@@ -1,5 +1,6 @@
 local AcceptOnes = "false";
 local AcceptRolls = "false";
+local HousePercent = 10;
 local totalrolls = 0
 local tierolls = 0;
 local theMax
@@ -17,13 +18,14 @@ local whispermethod = false;
 local totalentries = 0;
 local highplayername = "";
 local lowplayername = "";
+local lastroll = "";
 local rollCmd = SLASH_RANDOM1:upper();
 local debugLevel = 0;
 local virag_debug = false
 local chatmethods = {
 	"RAID",
 	"PARTY",
-	"Say",
+	"GUILD",
 	"CHANNEL"
 }
 local chatmethod = chatmethods[1];
@@ -32,14 +34,14 @@ local chatmethod = chatmethods[1];
 
 -- LOAD FUNCTION --
 function CrossGambling_OnLoad(self)
-	DEFAULT_CHAT_FRAME:AddMessage("|cffffff00<Cross Gambling for Warcraft 8.2.0 and Classic!> loaded /cg to use");
+	DEFAULT_CHAT_FRAME:AddMessage("|cffffff00<Cross Gambling for Warcraft 8.2.5 and Classic!> loaded /cg to use");
 
 	self:RegisterEvent("CHAT_MSG_RAID");
 	self:RegisterEvent("CHAT_MSG_CHANNEL");
 	self:RegisterEvent("CHAT_MSG_RAID_LEADER");
 	self:RegisterEvent("CHAT_MSG_PARTY_LEADER");
 	self:RegisterEvent("CHAT_MSG_PARTY");
-	self:RegisterEvent("CHAT_MSG_SAY");
+	self:RegisterEvent("CHAT_MSG_GUILD");
 	self:RegisterEvent("CHAT_MSG_SYSTEM");
 	self:RegisterEvent("PLAYER_ENTERING_WORLD");
 	self:RegisterForDrag("LeftButton");
@@ -104,6 +106,7 @@ function CrossGambling_SlashCmd(msg)
 		Print("", "", "ban - Ban's the user from being able to roll");
 		Print("", "", "unban - Unban's the user");
 		Print("", "", "listban - Shows ban list");
+		Print("", "", "house - Toggles guild house cut");
 		msgPrint = 1;
 	end
 	if (msg == "hide") then
@@ -159,6 +162,11 @@ function CrossGambling_SlashCmd(msg)
 
 	if (string.sub(msg, 1, 7) == "listban") then
 		CrossGambling_ListBan();
+		msgPrint = 1;
+	end
+    
+	if (string.sub(msg, 1, 5) == "house") then
+		CrossGambling_ToggleHouse();
 		msgPrint = 1;
 	end
 
@@ -222,7 +230,7 @@ function CrossGambling_OnEvent(self, event, ...)
 	-- LOADS ALL DATA FOR INITIALIZATION OF ADDON --
 	if (event == "PLAYER_ENTERING_WORLD") then
 		CrossGambling_EditBox:SetJustifyH("CENTER");
-
+        CrossGambling_EditBoxCut:SetJustifyH("CENTER");
 		if(not CrossGambling) then
 			CrossGambling = {
 				["active"] = 0,
@@ -243,15 +251,18 @@ function CrossGambling_OnEvent(self, event, ...)
 			-- If the value is not true/false then set it to true to show initially.
 			CrossGambling["minimap"] = true
 		end
+		if(not CrossGambling["lastroll"]) then CrossGambling["lastroll"] = 100; end
 		if(not CrossGambling["stats"]) then CrossGambling["stats"] = { }; end
 		if(not CrossGambling["joinstats"]) then CrossGambling["joinstats"] = { }; end
 		if(not CrossGambling["chat"]) then CrossGambling["chat"] = 1; end
 		if(not CrossGambling["channel"]) then CrossGambling["channel"] = "gambling"; end
 		if(not CrossGambling["whispers"]) then CrossGambling["whispers"] = false; end
 		if(not CrossGambling["bans"]) then CrossGambling["bans"] = { }; end
+		if(not CrossGambling["house"]) then CrossGambling["house"] = 0; end
+		if(not CrossGambling["isHouseCut"]) then CrossGambling["isHouseCut"] = false; end
 
 		CrossGambling_EditBox:SetText(""..CrossGambling["lastroll"]);
-
+        CrossGambling_EditBoxCut:SetText(HousePercent);
 		chatmethod = chatmethods[CrossGambling["chat"]];
 		CrossGambling_CHAT_Button:SetText(chatmethod); 
 
@@ -292,7 +303,7 @@ function CrossGambling_OnEvent(self, event, ...)
 		CrossGambling_ParseChatMsg(msg, name)
 	end
 
-    if ((event == "CHAT_MSG_SAY" or event == "CHAT_MSG_SAY")and AcceptOnes=="true" and CrossGambling["chat"] == 3) then
+    if ((event == "CHAT_MSG_GUILD" or event == "CHAT_MSG_GUILD")and AcceptOnes=="true" and CrossGambling["chat"] == 3) then
 		local msg, name = ... -- name no realm
 		CrossGambling_ParseChatMsg(msg, name)
 	end
@@ -313,6 +324,7 @@ end
 
 function CrossGambling_ResetStats()
 	CrossGambling["stats"] = { };
+	CrossGambling["house"] = 0;
 end
 
 function Minimap_Toggle()
@@ -424,7 +436,15 @@ function CrossGambling_OnClickSTATS(full)
 			if(sortlistamount[k] < 0) then sortsign = "lost"; end
 			ChatMsg(string.format("%d.  %s %s %d total", k+1, sortlistname[k], sortsign, math.abs(sortlistamount[k])), chatmethod);
 		end
+
+		if (CrossGambling["house"] > 0) then
+			ChatMsg(string.format("The house has taken %s total.", (CrossGambling["house"])), chatmethod);
+		end
 		return
+	end
+
+	if (CrossGambling["house"] > 0) then
+		ChatMsg(string.format("The house has taken %s total.", (CrossGambling["house"])), chatmethod);
 	end
 
 	local x1 = 3-1;
@@ -448,7 +468,6 @@ function CrossGambling_OnClickSTATS(full)
 		ChatMsg(string.format("%d.  %s %s %d total", i+1, sortlistname[i], sortsign, math.abs(sortlistamount[i])), chatmethod);
 	end
 end
-
 
 function CrossGambling_OnClickROLL()
 	if (totalrolls > 0 and AcceptRolls == "true") then
@@ -491,7 +510,7 @@ function CrossGambling_OnClickLASTCALL()
 end
 
 function CrossGambling_OnClickACCEPTONES()
-	if CrossGambling_EditBox:GetText() ~= "" and CrossGambling_EditBox:GetText() ~= "0" then
+	if CrossGambling_EditBox:GetText() ~= "" and CrossGambling_EditBox:GetText() ~= "1" then
 		CrossGambling_Reset();
 		CrossGambling_ROLL_Button:Disable();
 		CrossGambling_LASTCALL_Button:Disable();
@@ -550,15 +569,31 @@ end
 
 function CrossGambling_Report()
 	local goldowed = high - low
+	local houseCut = 0
+	if (CrossGambling["isHouseCut"]) then
+		houseCut = floor(goldowed * (HousePercent/100))
+		goldowed = goldowed - houseCut
+		CrossGambling["house"] = (CrossGambling["house"] or 0) + houseCut;
+	end
 	if (goldowed ~= 0) then
 		lowname = lowname:gsub("^%l", string.upper)
 		highname = highname:gsub("^%l", string.upper)
-		local string3 = strjoin(" ", "", lowname, "owes", highname, goldowed,"gold.")
+		local string3 = string.format("%s owes %s %s gold!", lowname, highname, (goldowed));
+
+		if (CrossGambling["isHouseCut"] and houseCut > 1) then
+			string3 = string.format("%s owes %s %s gold and %s gold the guild bank!", lowname, highname, (goldowed), (houseCut));
+		end
 
 		CrossGambling["stats"][highname] = (CrossGambling["stats"][highname] or 0) + goldowed;
 		CrossGambling["stats"][lowname] = (CrossGambling["stats"][lowname] or 0) - goldowed;
 
 		ChatMsg(string3);
+		
+		if (CrossGambling["loser"]) then
+			ChatMsg(string.format("%s can now set the next gambling amount by saying !amount x", lowname));
+			AcceptLoserAmount = lowname
+		end
+
 	else
 		ChatMsg("It was a tie! No payouts on this roll!");
 	end
@@ -737,6 +772,18 @@ function CrossGambling_ListBan()
 	end
 end
 
+function CrossGambling_ToggleHouse()
+	if (CrossGambling["isHouseCut"]) then
+		CrossGambling["isHouseCut"] = false
+		CrossGambling_HouseCut:SetText("House Cut Off");
+		Print("", "", "|cffffff00House cut has been turned off.");
+	else
+		CrossGambling["isHouseCut"] = true
+		CrossGambling_HouseCut:SetText("House Cut On");
+		Print("", "", "|cffffff00House cut has been turned on.");
+	end
+end
+
 function CrossGambling_Add(name)
 	local charname, realmname = strsplit("-",name);
 	local insname = strlower(charname);
@@ -862,6 +909,7 @@ function CrossGambling_Reset()
 		low = theMax
 		high = 0
 		tie = 0
+		lastroll = 100;
 		highbreak = 0;
 		lowbreak = 0;
 		tiehigh = 0;
@@ -885,8 +933,10 @@ end
 function CrossGambling_EditBox_OnLoad()
     CrossGambling_EditBox:SetNumeric(true);
 	CrossGambling_EditBox:SetAutoFocus(false);
+
 end
 
 function CrossGambling_EditBox_OnEnterPressed()
     CrossGambling_EditBox:ClearFocus();
+	lastroll = "";
 end

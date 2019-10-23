@@ -3,7 +3,7 @@
 	<Animation />
 	<Frame name="CrossGambling_Frame" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
 		<Size>
-			<AbsDimension x="400" y="400" />
+			<AbsDimension x="410" y="220" />
 		</Size>
 		<Anchors>
 			<Anchor point="CENTER" relativeTo="UIParent" />
@@ -24,7 +24,7 @@
 				<FontString name="Cross Gambling" inherits="GameFontNormal" text="Cross Gambling - Loyal@Stormrage">
 					<Anchors>
 						<Anchor point="TOPLEFT">
-							<Offset x="95" y="-175" />
+							<Offset x="95" y="-195" />
 						</Anchor>
 					</Anchors>
 				</FontString>
@@ -84,41 +84,25 @@
 				<OnLoad>CrossGambling_STATS_Button.tooltipText="Show's all user stats."</OnLoad>
 				</Scripts>
 			</Button>
-			<EditBox name="CrossGambling_EditBox" letters="7">
-				<Size>
-					<AbsDimension x="360" y="20" />
-				</Size>
-				<Anchors>
-					<Anchor point="TOP">
-						<Offset x="2" y="-40" />
-					</Anchor>
-				</Anchors>
-				<Layers>
-					<Layer level="BACKGROUND">
-					 <Texture file="Interface\ChatFrame\UI-ChatInputBorder-LEFT">
-                <Size x="375" y="32" />
-                <Anchors>
-                    <Anchor point="RIGHT">
-                        <Offset x="7" y="0" />
-                    </Anchor>
-                </Anchors>
-                <TexCoords left="0.7" right="1.0" top="0" bottom="1.0"/>
-            </Texture>
-					</Layer>
-				</Layers>
-				<Scripts>
-					<OnLoad>
-						CrossGambling_EditBox_OnLoad();
-					</OnLoad>
-					<OnEnterPressed>
-					CrossGambling_EditBox_OnEnterPressed();
-					</OnEnterPressed>
-					<OnEscapePressed>
-						self:ClearFocus();
-					</OnEscapePressed>
-				</Scripts>
-				<FontString inherits="ChatFontNormal" />
-			</EditBox>
+			
+					<EditBox name = "CrossGambling_EditBox" letters="7" inherits = "InputBoxTemplate" autoFocus = "false">
+    <Size>
+       <AbsDimension x="360" y="20" />
+    </Size>
+    <Anchors>
+        <Anchor point = "TOP">
+           	<Offset x="2" y="-40" />
+        </Anchor>
+    </Anchors>
+    <Scripts>
+        <OnLoad>
+		    CrossGambling_EditBox_OnLoad();
+            self:SetScript("OnEscapePressed", self.ClearFocus)
+            self:SetScript("OnEnterPressed", self.ClearFocus)
+			
+        </OnLoad>
+    </Scripts>
+</EditBox>
 			<Button name="CrossGambling_RESET1_Button" inherits="OptionsButtonTemplate" movable="true" text="Reset Game">
 				<Size x="180" y="30"/>
 				<Anchors>
@@ -192,7 +176,40 @@
 				<OnLoad>CrossGambling_Ban_Button.tooltipText="Ban list, to add people here type /cg ban (name)"</OnLoad>
 
 				</Scripts>
+						
 			</Button>
+				<Button name="CrossGambling_HouseCut" inherits="OptionsButtonTemplate" text="House Cut Off">
+					<Size x="180" y="30"/>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-95" y="132" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_ToggleHouse();
+					</OnClick>
+				<OnLoad>CrossGambling_HouseCut.tooltipText="The House Takes A Cut"</OnLoad>
+
+				</Scripts>
+			</Button>
+		<EditBox name = "CrossGambling_EditBoxCut" inherits = "InputBoxTemplate" autoFocus = "false">
+    <Size>
+        <AbsDimension x = "175" y = "30"/>
+    </Size>
+    <Anchors>
+        <Anchor point = "TOP">
+            <Offset x = "98" y = "-60"/>
+        </Anchor>
+    </Anchors>
+    <Scripts>
+        <OnLoad>
+            self:SetScript("OnEscapePressed", self.ClearFocus)
+            self:SetScript("OnEnterPressed", self.ClearFocus)
+			
+        </OnLoad>
+    </Scripts>
+</EditBox>
 
 			<Button name="CrossGambling_Type_Button" inherits="OptionsButtonTemplate" text="Enter's For You">
 				<Size x="180" y="30"/>
@@ -224,77 +241,8 @@
 				<OnLoad>CrossGambling_CHAT_Button.tooltipText="Change Channels"</OnLoad>
 				</Scripts>
 			</Button>
-<ScrollFrame name="ScrollFrameTest">
-<Size x="250" y="250"/>
-<Anchors>
-<Anchor point="CENTER"/>
-</Anchors>
-<Layers>
-<Layer level="BACKGROUND">
-<Texture setAllPoints="true">
-<Color r="0.0" g="0.0" b="0.0"/>
-</Texture>
-</Layer>
-</Layers>
-<Frames>
 
-<Slider name="ScrollFrameTest_VSlider" orientation="VERTICAL"
-minValue="0" maxValue="100" defaultValue="0" valueStep="1">
-<Size x="25" y="190"/>
-<Anchors>
-<Anchor point="LEFT" relativePoint="RIGHT" 
-relativeTo="ScrollFrameTest"/>
-</Anchors>
-<Scripts>
-<OnValueChanged>
-ScrollFrameTest:SetVerticalScroll(self:GetValue())
-</OnValueChanged>
-</Scripts>
-<ThumbTexture name="$parentThumbTexture"
-file="Interface\Buttons\UI-ScrollBar-Knob">
-<Size x="25" y="25"/>
-</ThumbTexture>
-</Slider>
-</Frames>
-<ScrollChild>
-<Frame>
-<Size x="250" y="250"/>
-<Layers>
-<Layer level="OVERLAY">
-				<FontString name="Cross Gambling" inherits="GameFontNormal" text="PLAYERS">
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="95" y="-175" />
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString inherits="GameFontNormal" text="">
-					<Size x="122" y="13" />
-					<Anchors>
-						<Anchor point="TOPLEFT">
-							<Offset x="98" y="-129" />
-						</Anchor>
-					</Anchors>
-					<FontHeight val="4" />
-					<Color r="0.753" g="0.753" b="0.753" />
-				</FontString>
-			</Layer>
-			<Scripts>
-					<OnLoad>
-						CrossGambling_EditBox_OnLoad();
-					</OnLoad>
-					<OnEnterPressed>
-					CrossGambling_EditBox_OnEnterPressed();
-					</OnEnterPressed>
-					<OnEscapePressed>
-						self:ClearFocus();
-					</OnEscapePressed>
-				</Scripts>
-</Layers>
 
-</Frame>
-</ScrollChild>
-</ScrollFrame>
 
 
 			<Button name="CG_MinimapButton" parent="Minimap" enableMouse="true" movable="true" hidden="false">
@@ -342,6 +290,7 @@ file="Interface\Buttons\UI-ScrollBar-Knob">
 		<HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
 		<Scripts>
 			<OnLoad>
+
 				self:RegisterForClicks("LeftButtonUp","RightButtonUp")
 				self:RegisterForDrag("LeftButton","RightButton")
 			</OnLoad>
