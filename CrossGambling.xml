@@ -1,0 +1,380 @@
+<Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.blizzard.com/wow/ui/">
+	<Script file="CrossGambling.lua" />
+	<Animation />
+	<Frame name="CrossGambling_Frame" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
+		<Size>
+			<AbsDimension x="400" y="400" />
+		</Size>
+		<Anchors>
+			<Anchor point="CENTER" relativeTo="UIParent" />
+		</Anchors>
+		<Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
+			<BackgroundInsets>
+				<AbsInset left="11" right="12" top="12" bottom="11" />
+			</BackgroundInsets>
+			<TileSize>
+				<AbsValue val="32" />
+			</TileSize>
+			<EdgeSize>
+				<AbsValue val="32" />
+			</EdgeSize>
+		</Backdrop>
+		<Layers>
+			<Layer level="OVERLAY">
+				<FontString name="Cross Gambling" inherits="GameFontNormal" text="Cross Gambling - Loyal@Stormrage">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="95" y="-175" />
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="">
+					<Size x="122" y="13" />
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="98" y="-129" />
+						</Anchor>
+					</Anchors>
+					<FontHeight val="4" />
+					<Color r="0.753" g="0.753" b="0.753" />
+				</FontString>
+			</Layer>
+		</Layers>
+
+		<Frames>
+			<Button name="CrossGambling_Close" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="CrossGambling_Frame" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="7" y="6"/>
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						hide_from_xml()
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_ROLL_Button" inherits="OptionsButtonTemplate" movable="true" text="ROLL!">
+				<Size x="180" y="30"/>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-95" y="50" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickROLL();
+					</OnClick>
+				</Scripts>
+			</Button>
+
+			<Button name="CrossGambling_STATS_Button" inherits="OptionsButtonTemplate" movable="true" text="Stats">
+				<Size x="180" y="30"/>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="95" y="50" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickSTATS();
+					</OnClick>
+				<OnLoad>CrossGambling_STATS_Button.tooltipText="Show's all user stats."</OnLoad>
+				</Scripts>
+			</Button>
+			<EditBox name="CrossGambling_EditBox" letters="7">
+				<Size>
+					<AbsDimension x="360" y="20" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOP">
+						<Offset x="2" y="-40" />
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+					 <Texture file="Interface\ChatFrame\UI-ChatInputBorder-LEFT">
+                <Size x="375" y="32" />
+                <Anchors>
+                    <Anchor point="RIGHT">
+                        <Offset x="7" y="0" />
+                    </Anchor>
+                </Anchors>
+                <TexCoords left="0.7" right="1.0" top="0" bottom="1.0"/>
+            </Texture>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnLoad>
+						CrossGambling_EditBox_OnLoad();
+					</OnLoad>
+					<OnEnterPressed>
+					CrossGambling_EditBox_OnEnterPressed();
+					</OnEnterPressed>
+					<OnEscapePressed>
+						self:ClearFocus();
+					</OnEscapePressed>
+				</Scripts>
+				<FontString inherits="ChatFontNormal" />
+			</EditBox>
+			<Button name="CrossGambling_RESET1_Button" inherits="OptionsButtonTemplate" movable="true" text="Reset Game">
+				<Size x="180" y="30"/>
+				<Anchors>
+				<Anchor point="BOTTOM">
+						<Offset x="95" y="25" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_Reset()
+						CrossGambling_ResetCmd()
+					</OnClick>
+				<OnLoad>CrossGambling_RESET1_Button.tooltipText="Resets The Game"</OnLoad>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_LASTCALL_Button" inherits="OptionsButtonTemplate" movable="true" text="Last Call">
+				<Size x="180" y="30"/>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-95" y="78" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickLASTCALL();
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_AcceptOnes_Button" inherits="OptionsButtonTemplate" text="Open Entry">
+				 <Size x="180" y="30"/>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-95" y="105" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickACCEPTONES();
+
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_Roll_Button" inherits="OptionsButtonTemplate" text="User Roll">
+				 <Size x="180" y="30"/>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="95" y="105" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickRoll();
+
+					</OnClick>
+				<OnLoad>CrossGambling_Roll_Button.tooltipText="Does /roll for you!"</OnLoad>
+				</Scripts>
+			</Button>
+
+			<Button name="CrossGambling_Ban_Button" inherits="OptionsButtonTemplate" text="Ban List">
+					<Size x="180" y="30"/>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="-95" y="25" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_ListBan();
+
+					</OnClick>
+				<OnLoad>CrossGambling_Ban_Button.tooltipText="Ban list, to add people here type /cg ban (name)"</OnLoad>
+
+				</Scripts>
+			</Button>
+
+			<Button name="CrossGambling_Type_Button" inherits="OptionsButtonTemplate" text="Enter's For You">
+				<Size x="180" y="30"/>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="95" y="78" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CrossGambling_OnClickRoll1();
+
+					</OnClick>
+					<OnLoad>CrossGambling_Type_Button.tooltipText="Type's the number one into chat"</OnLoad>
+				</Scripts>
+			</Button>
+			<Button name="CrossGambling_CHAT_Button" inherits="OptionsButtonTemplate" text="(Raid)">
+				 <Size x="380" y="30"/>
+				<Anchors>
+					<Anchor point="TOP">
+						<Offset x="1" y="-10" />
+					</Anchor>
+				</Anchors>
+				<Scripts>
+
+					<OnClick>
+						CrossGambling_OnClickCHAT();
+					</OnClick>
+				<OnLoad>CrossGambling_CHAT_Button.tooltipText="Change Channels"</OnLoad>
+				</Scripts>
+			</Button>
+<ScrollFrame name="ScrollFrameTest">
+<Size x="250" y="250"/>
+<Anchors>
+<Anchor point="CENTER"/>
+</Anchors>
+<Layers>
+<Layer level="BACKGROUND">
+<Texture setAllPoints="true">
+<Color r="0.0" g="0.0" b="0.0"/>
+</Texture>
+</Layer>
+</Layers>
+<Frames>
+
+<Slider name="ScrollFrameTest_VSlider" orientation="VERTICAL"
+minValue="0" maxValue="100" defaultValue="0" valueStep="1">
+<Size x="25" y="190"/>
+<Anchors>
+<Anchor point="LEFT" relativePoint="RIGHT" 
+relativeTo="ScrollFrameTest"/>
+</Anchors>
+<Scripts>
+<OnValueChanged>
+ScrollFrameTest:SetVerticalScroll(self:GetValue())
+</OnValueChanged>
+</Scripts>
+<ThumbTexture name="$parentThumbTexture"
+file="Interface\Buttons\UI-ScrollBar-Knob">
+<Size x="25" y="25"/>
+</ThumbTexture>
+</Slider>
+</Frames>
+<ScrollChild>
+<Frame>
+<Size x="250" y="250"/>
+<Layers>
+<Layer level="OVERLAY">
+				<FontString name="Cross Gambling" inherits="GameFontNormal" text="PLAYERS">
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="95" y="-175" />
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString inherits="GameFontNormal" text="">
+					<Size x="122" y="13" />
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="98" y="-129" />
+						</Anchor>
+					</Anchors>
+					<FontHeight val="4" />
+					<Color r="0.753" g="0.753" b="0.753" />
+				</FontString>
+			</Layer>
+			<Scripts>
+					<OnLoad>
+						CrossGambling_EditBox_OnLoad();
+					</OnLoad>
+					<OnEnterPressed>
+					CrossGambling_EditBox_OnEnterPressed();
+					</OnEnterPressed>
+					<OnEscapePressed>
+						self:ClearFocus();
+					</OnEscapePressed>
+				</Scripts>
+</Layers>
+
+</Frame>
+</ScrollChild>
+</ScrollFrame>
+
+
+			<Button name="CG_MinimapButton" parent="Minimap" enableMouse="true" movable="true" hidden="false">
+		<Size>
+			<AbsDimension x="33" y="33"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT"/>
+		</Anchors>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="CG_MinimapButton_Icon" file="Interface\AddOns\CrossGambling\media\icon">
+					<Size>
+						<AbsDimension x="21" y="21"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="7" y="-6"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture file="Interface\Minimap\MiniMap-TrackingBorder">
+					<Size>
+						<AbsDimension x="56" y="56"/>
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame name="CG_MinimapButton_DraggingFrame" hidden="true">
+				<Scripts>
+					<OnUpdate>
+						CG_MinimapButton_DraggingFrame_OnUpdate()
+					</OnUpdate>
+				</Scripts>
+			</Frame>
+		</Frames>
+		<HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
+		<Scripts>
+			<OnLoad>
+				self:RegisterForClicks("LeftButtonUp","RightButtonUp")
+				self:RegisterForDrag("LeftButton","RightButton")
+			</OnLoad>
+			<OnDragStart>
+				self:LockHighlight()
+								CG_MinimapButton_DraggingFrame:Show()
+			</OnDragStart>
+			<OnDragStop>
+				self:UnlockHighlight()
+				CG_MinimapButton_DraggingFrame:Hide()
+			</OnDragStop>
+			<OnClick>
+								ToggleFrame(CrossGambling_Frame)
+			</OnClick>
+		</Scripts>
+	</Button>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				CrossGambling_OnLoad(self);
+			</OnLoad>
+			<OnEvent>
+				CrossGambling_OnEvent(self, event, ...);
+			</OnEvent>
+			<OnDragStart>
+				self:StartMoving();
+				self.isMoving = true;
+			</OnDragStart>
+			<OnDragStop>
+				self:StopMovingOrSizing();
+				self.isMoving = false;
+			</OnDragStop>
+		</Scripts>
+	</Frame>
+
+</Ui>
