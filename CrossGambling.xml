@@ -112,8 +112,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						CrossGambling_Reset()
-						CrossGambling_ResetCmd()
+						CrossGambling_ROLL()
 					</OnClick>
 				<OnLoad>CrossGambling_RESET1_Button.tooltipText="Resets The Game"</OnLoad>
 				</Scripts>
