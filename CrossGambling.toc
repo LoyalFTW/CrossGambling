@@ -9,5 +9,4 @@
 ## SavedVariables: CrossGambling
 CrossGambling.xml
 CrossGambling.lua
-Locale\Locale.lua
 
