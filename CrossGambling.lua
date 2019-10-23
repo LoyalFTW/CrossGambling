@@ -78,6 +78,77 @@ local function DebugMsg(level, text)
   Print("","",GRAY_FONT_COLOR_CODE..date("%H:%M:%S")..RED_FONT_COLOR_CODE..level..FONT_COLOR_CODE_CLOSE..text)
 end
 
+
+function CrossGambling_ROLL()
+  if not reset_dialog then
+    local f = CreateFrame("Frame", "UnlockDialog", UIParent)
+    f:SetFrameStrata("DIALOG")
+    f:SetToplevel(true)
+    f:EnableMouse(true)
+    f:SetMovable(true)
+    f:SetClampedToScreen(true)
+    f:SetWidth(360)
+    f:SetHeight(110)
+    f:SetBackdrop{
+      bgFile="Interface\\DialogFrame\\UI-DialogBox-Background" ,
+      edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
+      tile = true,
+      insets = {left = 11, right = 12, top = 12, bottom = 11},
+      tileSize = 32,
+      edgeSize = 32,
+    }
+    f:SetPoint("TOP", 0, -50)
+    f:Hide()
+
+    f:RegisterForDrag('LeftButton')
+    f:SetScript('OnDragStart', function(f) f:StartMoving() end)
+    f:SetScript('OnDragStop', function(f) f:StopMovingOrSizing() end)
+
+    local header = f:CreateTexture(nil, "ARTWORK")
+    header:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
+    header:SetWidth(256); header:SetHeight(64)
+    header:SetPoint("TOP", 0, 12)
+
+    local title = f:CreateFontString("ARTWORK")
+    title:SetFontObject("GameFontNormal")
+    title:SetPoint("TOP", header, "TOP", 0, -14)
+    title:SetText("CrossGambling")
+
+    local desc = f:CreateFontString("ARTWORK")
+    desc:SetFontObject("GameFontHighlight")
+    desc:SetJustifyV("TOP")
+    desc:SetJustifyH("LEFT")
+    desc:SetPoint("TOPLEFT", 18, -42)
+    desc:SetPoint("BOTTOMRIGHT", -18, 48)
+    desc:SetText("Would you like to reset your stats as well?")
+
+    local yes_button = CreateFrame("CheckButton", "Yes", f, "OptionsButtonTemplate")
+    getglobal(yes_button:GetName() .. "Text"):SetText("Yes")
+
+    yes_button:SetScript("OnClick", function(self)
+      print("Stats Reset")
+      CrossGambling_ResetStats();
+      reset_dialog:Hide()
+    end)
+
+    local no_button = CreateFrame("CheckButton", "No", f, "OptionsButtonTemplate")
+    getglobal(no_button:GetName() .. "Text"):SetText("No")
+
+    no_button:SetScript("OnClick", function(self)
+	print("Game Reset")
+	CrossGambling_Reset();
+      reset_dialog:Hide()
+    end)
+    --position buttons
+    yes_button:SetPoint("BOTTOMRIGHT", -210, 14)
+    no_button:SetPoint("BOTTOMRIGHT", -55, 14)
+    reset_dialog = f
+  end
+  reset_dialog:Show()
+end
+
+
+
 local function ChatMsg(msg, chatType, language, channel)
 	chatType = chatType or chatmethod
 	channelnum = GetChannelName(channel or CrossGambling["channel"] or "gambling")
@@ -326,6 +397,7 @@ function CrossGambling_ResetStats()
 	CrossGambling["stats"] = { };
 	CrossGambling["house"] = 0;
 end
+
 
 function Minimap_Toggle()
 	if CrossGambling["minimap"] then
@@ -580,9 +652,13 @@ function CrossGambling_Report()
 		highname = highname:gsub("^%l", string.upper)
 		local string3 = string.format("%s owes %s %s gold!", lowname, highname, (goldowed));
 
-		if (CrossGambling["isHouseCut"] and houseCut > 1) then
-			string3 = string.format("%s owes %s %s gold and %s gold the guild bank!", lowname, highname, (goldowed), (houseCut));
+
+			if (CrossGambling["isHouseCut"] and houseCut > 1) then
+			string3 = string.format("%s owes %s %s gold and the guild gets , ", CrossGambling_EditBoxCut:GetText(), "% %s gold owed", lowname, highname, (goldowed), (houseCut));
 		end
+		
+	
+			CrossGambling["house"] = CrossGambling_EditBoxCut:GetText();
 
 		CrossGambling["stats"][highname] = (CrossGambling["stats"][highname] or 0) + goldowed;
 		CrossGambling["stats"][lowname] = (CrossGambling["stats"][lowname] or 0) - goldowed;
@@ -597,7 +673,6 @@ function CrossGambling_Report()
 	else
 		ChatMsg("It was a tie! No payouts on this roll!");
 	end
-	CrossGambling_Reset();
 	CrossGambling_AcceptOnes_Button:SetText("Open Entry");
 	CrossGambling_CHAT_Button:Enable();
 end
