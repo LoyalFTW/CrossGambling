@@ -8,4 +8,3 @@
 ## Notes: A fun way to lose gold. Or win it.
 ## SavedVariables: CrossGambling
 CrossGambling.xml
-

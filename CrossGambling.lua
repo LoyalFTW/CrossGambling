@@ -1,5 +1,5 @@
-CrossGambling = LibStub("AceAddon-3.0"):NewAddon("CrossGambling")
-local CrossGambling	= LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+CrossGambling1 = LibStub("AceAddon-3.0"):NewAddon("CrossGambling1")
+local CrossGambling1	= LibStub("AceAddon-3.0"):GetAddon("CrossGambling1")
 local AcceptOnes = "false";
 local AcceptRolls = "false";
 local HousePercent = 10;
@@ -32,26 +32,8 @@ local chatmethods = {
 }
 local chatmethod = chatmethods[1];
 
-function CrossGambling:OnInitialize()
-	
-	-- Member Initializers
-	local defaults = {
-	    global = {
-			minimap = {
-				hide = false,
-			}
-		}
-	}
-    self.db = LibStub("AceDB-3.0"):New("CrossGamblingDB", defaults)
 
-	-- Register with the minimap icon frame
-	self:ConstructMiniMapIcon()
-
-end
-
-
-
-function CrossGambling:ConstructMiniMapIcon() 
+function CrossGambling1:ConstructMiniMapIcon() 
 	self.minimap = { }
 	self.minimap.icon_data = LibStub("LibDataBroker-1.1"):NewDataObject("CrossGamblingIcon", {
 		type = "data source",
@@ -109,7 +91,6 @@ GUI:SetUserPlaced(true)
 GUI:RegisterForDrag("LeftButton")
 GUI:SetScript("OnDragStart", GUI.StartMoving)
 GUI:SetScript("OnDragStop", GUI.StopMovingOrSizing)
-GUI:SetScript("OnEvent", function() CrossGambling_OnLoad(self) end)
 
 GUI:Hide()
 
@@ -138,7 +119,7 @@ AdminTop:SetPoint("BOTTOM", Admin, "TOP", 0, -1)
 SetTemplateDark(AdminTop)
 
 AdminTop.TopLabel = AdminTop:CreateFontString(nil, "OVERLAY")
-AdminTop.TopLabel:SetPoint("CENTER", AdminTop, "CENTER", 0, -1) -- Original Point: AdminTop.TopLabel:SetPoint("TOPLEFT", AdminTop, "TOPLEFT", 4, -4)
+AdminTop.TopLabel:SetPoint("CENTER", AdminTop, "CENTER", 0, -1)
 AdminTop.TopLabel:SetFont(Font, 16)
 AdminTop.TopLabel:SetTextColor(unpack(FontColor))
 AdminTop.TopLabel:SetText("CrossGambling")
@@ -157,12 +138,13 @@ Admin2Top:SetPoint("BOTTOM", Admin2, "TOP", 0, -1)
 SetTemplateDark(Admin2Top)
 
 Admin2Top.TopLabel = Admin2Top:CreateFontString(nil, "OVERLAY")
-Admin2Top.TopLabel:SetPoint("CENTER", Admin2Top, "CENTER", 0, -1) -- Original Point: Admin2Top.TopLabel:SetPoint("TOPLEFT", Admin2Top, "TOPLEFT", 4, -4)
+Admin2Top.TopLabel:SetPoint("CENTER", Admin2Top, "CENTER", 0, -1)
 Admin2Top.TopLabel:SetFont(Font, 16)
 Admin2Top.TopLabel:SetTextColor(unpack(FontColor))
-Admin2Top.TopLabel:SetText("Munty's Casino")
 Admin2Top.TopLabel:SetShadowOffset(1.25, -1.25)
 Admin2Top.TopLabel:SetShadowColor(0, 0, 0)
+
+
 
 -- Commands panel
 
@@ -595,7 +577,35 @@ local EditBoxOnEnterPressed2 = function(self)
 
 end
 
+local ButtonOnEnter = function(self)
+	self:SetBackdropColor(0.17, 0.17, 0.17)
+	SetTemplateDark(GameTooltip)
+	GameTooltip:SetOwner(Admin2Top, "ANCHOR_BOTTOMRIGHT", -2, 21)
+end
 
+GameMode = CreateFrame("Frame", nil, Admin2)
+GameMode:SetSize(112, 10)
+GameMode:SetPoint("CENTER", Admin2Top, "CENTER", 0, -1)
+SetTemplateDark(GameMode)
+GameMode:SetScript("OnEnter", ButtonOnEnter)
+GameMode:HookScript("OnEnter", function(self)
+	GameTooltip:SetText("GameModes")
+    GameTooltip:AddLine("Change Game Mode", 1, 1, 1, true)
+    GameTooltip:Show()
+end)
+GameMode:SetScript("OnLeave", ButtonOnLeave)
+GameMode:SetScript("OnMouseUp", function(self)
+CrossGambling_GameMode()
+end)
+
+GameMode_Button = GameMode:CreateFontString(nil, "OVERLAY")
+GameMode_Button:SetPoint("CENTER", GameMode, 0, 0)
+GameMode_Button:SetFont(Font, 14)
+GameMode_Button:SetJustifyH("CENTER")
+GameMode_Button:SetTextColor(unpack(FontColor))
+GameMode_Button:SetText("Munty's Casino")
+GameMode_Button:SetShadowOffset(1.25, -1.25)
+GameMode_Button:SetShadowColor(0, 0, 0)
 
 local EditBox = CreateFrame("Frame", nil, Admin2)
 EditBox:SetPoint("TOPLEFT", Admin2, 3, -3)
@@ -604,7 +614,7 @@ SetTemplateDark(EditBox)
 EditBox:EnableMouse(true)
 
 CrossGambling_EditBox2 = CreateFrame("EditBox", nil, EditBox)
-CrossGambling_EditBox2:SetPoint("CENTER", EditBox, 16, -3)
+CrossGambling_EditBox2:SetPoint("CENTER", EditBox, 0, 0)
 CrossGambling_EditBox2:SetPoint("BOTTOMRIGHT", EditBox, -4, 2)
 CrossGambling_EditBox2:SetFont(Font, 16)
 CrossGambling_EditBox2:SetText("501")
@@ -823,6 +833,20 @@ end
 
 
 
+function CrossGambling1:OnInitialize()
+	
+	-- Member Initializers
+	local defaults = {
+	    global = {
+			minimap = {
+				hide = false,
+			}
+		}
+	}
+    self.db = LibStub("AceDB-3.0"):New("CrossGambling", defaults)
+	-- Register with the minimap icon frame
+	self:ConstructMiniMapIcon()
+end
 
 
 local EventFrame=CreateFrame("Frame");
@@ -1191,6 +1215,21 @@ function CrossGambling_OnClickCHAT()
 	CrossGambling_CHAT_Button:SetText(chatmethod);
 end
 
+-- Will work on later 
+
+function CrossGambling_GameMode()
+if(CrossGambling["Test"] == false) then
+ GameMode_Button:SetText("< BigTwo >");
+ CrossGambling_EditBox2:SetText("2");
+ CrossGambling["isHouseCut"] = false
+  CrossGambling_HouseCut.Label:SetText("Guild Cut (OFF)");
+		Print("", "", "|cffffff00Guild cut has been turned off.");
+ else
+ GameMode_Button:SetText("< Munty's Casino >");
+  CrossGambling_EditBox2:SetText("501");
+end
+end
+
 function CrossGambling_OnClickWHISPERS()
 	if(CrossGambling["whispers"] == nil) then CrossGambling["whispers"] = false; end
 
@@ -1379,7 +1418,7 @@ function CrossGambling_OnClickACCEPT501()
 		local fakeroll = "";
 		ChatMsg(format("%s%s", "CrossGambling(Muntys Casino): User's Roll ", CrossGambling_EditBox2:GetText()));
 		ChatMsg(format("%s%s%s%s", "Type 1 to Join -1 to withdraw ", "Current Bet Is ", CrossGambling_EditBox:GetText()," gold"));
-		CrossGambling["Test2"] = CrossGambling_EditBox2:GetText();
+		CrossGambling["Test"] = CrossGambling_EditBox2:GetText();
 		theMax = tonumber(CrossGambling_EditBox2:GetText());
 		low = theMax+1;
 		tielow = theMax+1;
@@ -1430,11 +1469,12 @@ end
 
 function CrossGambling_Report()
 	local goldowed = high - low
-	local Test2 = ""
 	local houseCut = 0
+	local Test2 = ""
 	if (CrossGambling["Test"]) then
 	Test2 = floor(CrossGambling_EditBox:GetText())
 	goldowed = goldowed - Test2
+	goldowed = high - low
 	CrossGambling["Test1"]  = (CrossGambling["Test1"] or 0);
 	else 
 	Test2 = floor(goldowed)
@@ -1443,21 +1483,21 @@ function CrossGambling_Report()
 	if (CrossGambling["isHouseCut"]) then
 		houseCut = floor(goldowed * (HousePercent/100))
 		goldowed = goldowed - houseCut
-		CrossGambling["house"] = (CrossGambling["house"] or 0) + houseCut;
-		
+		CrossGambling["house"] = (CrossGambling["house"] or 0) + houseCut;	
 	end
-
 	if (goldowed ~= 0) then
 		lowname = lowname:gsub("^%l", string.upper)
 		highname = highname:gsub("^%l", string.upper)
-local string3 = string.format("%s owes %s %s gold! %s %s", lowname, highname, (Test2), (houseCut), "Is owed to the guild");	
+local string3 = string.format("%s owes %s %s gold! %s ", lowname, highname, (Test2), "Congrats");	
 
-		CrossGambling["stats"][highname] = (CrossGambling["stats"][highname] or 0) + goldowed;
-		CrossGambling["stats"][lowname] = (CrossGambling["stats"][lowname] or 0) - goldowed;
+	if (CrossGambling["isHouseCut"] and houseCut > 1) then
+			string3 = string.format("%s owes %s %s gold and %s gold to the guild bank!", lowname, highname, (Test2), (houseCut));
+		end
+
+		CrossGambling["stats"][highname] = (CrossGambling["stats"][highname] or 0) + Test2;
+		CrossGambling["stats"][lowname] = (CrossGambling["stats"][lowname] or 0) - Test2;
 
 		ChatMsg(string3);
-
-
 	else
 		ChatMsg("It was a tie! No payouts on this roll!");
 	end

@@ -1,5 +1,5 @@
 <Ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.blizzard.com/wow/ui/">
-			  <Script file="libs\LibStub\LibStub.lua"/>
+				  <Script file="libs\LibStub\LibStub.lua"/>
     <Script file="libs\AceSerializer-3.0\AceSerializer-3.0.lua"/>
     <Script file="libs\AceConsole-3.0\AceConsole-3.0.lua"/>
     <Script file="libs\AceDB-3.0\AceDB-3.0.lua"/>
@@ -11,8 +11,9 @@
     <Script file="libs\LibDBIcon-1.0\LibDBIcon-1.0\LibDBIcon-1.0.lua"/>
     <Script file="libs\AceLocale-3.0\AceLocale-3.0.lua"/>
 	<Script file="CrossGambling.lua" />
-
-	<Frame name="CrossGambling_Frame1" parent="UIParent" toplevel="false" movable="true" enableMouse="true">
+	
+	<Frame name="CrossGambling_Frame" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
+		
 
 		<Scripts>
 			<OnLoad>
@@ -30,9 +31,8 @@
 				self.isMoving = false;
 			</OnDragStop>
 		</Scripts>
-
-
 	</Frame>
 	
+
 
 </Ui>
