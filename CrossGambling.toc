@@ -1,12 +1,11 @@
-## Interface: 82000
+## Interface: 80205
 ## Title:|cffff7d0aCrossGambling
 ## Author: Loyal
-## 8.2.0 Maintainer: Loyal @ Stormrage
-## Version: 8.2.0
+## 8.2.5 Maintainer: Loyal @ Stormrage
+## Version: 8.2.5
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## Notes: A fun way to lose gold. Or win it.
 ## SavedVariables: CrossGambling
 CrossGambling.xml
-CrossGambling.lua
 

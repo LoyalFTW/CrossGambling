@@ -1,6 +1,9 @@
+CrossGambling = LibStub("AceAddon-3.0"):NewAddon("CrossGambling")
+local CrossGambling	= LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
 local AcceptOnes = "false";
 local AcceptRolls = "false";
 local HousePercent = 10;
+local Test = 100; 
 local totalrolls = 0
 local tierolls = 0;
 local theMax
@@ -13,7 +16,6 @@ local highbreak = 0;
 local lowbreak = 0;
 local tiehigh = 0;
 local tielow = 0;
-local chatmethod = "RAID";
 local whispermethod = false;
 local totalentries = 0;
 local highplayername = "";
@@ -30,9 +32,777 @@ local chatmethods = {
 }
 local chatmethod = chatmethods[1];
 
+function CrossGambling:OnInitialize()
+	
+	-- Member Initializers
+	local defaults = {
+	    global = {
+			minimap = {
+				hide = false,
+			}
+		}
+	}
+    self.db = LibStub("AceDB-3.0"):New("CrossGamblingDB", defaults)
+
+	-- Register with the minimap icon frame
+	self:ConstructMiniMapIcon()
+
+end
 
 
--- LOAD FUNCTION --
+
+function CrossGambling:ConstructMiniMapIcon() 
+	self.minimap = { }
+	self.minimap.icon_data = LibStub("LibDataBroker-1.1"):NewDataObject("CrossGamblingIcon", {
+		type = "data source",
+		text = "CrossGambling",
+		icon = "Interface\\AddOns\\CrossGambling\\media\\icon",
+		OnClick = Minimap_Toggle,
+
+		OnTooltipShow = function(tooltip)
+			tooltip:AddLine("CrossGambling!",1,1,1)
+			tooltip:Show()
+		end,
+	})
+
+	self.minimap.icon = LibStub("LibDBIcon-1.0")
+	self.minimap.icon:Register("CrossGamblingIcon", self.minimap.icon_data, self.db.global.minimap)
+end
+-- GUI
+local Blank = "Interface\\AddOns\\CrossGambling\\Media\\Blank.tga"
+local Font = "Interface\\AddOns\\CrossGambling\\Media\\PTSans.ttf"
+local FontColor = {220/255, 220/255, 220/255}
+
+local Backdrop = {
+	bgFile = Blank,
+	edgeFile = Blank,
+	tile = false, tileSize = 0, edgeSize = 1,
+	insets = {left = 1, right = 1, top = 1, bottom = 1},
+}
+
+local BackdropBorder = {
+	edgeFile = Blank,
+	edgeSize = 1,
+	insets = {left = 0, right = 0, top = 0, bottom = 0},
+}
+
+local SetTemplate = function(self)
+	self:SetBackdrop(Backdrop)
+	self:SetBackdropBorderColor(0, 0, 0)
+	self:SetBackdropColor(0.21, 0.21, 0.21)
+end
+
+local SetTemplateDark = function(self)
+	self:SetBackdrop(Backdrop)
+	self:SetBackdropBorderColor(0, 0, 1)
+	self:SetBackdropColor(0.12, 0.12, 0.12)
+end
+
+
+local GUI = CreateFrame("Frame", "CrossGambling_Frame", UIParent)
+GUI:SetSize(227, 108) 
+GUI:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+SetTemplate(GUI)
+GUI:SetMovable(true)
+GUI:EnableMouse(true)
+GUI:SetUserPlaced(true)
+GUI:RegisterForDrag("LeftButton")
+GUI:SetScript("OnDragStart", GUI.StartMoving)
+GUI:SetScript("OnDragStop", GUI.StopMovingOrSizing)
+GUI:SetScript("OnEvent", function() CrossGambling_OnLoad(self) end)
+
+GUI:Hide()
+
+local Top = CreateFrame("Frame", nil, GUI)
+Top:SetSize(GUI:GetSize(), 21) -- Default is 228, 21
+Top:SetPoint("BOTTOM", GUI, "TOP", 0, -1)
+SetTemplateDark(Top)
+
+GUI.TopLabel = Top:CreateFontString(nil, "OVERLAY")
+GUI.TopLabel:SetPoint("TOPLEFT", Top, "TOPLEFT", 4, -4)
+GUI.TopLabel:SetFont(Font, 16)
+GUI.TopLabel:SetTextColor(unpack(FontColor))
+GUI.TopLabel:SetShadowOffset(1.25, -1.25)
+GUI.TopLabel:SetShadowColor(0, 0, 0)
+
+-- Admin panel
+local Admin = CreateFrame("Frame", "CrossGambleAdmin", GUI)
+Admin:SetSize(112, 128) --Original Size: 120, 96
+Admin:SetPoint("BOTTOMLEFT", GUI, "TOPLEFT", -111, -128)
+SetTemplate(Admin)
+Admin:Hide()
+
+local AdminTop = CreateFrame("Frame", nil, Admin)
+AdminTop:SetSize(Admin:GetSize(), 21)
+AdminTop:SetPoint("BOTTOM", Admin, "TOP", 0, -1)
+SetTemplateDark(AdminTop)
+
+AdminTop.TopLabel = AdminTop:CreateFontString(nil, "OVERLAY")
+AdminTop.TopLabel:SetPoint("CENTER", AdminTop, "CENTER", 0, -1) -- Original Point: AdminTop.TopLabel:SetPoint("TOPLEFT", AdminTop, "TOPLEFT", 4, -4)
+AdminTop.TopLabel:SetFont(Font, 16)
+AdminTop.TopLabel:SetTextColor(unpack(FontColor))
+AdminTop.TopLabel:SetText("CrossGambling")
+AdminTop.TopLabel:SetShadowOffset(1.25, -1.25)
+AdminTop.TopLabel:SetShadowColor(0, 0, 0)
+
+local Admin2 = CreateFrame("Frame", "CrossGambleAdmin", GUI)
+Admin2:SetSize(112, 128) --Original Size: 120, 96
+Admin2:SetPoint("BOTTOMLEFT", GUI, "TOPRIGHT", 0, -128)
+SetTemplate(Admin2)
+Admin2:Hide()
+
+local Admin2Top = CreateFrame("Frame", nil, Admin2)
+Admin2Top:SetSize(Admin2:GetSize(), 21)
+Admin2Top:SetPoint("BOTTOM", Admin2, "TOP", 0, -1)
+SetTemplateDark(Admin2Top)
+
+Admin2Top.TopLabel = Admin2Top:CreateFontString(nil, "OVERLAY")
+Admin2Top.TopLabel:SetPoint("CENTER", Admin2Top, "CENTER", 0, -1) -- Original Point: Admin2Top.TopLabel:SetPoint("TOPLEFT", Admin2Top, "TOPLEFT", 4, -4)
+Admin2Top.TopLabel:SetFont(Font, 16)
+Admin2Top.TopLabel:SetTextColor(unpack(FontColor))
+Admin2Top.TopLabel:SetText("Munty's Casino")
+Admin2Top.TopLabel:SetShadowOffset(1.25, -1.25)
+Admin2Top.TopLabel:SetShadowColor(0, 0, 0)
+
+-- Commands panel
+
+-----------------------
+--    USER BUTTONS   --
+-----------------------
+
+-- Button Enter and Button Leave Functions
+local ButtonOnEnter = function(self)
+	self:SetBackdropColor(0.17, 0.17, 0.17)
+	SetTemplateDark(GameTooltip)
+	GameTooltip:SetOwner(AdminTop, "ANCHOR_BOTTOMLEFT", -2, 21)
+end
+
+local ButtonOnLeave = function(self)
+	self:SetBackdropColor(0.12, 0.12, 0.12)
+	GameTooltip:Hide()
+end
+
+-- Enter Button
+EnterButton = CreateFrame("Frame", "CrossGambleJoinButton", GUI)
+EnterButton:SetSize(63, 21)
+EnterButton:SetPoint("LEFT", Top, 20, 0)
+SetTemplateDark(EnterButton)
+EnterButton:SetScript("OnEnter", ButtonOnEnter)
+EnterButton:SetScript("OnLeave", ButtonOnLeave)
+EnterButton:SetScript("OnMouseUp", function(self)
+	CrossGambling_OnClickRoll1()
+end)
+
+
+
+EnterButton.Disable = function(self)
+	self.Label:SetTextColor(0.3, 0.3, 0.3)
+	self:EnableMouse(false)
+end
+
+EnterButton.Enable = function(self)
+	self.Label:SetTextColor(unpack(FontColor))
+	self:EnableMouse(true)
+end
+
+EnterButton.Label = EnterButton:CreateFontString(nil, "OVERLAY")
+EnterButton.Label:SetPoint("CENTER", EnterButton, 0, 0)
+EnterButton.Label:SetFont(Font, 14)
+EnterButton.Label:SetJustifyH("CENTER")
+EnterButton.Label:SetTextColor(unpack(FontColor))
+EnterButton.Label:SetText("     Join Game")
+EnterButton.Label:SetShadowOffset(1.25, -1.25)
+EnterButton.Label:SetShadowColor(0, 0, 0)
+
+
+CG_MinimapButton = CreateFrame("Frame", "CrossGambleJoinButton", GUI)
+CG_MinimapButton:SetSize(63, 21)
+CG_MinimapButton:SetPoint("LEFT", Top, 20, 0)
+SetTemplateDark(CG_MinimapButton)
+CG_MinimapButton:SetScript("OnEnter", ButtonOnEnter)
+CG_MinimapButton:SetScript("OnLeave", ButtonOnLeave)
+CG_MinimapButton:SetScript("OnMouseUp", function(self)
+	CrossGambling_OnClickRoll1()
+end)
+
+
+
+CG_MinimapButton.Disable = function(self)
+	self.Label:SetTextColor(0.3, 0.3, 0.3)
+	self:EnableMouse(false)
+end
+
+CG_MinimapButton.Enable = function(self)
+	self.Label:SetTextColor(unpack(FontColor))
+	self:EnableMouse(true)
+end
+
+CG_MinimapButton.Label = CG_MinimapButton:CreateFontString(nil, "OVERLAY")
+CG_MinimapButton.Label:SetPoint("CENTER", CG_MinimapButton, 0, 0)
+CG_MinimapButton.Label:SetFont(Font, 14)
+CG_MinimapButton.Label:SetJustifyH("CENTER")
+CG_MinimapButton.Label:SetTextColor(unpack(FontColor))
+CG_MinimapButton.Label:SetText("     Join Game")
+CG_MinimapButton.Label:SetShadowColor(0, 0, 0)
+CG_MinimapButton.Label:SetShadowOffset(1.25, -1.25)
+
+-- Pass Button
+PassButton = CreateFrame("Frame", "CrossGamblePassButton", GUI)
+PassButton:SetSize(63, 21)
+PassButton:SetPoint("LEFT", EnterButton, "RIGHT", 40, 0)
+SetTemplateDark(PassButton)
+PassButton:SetScript("OnEnter", ButtonOnEnter)
+PassButton:SetScript("OnLeave", ButtonOnLeave)
+PassButton:SetScript("OnMouseUp", function(self)
+      CrossGambling_OnClickRoll2()
+end)
+
+PassButton.Disable = function(self)
+	self.Label:SetTextColor(0.3, 0.3, 0.3)
+	self:EnableMouse(false)
+end
+
+PassButton.Enable = function(self)
+	self.Label:SetTextColor(unpack(FontColor))
+	self:EnableMouse(true)
+end
+
+PassButton.Label = PassButton:CreateFontString(nil, "OVERLAY")
+PassButton.Label:SetPoint("CENTER", PassButton, 0, 0)
+PassButton.Label:SetFont(Font, 14)
+PassButton.Label:SetJustifyH("CENTER")
+PassButton.Label:SetTextColor(unpack(FontColor))
+PassButton.Label:SetText("|     Leave Game")
+PassButton.Label:SetShadowOffset(1.25, -1.25)
+PassButton.Label:SetShadowColor(0, 0, 0)
+
+
+
+CHAT = CreateFrame("Frame", nil, GUI)
+CHAT:SetSize(228, 21)
+CHAT:SetPoint("TOPLEFT", GUI, "CENTER", -114, 90)
+SetTemplateDark(CHAT)
+CHAT:SetScript("OnEnter", ButtonOnEnter)
+CHAT:HookScript("OnEnter", function(self)
+	GameTooltip:SetText(chatmethod)
+	GameTooltip:AddLine("Change Chat Method", 1, 1, 1, true)
+	GameTooltip:Show()
+end)
+CHAT:SetScript("OnLeave", ButtonOnLeave)
+CHAT:SetScript("OnMouseUp", function(self)
+CrossGambling_OnClickCHAT()
+end)
+
+CrossGambling_CHAT_Button = CHAT:CreateFontString(nil, "OVERLAY")
+CrossGambling_CHAT_Button:SetPoint("CENTER", CHAT, 0, 0)
+CrossGambling_CHAT_Button:SetFont(Font, 14)
+CrossGambling_CHAT_Button:SetJustifyH("CENTER")
+CrossGambling_CHAT_Button:SetTextColor(unpack(FontColor))
+CrossGambling_CHAT_Button:SetText(chatmethod)
+CrossGambling_CHAT_Button:SetShadowOffset(1.25, -1.25)
+CrossGambling_CHAT_Button:SetShadowColor(0, 0, 0)
+
+
+local Bottom = CreateFrame("Frame", nil, GUI)
+Bottom:SetSize(GUI:GetSize(), 21) -- Default is 228
+Bottom:SetPoint("TOP", GUI, "BOTTOM", 0, 1)
+SetTemplateDark(Bottom)
+
+GUI.BottomLabel = Bottom:CreateFontString(nil, "OVERLAY")
+GUI.BottomLabel:SetPoint("LEFT", Bottom, 22, 0)
+GUI.BottomLabel:SetFont(Font, 12)
+GUI.BottomLabel:SetTextColor(unpack(FontColor))
+GUI.BottomLabel:SetJustifyH("LEFT")
+GUI.BottomLabel:SetShadowOffset(1.25, -1.25)
+GUI.BottomLabel:SetShadowColor(0, 0, 0)
+GUI.BottomLabel:SetText("CrossGambling - Loyal@Stormrage")
+
+-- Editbox
+local EditBoxDown = function(self)
+	self:SetAutoFocus(true)
+	self:SetText("") -- Clears the editbox whenever it is clicked on.
+end
+
+local EditBoxOnEditFocusLost = function(self)
+	self:SetAutoFocus(false)
+end
+
+local EditBoxOnEscapePressed = function(self)
+	self:SetAutoFocus(false)
+	self:ClearFocus()
+end
+
+local EditBoxOnEnterPressed = function(self)
+	self:SetAutoFocus(false)
+	self:ClearFocus()
+
+	local Value = self:GetText()
+
+	if (Value == "" or Value == " ") then
+		self:SetText(CurrentRollValue)
+
+		return
+	end
+end
+
+local EditBoxOnEnterPressed2 = function(self)
+	self:SetAutoFocus(false)
+	self:ClearFocus()
+
+	local Value = self:GetText()
+
+	if (Value == "" or Value == " ") then
+		self:SetText(CurrentRollValue)
+
+		return
+	end
+end
+
+
+------------------------
+--    ADMIN BUTTONS   --
+------------------------
+
+
+local EditBox = CreateFrame("Frame", nil, Admin)
+EditBox:SetPoint("TOPLEFT", Admin, 3, -3)
+EditBox:SetSize(Admin:GetSize()-6, 21)
+SetTemplateDark(EditBox)
+EditBox:EnableMouse(true)
+
+CrossGambling_EditBox = CreateFrame("EditBox", nil, EditBox)
+CrossGambling_EditBox:SetPoint("CENTER", EditBox, 0, 0)
+CrossGambling_EditBox:SetPoint("BOTTOMRIGHT", EditBox, -4, 2)
+CrossGambling_EditBox:SetFont(Font, 16)
+CrossGambling_EditBox:SetText("100")
+CrossGambling_EditBox:SetShadowColor(0, 0, 0)
+CrossGambling_EditBox:SetShadowOffset(1.25, -1.25)
+CrossGambling_EditBox:SetMaxLetters(6)
+CrossGambling_EditBox:SetAutoFocus(false)
+CrossGambling_EditBox:SetNumeric(true)
+CrossGambling_EditBox:EnableKeyboard(true)
+CrossGambling_EditBox:EnableMouse(true)
+CrossGambling_EditBox:SetScript("OnMouseDown", EditBoxOnMouseDown)
+CrossGambling_EditBox:SetScript("OnEscapePressed", EditBoxOnEscapePressed)
+CrossGambling_EditBox:SetScript("OnEnterPressed", EditBoxOnEnterPressed)
+CrossGambling_EditBox:SetScript("OnEditFocusLost", EditBoxOnEditFocusLost)
+
+
+-- New Game Button
+
+AcceptRolls = CreateFrame("Frame", nil, Admin)
+AcceptRolls:SetSize(Admin:GetSize()-6, 21)
+AcceptRolls:SetPoint("TOPLEFT", EditBox, "BOTTOMLEFT", 0, -2)
+SetTemplateDark(AcceptRolls)
+AcceptRolls:SetScript("OnEnter", ButtonOnEnter)
+AcceptRolls:HookScript("OnEnter", function(self)
+
+
+end)
+AcceptRolls:SetScript("OnLeave", ButtonOnLeave)
+AcceptRolls:SetScript("OnMouseUp", function(self)
+	CrossGambling_OnClickACCEPTONES()
+	CrossGambling["Test"] = false; 
+end)
+
+AcceptRolls.Disable = function(self)
+	self.Label:SetTextColor(0.3, 0.3, 0.3)
+	self:EnableMouse(false)
+end
+
+AcceptRolls.Enable = function(self)
+	self.Label:SetTextColor(unpack(FontColor))
+	self:EnableMouse(true)
+end
+
+AcceptRolls.Label = AcceptRolls:CreateFontString(nil, "OVERLAY")
+AcceptRolls.Label:SetPoint("CENTER", AcceptRolls, 0, 0)
+AcceptRolls.Label:SetFont(Font, 14)
+AcceptRolls.Label:SetJustifyH("CENTER")
+AcceptRolls.Label:SetTextColor(unpack(FontColor))
+AcceptRolls.Label:SetText("New Game")
+AcceptRolls.Label:SetShadowOffset(1.25, -1.25)
+AcceptRolls.Label:SetShadowColor(0, 0, 0)
+
+LastCall = CreateFrame("Frame", nil, Admin)
+LastCall:SetSize(Admin:GetSize()-6, 21)
+LastCall:SetPoint("TOPLEFT", AcceptRolls, "BOTTOMLEFT", 0, -2)
+SetTemplateDark(LastCall)
+LastCall:SetScript("OnEnter", ButtonOnEnter)
+LastCall:HookScript("OnEnter", function(self)
+
+end)
+LastCall:SetScript("OnLeave", ButtonOnLeave)
+LastCall:SetScript("OnMouseUp", function(self)
+	CrossGambling_OnClickLASTCALL();
+end)
+
+LastCall.Disable = function(self)
+	self.Label:SetTextColor(0.3, 0.3, 0.3)
+	self:EnableMouse(false)
+end
+
+LastCall.Enable = function(self)
+	self.Label:SetTextColor(unpack(FontColor))
+	self:EnableMouse(true)
+end
+
+LastCall.Label = LastCall:CreateFontString(nil, "OVERLAY")
+LastCall.Label:SetPoint("CENTER", LastCall, 0, 0)
+LastCall.Label:SetFont(Font, 14)
+LastCall.Label:SetJustifyH("CENTER")
+LastCall.Label:SetTextColor(unpack(FontColor))
+LastCall.Label:SetText("Last Call")
+LastCall.Label:SetShadowOffset(1.25, -1.25)
+LastCall.Label:SetShadowColor(0, 0, 0)
+
+
+-- Close
+RollGame = CreateFrame("Frame", nil, Admin)
+RollGame:SetSize(Admin:GetSize()-6, 21)
+RollGame:SetPoint("TOPLEFT", LastCall, "BOTTOMLEFT", 0, -2)
+SetTemplateDark(RollGame)
+RollGame:SetScript("OnEnter", ButtonOnEnter)
+RollGame:HookScript("OnEnter", function(self)
+	GameTooltip:SetText("Start Rolling")
+	GameTooltip:AddLine("Step 2. Closes entry to the game and allows users to roll.", 1, 1, 1, true)
+	GameTooltip:Show()
+end)
+RollGame:SetScript("OnLeave", ButtonOnLeave)
+RollGame:SetScript("OnMouseUp", function(self)
+	CrossGambling_OnClickROLL()
+end)
+
+RollGame.Disable = function(self)
+	self.Label:SetTextColor(0.3, 0.3, 0.3)
+	self:EnableMouse(false)
+end
+
+RollGame.Enable = function(self)
+	self.Label:SetTextColor(unpack(FontColor))
+	self:EnableMouse(true)
+end
+
+RollGame.Label = RollGame:CreateFontString(nil, "OVERLAY")
+RollGame.Label:SetPoint("CENTER", RollGame, 0, 0)
+RollGame.Label:SetFont(Font, 14)
+RollGame.Label:SetJustifyH("CENTER")
+RollGame.Label:SetTextColor(unpack(FontColor))
+RollGame.Label:SetText("Start Rolling")
+RollGame.Label:SetShadowOffset(1.25, -1.25)
+RollGame.Label:SetShadowColor(0, 0, 0)
+
+-- Reset
+Reset = CreateFrame("Frame", nil, Admin)
+Reset:SetSize(Admin:GetSize()-6, 21)
+Reset:SetPoint("TOPLEFT", RollGame, "BOTTOMLEFT", 0, -2)
+SetTemplateDark(Reset)
+Reset:SetScript("OnEnter", ButtonOnEnter)
+Reset:HookScript("OnEnter", function(self)
+end)
+Reset:SetScript("OnLeave", ButtonOnLeave)
+Reset:SetScript("OnMouseUp", function(self)
+	CrossGambling_ROLL()
+end)
+
+Reset.Label = Reset:CreateFontString(nil, "OVERLAY")
+Reset.Label:SetPoint("CENTER", Reset, 0, 0)
+Reset.Label:SetFont(Font, 14)
+Reset.Label:SetJustifyH("CENTER")
+Reset.Label:SetTextColor(unpack(FontColor))
+Reset.Label:SetText("Reset Game")
+Reset.Label:SetShadowOffset(1.25, -1.25)
+Reset.Label:SetShadowColor(0, 0, 0)
+
+RollGame:Disable()
+LastCall:Disable()
+EnterButton:Enable()
+PassButton:Enable()
+
+
+-- Chat window
+local ChatFrame = CreateFrame("Frame", nil, GUI)
+ChatFrame:SetPoint("TOPLEFT", Top, "TOPRIGHT", 2, 0)
+ChatFrame:SetSize(260, 205)
+SetTemplate(ChatFrame)
+ChatFrame:Hide()
+
+ChatFrame.Chat = CreateFrame("ScrollingMessageFrame", nil, ChatFrame)
+ChatFrame.Chat:SetPoint("CENTER", ChatFrame, 2, 3)
+ChatFrame.Chat:SetSize(ChatFrame:GetWidth() - 8, ChatFrame:GetHeight() - 6)
+ChatFrame.Chat:SetFont(Font, 14)
+ChatFrame.Chat:SetShadowColor(0, 0, 0)
+ChatFrame.Chat:SetShadowOffset(1.25, -1.25)
+ChatFrame.Chat:SetFading(false)
+ChatFrame.Chat:SetJustifyH("LEFT")
+ChatFrame.Chat:SetMaxLines(50)
+ChatFrame.Chat:SetScript("OnMouseWheel", function(self, delta)
+	if (delta == 1) then
+		self:ScrollUp()
+	else
+		self:ScrollDown()
+	end
+end)
+
+-- Editbox
+local EditBox2Down = function(self)
+	self:SetText("")
+	self:SetAutoFocus(true)
+end
+
+local EditBoxOnEditFocusLost = function(self)
+	self:SetAutoFocus(false)
+end
+
+local EditBoxOnEscapePressed = function(self)
+	self:SetText("")
+
+	self:SetAutoFocus(false)
+	self:ClearFocus()
+
+	self:SetText("|cffB0B0B0Chat...|r")
+end
+
+local EditBoxOnEnterPressed = function(self)
+	self:SetAutoFocus(false)
+	self:ClearFocus()
+
+	local Value = self:GetText()
+
+	if (Value == "" or Value == " ") then
+		self:SetText("|cffB0B0B0Chat...|r")
+
+		return
+	end
+
+  SendEvent(format("CHAT_MSG:%s:%s:%s", PlayerName, PlayerClass, Value))
+  --print("DEBUG | EBOnEnPressed | PName: ", PlayerName, " // PClass: ", PlayerClass, " // Value: ", Value)
+
+	self:SetText("|cffB0B0B0Chat...|r")
+end
+
+local EditBoxOnEnterPressed2 = function(self)
+	self:SetAutoFocus(false)
+	self:ClearFocus()
+
+	local Value = self:GetText()
+
+	if (Value == "" or Value == " ") then
+		self:SetText("|cffB0B0B0Chat...|r")
+
+		return
+	end
+
+end
+
+
+
+local EditBox = CreateFrame("Frame", nil, Admin2)
+EditBox:SetPoint("TOPLEFT", Admin2, 3, -3)
+EditBox:SetSize(Admin2:GetSize()-6, 21)
+SetTemplateDark(EditBox)
+EditBox:EnableMouse(true)
+
+CrossGambling_EditBox2 = CreateFrame("EditBox", nil, EditBox)
+CrossGambling_EditBox2:SetPoint("CENTER", EditBox, 16, -3)
+CrossGambling_EditBox2:SetPoint("BOTTOMRIGHT", EditBox, -4, 2)
+CrossGambling_EditBox2:SetFont(Font, 16)
+CrossGambling_EditBox2:SetText("501")
+CrossGambling_EditBox2:SetShadowColor(0, 0, 0)
+CrossGambling_EditBox2:SetShadowOffset(1.25, -1.25)
+CrossGambling_EditBox2:SetMaxLetters(6)
+CrossGambling_EditBox2:SetAutoFocus(false)
+CrossGambling_EditBox2:SetNumeric(true)
+CrossGambling_EditBox2:EnableKeyboard(false)
+CrossGambling_EditBox2:EnableMouse(false)
+CrossGambling_EditBox2:SetScript("OnMouseDown", EditBoxOnMouseDown)
+CrossGambling_EditBox2:SetScript("OnEscapePressed", EditBoxOnEscapePressed)
+CrossGambling_EditBox2:SetScript("OnEnterPressed", EditBoxOnEnterPressed2)
+CrossGambling_EditBox2:SetScript("OnEditFocusLost", EditBoxOnEditFocusLost)
+
+
+AcceptRolls = CreateFrame("Frame", nil, Admin2)
+AcceptRolls:SetSize(Admin2:GetSize()-6, 21)
+AcceptRolls:SetPoint("TOPLEFT", EditBox, "BOTTOMLEFT", 0, -2)
+SetTemplateDark(AcceptRolls)
+AcceptRolls:SetScript("OnEnter", ButtonOnEnter)
+AcceptRolls:HookScript("OnEnter", function(self)
+
+end)
+AcceptRolls:SetScript("OnLeave", ButtonOnLeave)
+AcceptRolls:SetScript("OnMouseUp", function(self)
+	CrossGambling_OnClickACCEPT501()
+	CrossGambling["Test"] = true;
+end)
+
+AcceptRolls.Disable = function(self)
+	self.Label:SetTextColor(0.3, 0.3, 0.3)
+	self:EnableMouse(false)
+end
+
+AcceptRolls.Enable = function(self)
+	self.Label:SetTextColor(unpack(FontColor))
+	self:EnableMouse(true)
+end
+
+AcceptRolls.Label = AcceptRolls:CreateFontString(nil, "OVERLAY")
+AcceptRolls.Label:SetPoint("CENTER", AcceptRolls, 0, 0)
+AcceptRolls.Label:SetFont(Font, 14)
+AcceptRolls.Label:SetJustifyH("CENTER")
+AcceptRolls.Label:SetTextColor(unpack(FontColor))
+AcceptRolls.Label:SetText("New Game")
+AcceptRolls.Label:SetShadowOffset(1.25, -1.25)
+AcceptRolls.Label:SetShadowColor(0, 0, 0)
+
+
+CrossGambling_HouseCut = CreateFrame("Frame", nil, Admin2)
+CrossGambling_HouseCut:SetSize(Admin2:GetSize()-6, 21)
+CrossGambling_HouseCut:SetPoint("TOPLEFT", Admin2, 3, -105)
+SetTemplateDark(CrossGambling_HouseCut)
+CrossGambling_HouseCut:SetScript("OnEnter", ButtonOnEnter)
+CrossGambling_HouseCut:HookScript("OnEnter", function(self)
+	GameTooltip:SetText("Guild Cut")
+    GameTooltip:AddLine("Sets The Guild Cut to 10%", 1, 1, 1, true)
+    GameTooltip:Show()
+
+end)
+CrossGambling_HouseCut:SetScript("OnLeave", ButtonOnLeave)
+CrossGambling_HouseCut:SetScript("OnMouseUp", function(self)
+	CrossGambling_ToggleHouse()
+end)
+
+CrossGambling_HouseCut.Disable = function(self)
+	self.Label:SetTextColor(0.3, 0.3, 0.3)
+	self:EnableMouse(false)
+end
+
+CrossGambling_HouseCut.Enable = function(self)
+	self.Label:SetTextColor(unpack(FontColor))
+	self:EnableMouse(true)
+end
+
+CrossGambling_HouseCut.Label = CrossGambling_HouseCut:CreateFontString(nil, "OVERLAY")
+CrossGambling_HouseCut.Label:SetPoint("CENTER", CrossGambling_HouseCut, 0, 0)
+CrossGambling_HouseCut.Label:SetFont(Font, 14)
+CrossGambling_HouseCut.Label:SetText("Guild Cut (OFF)")
+CrossGambling_HouseCut.Label:SetJustifyH("CENTER")
+CrossGambling_HouseCut.Label:SetTextColor(unpack(FontColor))
+
+
+
+CrossGambling_HouseCut.Label:SetShadowOffset(1.25, -1.25)
+CrossGambling_HouseCut.Label:SetShadowColor(0, 0, 0)
+
+
+-- Chat toggle
+
+local AdminToggle = CreateFrame("Button", nil, GUI)
+AdminToggle:SetSize(21, 21)
+AdminToggle:SetPoint("TOPRIGHT", Top, "TOPRIGHT", 0, 0)
+AdminToggle:SetFrameStrata("MEDIUM")
+SetTemplateDark(AdminToggle)
+AdminToggle:SetScript("OnMouseUp", function(self)
+	if self.NeedsReset then
+		self.Arrow:SetTextColor(1, 1, 1)
+		self.NeedsReset = false
+	end
+
+	if Admin2:IsShown() then
+		Admin2:Hide()
+		self.Arrow:SetText("►")
+		
+	else
+		Admin2:Show()
+		self.Arrow:SetText("◄")
+	end
+end)
+
+AdminToggle.Arrow = AdminToggle:CreateFontString(nil, "OVERLAY")
+AdminToggle.Arrow:SetPoint("CENTER", AdminToggle, "CENTER", 0, 0)
+AdminToggle.Arrow:SetFont("Interface\\AddOns\\CrossGambling\\Media\\Arial.ttf", 12)
+AdminToggle.Arrow:SetTextColor(unpack(FontColor))
+AdminToggle.Arrow:SetText("►")
+AdminToggle.Arrow:SetShadowOffset(1.25, -1.25)
+AdminToggle.Arrow:SetShadowColor(0, 0, 0)
+
+-- Admin Toggle
+local AdminToggle = CreateFrame("Button", nil, Top)
+AdminToggle:SetSize(21, 21)
+AdminToggle:SetPoint("TOPLEFT", Top, "TOPLEFT", 0, 0)
+AdminToggle:SetFrameStrata("MEDIUM")
+SetTemplateDark(AdminToggle)
+AdminToggle:SetScript("OnMouseUp", function(self)
+	if Admin:IsShown() then
+		Admin:Hide()
+		self.Arrow:SetText("◄")
+		
+	else
+		Admin:Show()
+		self.Arrow:SetText("►")
+	
+	end
+end)
+
+AdminToggle.Arrow = AdminToggle:CreateFontString(nil, "OVERLAY")
+AdminToggle.Arrow:SetPoint("CENTER", AdminToggle, "CENTER", 1, 0)
+AdminToggle.Arrow:SetFont("Interface\\AddOns\\CrossGambling\\Media\\Arial.ttf", 12)
+AdminToggle.Arrow:SetTextColor(unpack(FontColor))
+AdminToggle.Arrow:SetText("◄")
+AdminToggle.Arrow:SetShadowOffset(1.25, -1.25)
+AdminToggle.Arrow:SetShadowColor(0, 0, 0)
+
+-- Exit Button
+
+local Close = CreateFrame("Button", nil, Top)
+Close:SetSize(21, 21)
+Close:SetPoint("BOTTOMRIGHT", Bottom, "BOTTOMRIGHT", 0, 0)
+Close:SetFrameStrata("MEDIUM")
+SetTemplateDark(Close)
+Close:SetScript("OnMouseUp", function(self)
+	GUI:Hide()
+end)
+Close:SetScript("OnEnter", function(self) self.X:SetTextColor(1, 0.1, 0.1) end)
+Close:SetScript("OnLeave", function(self) self.X:SetTextColor(unpack(FontColor)) end)
+
+Close.X = Close:CreateFontString(nil, "OVERLAY")
+Close.X:SetPoint("CENTER", Close, "CENTER", 0.5, -1)
+Close.X:SetFont(Font, 16)
+Close.X:SetTextColor(unpack(FontColor))
+Close.X:SetText("×")
+Close.X:SetShadowOffset(1.25, -1.25)
+Close.X:SetShadowColor(0, 0, 0)
+
+-- View Stats Button
+
+local ViewStats = CreateFrame("Button", nil, Bottom)
+ViewStats:SetSize(21, 21)
+ViewStats:SetPoint("BOTTOMLEFT", Bottom, "BOTTOMLEFT", 0, 0)
+ViewStats:SetFrameStrata("MEDIUM")
+SetTemplateDark(ViewStats)
+ViewStats:SetScript("OnMouseUp", function(self)
+	CrossGambling_OnClickSTATS(full)
+end)
+ViewStats:SetScript("OnEnter", function(self) self.X:SetTextColor(1, 0.1, 0.1) end)
+ViewStats:SetScript("OnLeave", function(self) self.X:SetTextColor(unpack(FontColor)) end)
+
+ViewStats.X = ViewStats:CreateFontString(nil, "OVERLAY")
+ViewStats.X:SetPoint("CENTER", ViewStats, "CENTER", 1, -1)
+ViewStats.X:SetFont(Font, 16)
+ViewStats.X:SetTextColor(unpack(FontColor))
+ViewStats.X:SetText("+")
+ViewStats.X:SetShadowOffset(1.25, -1.25)
+ViewStats.X:SetShadowColor(0, 0, 0)
+
+
+-- Debug Stuff. Will be cleaned up.
+
+__IGAdd = AddPlayer
+__IGRem = RemovePlayer
+__IGRoll = PlayerRoll
+
+
+
+
 function CrossGambling_OnLoad(self)
 	DEFAULT_CHAT_FRAME:AddMessage("|cffffff00<Cross Gambling for Warcraft 8.2.5 and Classic!> loaded /cg to use");
 
@@ -46,11 +816,14 @@ function CrossGambling_OnLoad(self)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD");
 	self:RegisterForDrag("LeftButton");
     
-	CrossGambling_ROLL_Button:Disable();
-	CrossGambling_AcceptOnes_Button:Enable();
-	CrossGambling_LASTCALL_Button:Disable();
-	CrossGambling_CHAT_Button:Enable();
+	RollGame:Disable();
+	AcceptRolls:Enable();
+	LastCall:Disable();
 end
+
+
+
+
 
 local EventFrame=CreateFrame("Frame");
 EventFrame:RegisterEvent("CHAT_MSG_WHISPER");-- Need to register an event to receive it
@@ -79,59 +852,62 @@ local function DebugMsg(level, text)
 end
 
 
+
+
+
 function CrossGambling_ROLL()
   if not reset_dialog then
-    local f = CreateFrame("Frame", "UnlockDialog", UIParent)
-    f:SetFrameStrata("DIALOG")
-    f:SetToplevel(true)
-    f:EnableMouse(true)
-    f:SetMovable(true)
-    f:SetClampedToScreen(true)
-    f:SetWidth(360)
-    f:SetHeight(110)
-    f:SetBackdrop{
-      bgFile="Interface\\DialogFrame\\UI-DialogBox-Background" ,
-      edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
-      tile = true,
-      insets = {left = 11, right = 12, top = 12, bottom = 11},
-      tileSize = 32,
-      edgeSize = 32,
-    }
-    f:SetPoint("TOP", 0, -50)
-    f:Hide()
+   local Reset = CreateFrame("Frame", "CrossGambling_Frame", UIParent)
+Reset:SetSize(300, 80) 
+Reset:SetPoint("CENTER", UIParent, "CENTER", 0, 100)
+SetTemplate(Reset)
+Reset:SetMovable(true)
+Reset:EnableMouse(true)
+Reset:SetUserPlaced(true)
+Reset:RegisterForDrag("LeftButton")
+Reset:SetScript("OnDragStart", Reset.StartMoving)
+Reset:SetScript("OnDragStop", Reset.StopMovingOrSizing)
+Reset:Hide()
 
-    f:RegisterForDrag('LeftButton')
-    f:SetScript('OnDragStart', function(f) f:StartMoving() end)
-    f:SetScript('OnDragStop', function(f) f:StopMovingOrSizing() end)
+local Top = CreateFrame("Frame", nil, Reset)
+Top:SetSize(Reset:GetSize(), 21) -- Default is 228, 21
+Top:SetPoint("BOTTOM", Reset, "TOP", 0, -1)
+SetTemplateDark(Top)
 
-    local header = f:CreateTexture(nil, "ARTWORK")
-    header:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header")
-    header:SetWidth(256); header:SetHeight(64)
-    header:SetPoint("TOP", 0, 12)
+Reset.TopLabel = Top:CreateFontString(nil, "OVERLAY")
+Reset.TopLabel:SetPoint("CENTER", Top, "CENTER", 10, -4)
+Reset.TopLabel:SetFont(Font, 16)
+Reset.TopLabel:SetText("CrossGambling")
+Reset.TopLabel:SetTextColor(unpack(FontColor))
+Reset.TopLabel:SetShadowOffset(1.25, -1.25)
+Reset.TopLabel:SetShadowColor(0, 0, 0)
 
-    local title = f:CreateFontString("ARTWORK")
-    title:SetFontObject("GameFontNormal")
-    title:SetPoint("TOP", header, "TOP", 0, -14)
-    title:SetText("CrossGambling")
 
-    local desc = f:CreateFontString("ARTWORK")
+
+Reset:RegisterForDrag('LeftButton')
+Reset:SetScript('OnDragStart', function(Reset) Reset:StartMoving() end)
+Reset:SetScript('OnDragStop', function(Reset) Reset:StopMovingOrSizing() end)
+
+    local desc = Reset:CreateFontString("ARTWORK")
     desc:SetFontObject("GameFontHighlight")
     desc:SetJustifyV("TOP")
     desc:SetJustifyH("LEFT")
-    desc:SetPoint("TOPLEFT", 18, -42)
+    desc:SetPoint("CENTER", 18, -42)
     desc:SetPoint("BOTTOMRIGHT", -18, 48)
-    desc:SetText("Would you like to reset your stats as well?")
+    desc:SetText("Are you sure you want to Reset all stats?")
 
-    local yes_button = CreateFrame("CheckButton", "Yes", f, "OptionsButtonTemplate")
+    local yes_button = CreateFrame("CheckButton", "Yes", Reset, "OptionsButtonTemplate")
+	SetTemplateDark(Bottom)
     getglobal(yes_button:GetName() .. "Text"):SetText("Yes")
 
     yes_button:SetScript("OnClick", function(self)
       print("Stats Reset")
       CrossGambling_ResetStats();
+	  CrossGambling_Reset();
       reset_dialog:Hide()
     end)
 
-    local no_button = CreateFrame("CheckButton", "No", f, "OptionsButtonTemplate")
+    local no_button = CreateFrame("CheckButton", "No", Reset, "OptionsButtonTemplate")
     getglobal(no_button:GetName() .. "Text"):SetText("No")
 
     no_button:SetScript("OnClick", function(self)
@@ -140,9 +916,9 @@ function CrossGambling_ROLL()
       reset_dialog:Hide()
     end)
     --position buttons
-    yes_button:SetPoint("BOTTOMRIGHT", -210, 14)
-    no_button:SetPoint("BOTTOMRIGHT", -55, 14)
-    reset_dialog = f
+    yes_button:SetPoint("BOTTOMRIGHT", -180, 14)
+    no_button:SetPoint("BOTTOMRIGHT", -45, 14)
+    reset_dialog = Reset
   end
   reset_dialog:Show()
 end
@@ -181,15 +957,18 @@ function CrossGambling_SlashCmd(msg)
 		msgPrint = 1;
 	end
 	if (msg == "hide") then
-		CrossGambling_Frame:Hide();
+	    GUI:IsShown();
+		GUI:Hide();
 		CrossGambling["active"] = 0;
 		msgPrint = 1;
 	end
 	if (msg == "show") then
-		CrossGambling_Frame:Show();
+	GUI:IsShown();
+		GUI:Show();
 		CrossGambling["active"] = 1;
 		msgPrint = 1;
 	end
+	
 	if (msg == "reset") then
 		CrossGambling_Reset();
 		CrossGambling_ResetCmd()
@@ -200,7 +979,7 @@ function CrossGambling_SlashCmd(msg)
 		msgPrint = 1;
 	end
 	if (msg == "resetstats") then
-		Print("", "", "|cffffff00GCG stats have now been reset");
+		Print("", "", "|cffffff00CG stats have now been reset");
 		CrossGambling_ResetStats();
 		msgPrint = 1;
 	end
@@ -254,12 +1033,12 @@ function CrossGambling_ParseChatMsg(arg1, arg2)
 	if (arg1 == "1") then
 		if(CrossGambling_ChkBan(tostring(arg2)) == 0) then
 			CrossGambling_Add(tostring(arg2));
-			if (not CrossGambling_LASTCALL_Button:IsEnabled() and totalrolls == 1) then
-				CrossGambling_LASTCALL_Button:Enable();
+			if (not LastCall:Disable() and totalrolls == 1) then
+				LastCall:Disable();
 			end
 			if totalrolls == 2 then
-				CrossGambling_AcceptOnes_Button:Disable();
-				CrossGambling_AcceptOnes_Button:SetText("Open Entry");
+				LastCall:Enable();
+			
 			end
 		else
 			ChatMsg("Sorry, but you're banned from the game!");
@@ -267,12 +1046,13 @@ function CrossGambling_ParseChatMsg(arg1, arg2)
 
 	elseif(arg1 == "-1") then
 		CrossGambling_Remove(tostring(arg2));
-		if (CrossGambling_LASTCALL_Button:IsEnabled() and totalrolls == 0) then
-			CrossGambling_LASTCALL_Button:Disable();
+		if (LastCall:Enable() and totalrolls == 0) then
+			LastCall:Enable();
 		end
 		if totalrolls == 1 then
-			CrossGambling_AcceptOnes_Button:Enable();
-			CrossGambling_AcceptOnes_Button:SetText("Open Entry");
+			LastCall:Enable();
+			AcceptRolls:Enable();
+			AcceptRolls:SetText("Open Entry");
 		end
 	end
 end
@@ -282,18 +1062,7 @@ local function OptionsFormatter(text, prefix)
 	DEFAULT_CHAT_FRAME:AddMessage(string.format("%s%s%s: %s", GREEN_FONT_COLOR_CODE, prefix, FONT_COLOR_CODE_CLOSE, text))
 end
 
-function debug(name, data)
-	if not virag_debug then
-		return false
-	elseif not ViragDevTool_AddData and virag_debug then
-	 	OptionsFormatter("VDT not enabled for debugging")
-	 	return false
-	elseif not data or not name then
-		OptionsFormatter(string.format("Debug failed: data: %s, name: %s", data, name))
-		return false
-	end
-	ViragDevTool_AddData(data, name)
-end
+
 
 
 function CrossGambling_OnEvent(self, event, ...)
@@ -301,7 +1070,7 @@ function CrossGambling_OnEvent(self, event, ...)
 	-- LOADS ALL DATA FOR INITIALIZATION OF ADDON --
 	if (event == "PLAYER_ENTERING_WORLD") then
 		CrossGambling_EditBox:SetJustifyH("CENTER");
-        CrossGambling_EditBoxCut:SetJustifyH("CENTER");
+		CrossGambling_EditBox2:SetJustifyH("CENTER");
 		if(not CrossGambling) then
 			CrossGambling = {
 				["active"] = 0,
@@ -312,17 +1081,15 @@ function CrossGambling_OnEvent(self, event, ...)
 				["lowtie"] = { },
 				["hightie"] = { },
 				["bans"] = { },
-				["minimap"] = true
 				
 			}
 		-- fix older legacy items for new chat channels.  Probably need to iterate through each to see if it should be set.
 		elseif tostring(type(CrossGambling["chat"])) ~= "number" then
 			CrossGambling["chat"] = 1
-		elseif CrossGambling["minimap"] == nil then
-			-- If the value is not true/false then set it to true to show initially.
-			CrossGambling["minimap"] = true
 		end
 		if(not CrossGambling["lastroll"]) then CrossGambling["lastroll"] = 100; end
+		if(not CrossGambling["Test1"]) then CrossGambling["Test1"] = 501; end
+		if(not CrossGambling["Test"]) then CrossGambling["Test"] = false; end
 		if(not CrossGambling["stats"]) then CrossGambling["stats"] = { }; end
 		if(not CrossGambling["joinstats"]) then CrossGambling["joinstats"] = { }; end
 		if(not CrossGambling["chat"]) then CrossGambling["chat"] = 1; end
@@ -331,18 +1098,20 @@ function CrossGambling_OnEvent(self, event, ...)
 		if(not CrossGambling["bans"]) then CrossGambling["bans"] = { }; end
 		if(not CrossGambling["house"]) then CrossGambling["house"] = 0; end
 		if(not CrossGambling["isHouseCut"]) then CrossGambling["isHouseCut"] = false; end
+        
+		
 
+		CrossGambling_EditBox2:SetText(""..CrossGambling["Test1"]);
 		CrossGambling_EditBox:SetText(""..CrossGambling["lastroll"]);
-        CrossGambling_EditBoxCut:SetText(HousePercent);
 		chatmethod = chatmethods[CrossGambling["chat"]];
 		CrossGambling_CHAT_Button:SetText(chatmethod); 
 
 
 		if CrossGambling["minimap"] then
 			-- show minimap
-			CG_MinimapButton:Show()
+			CrossGambling_Frame:Show()
 		else
-			CG_MinimapButton:Hide()
+			CrossGambling_Frame:Hide()
 		end
 
 
@@ -354,10 +1123,10 @@ function CrossGambling_OnEvent(self, event, ...)
 			whispermethod = true;
 		end
 		if(CrossGambling["active"] == 1) then
-			CrossGambling_Frame:Show();
+			GUI:Show();
 		else
-		CrossGambling_Frame:Hide();
-		
+		GUI:Hide();
+
 		
 			
 		end
@@ -399,15 +1168,17 @@ function CrossGambling_ResetStats()
 end
 
 
+
+
 function Minimap_Toggle()
 	if CrossGambling["minimap"] then
 		-- minimap is shown, set to false, and hide
 		CrossGambling["minimap"] = false
-		CG_MinimapButton:Hide()
+		CrossGambling_Frame:Hide()
 	else
 		-- minimap is now shown, set to true, and show
 		CrossGambling["minimap"] = true
-		CG_MinimapButton:Show()
+		CrossGambling_Frame:Show()
 	end
 end
 
@@ -515,9 +1286,7 @@ function CrossGambling_OnClickSTATS(full)
 		return
 	end
 
-	if (CrossGambling["house"] > 0) then
-		ChatMsg(string.format("The house has taken %s total.", (CrossGambling["house"])), chatmethod);
-	end
+
 
 	local x1 = 3-1;
 	local x2 = n-3;
@@ -577,37 +1346,57 @@ end
 function CrossGambling_OnClickLASTCALL()
 	ChatMsg("Last Call to join!");
 	CrossGambling_EditBox:ClearFocus();
-	CrossGambling_LASTCALL_Button:Disable();
-	CrossGambling_ROLL_Button:Enable();
+	LastCall:Enable();
+	RollGame:Enable();
 end
 
 function CrossGambling_OnClickACCEPTONES()
 	if CrossGambling_EditBox:GetText() ~= "" and CrossGambling_EditBox:GetText() ~= "1" then
 		CrossGambling_Reset();
-		CrossGambling_ROLL_Button:Disable();
-		CrossGambling_LASTCALL_Button:Disable();
+		RollGame:Disable();
+		LastCall:Disable();
 		AcceptOnes = "true";
 		local fakeroll = "";
-		ChatMsg(format("%s%s%s%s", ".:Welcome to CrossGambling:. User's Roll - (", CrossGambling_EditBox:GetText(), ") - Type 1 to Join  (-1 to withdraw)", fakeroll));
+		ChatMsg(format("%s%s%s%s", "CrossGambling:. User's Roll - (", CrossGambling_EditBox:GetText(), ") - Type 1 to Join  (-1 to withdraw)", fakeroll));
         CrossGambling["lastroll"] = CrossGambling_EditBox:GetText();
 		theMax = tonumber(CrossGambling_EditBox:GetText());
 		low = theMax+1;
 		tielow = theMax+1;
 		CrossGambling_EditBox:ClearFocus();
-		CrossGambling_AcceptOnes_Button:SetText("New Game");
-		CrossGambling_LASTCALL_Button:Disable();
+		LastCall:Disable();
 		CrossGambling_EditBox:ClearFocus();
 	else
 		message("Please enter a number to roll from.", chatmethod);
 	end
 end
 
-function CrossGambling_OnClickRoll()
-hash_SlashCmdList[rollCmd](CrossGambling_EditBox:GetText())
+function CrossGambling_OnClickACCEPT501()
+	if CrossGambling_EditBox2:GetText() ~= "" and CrossGambling_EditBox2:GetText() ~= "1" then
+		CrossGambling_Reset();
+		RollGame:Enable();
+		LastCall:Enable();
+		AcceptOnes = "true";
+		local fakeroll = "";
+		ChatMsg(format("%s%s", "CrossGambling(Muntys Casino): User's Roll ", CrossGambling_EditBox2:GetText()));
+		ChatMsg(format("%s%s%s%s", "Type 1 to Join -1 to withdraw ", "Current Bet Is ", CrossGambling_EditBox:GetText()," gold"));
+		CrossGambling["Test2"] = CrossGambling_EditBox2:GetText();
+		theMax = tonumber(CrossGambling_EditBox2:GetText());
+		low = theMax+1;
+		tielow = theMax+1;
+		CrossGambling_EditBox2:ClearFocus();
+		LastCall:Disable();
+		CrossGambling_EditBox2:ClearFocus();
+	else
+		message("Please enter a number to roll from.", chatmethod);
+	end
 end
+
 
 function CrossGambling_OnClickRoll1()
 	ChatMsg("1");
+end
+function CrossGambling_OnClickRoll2()
+	ChatMsg("-1");
 end
 
 CG_Settings = {
@@ -641,41 +1430,48 @@ end
 
 function CrossGambling_Report()
 	local goldowed = high - low
+	local Test2 = ""
 	local houseCut = 0
+	if (CrossGambling["Test"]) then
+	Test2 = floor(CrossGambling_EditBox:GetText())
+	goldowed = goldowed - Test2
+	CrossGambling["Test1"]  = (CrossGambling["Test1"] or 0);
+	else 
+	Test2 = floor(goldowed)
+	goldowed = high - low
+	end
 	if (CrossGambling["isHouseCut"]) then
 		houseCut = floor(goldowed * (HousePercent/100))
 		goldowed = goldowed - houseCut
 		CrossGambling["house"] = (CrossGambling["house"] or 0) + houseCut;
+		
 	end
+
 	if (goldowed ~= 0) then
 		lowname = lowname:gsub("^%l", string.upper)
 		highname = highname:gsub("^%l", string.upper)
-		local string3 = string.format("%s owes %s %s gold!", lowname, highname, (goldowed));
-
-
-			if (CrossGambling["isHouseCut"] and houseCut > 1) then
-			string3 = string.format("%s owes %s %s gold and the guild gets , ", CrossGambling_EditBoxCut:GetText(), "% %s gold owed", lowname, highname, (goldowed), (houseCut));
-		end
-		
-	
-			CrossGambling["house"] = CrossGambling_EditBoxCut:GetText();
+local string3 = string.format("%s owes %s %s gold! %s %s", lowname, highname, (Test2), (houseCut), "Is owed to the guild");	
 
 		CrossGambling["stats"][highname] = (CrossGambling["stats"][highname] or 0) + goldowed;
 		CrossGambling["stats"][lowname] = (CrossGambling["stats"][lowname] or 0) - goldowed;
 
 		ChatMsg(string3);
-		
-		if (CrossGambling["loser"]) then
-			ChatMsg(string.format("%s can now set the next gambling amount by saying !amount x", lowname));
-			AcceptLoserAmount = lowname
-		end
+
 
 	else
 		ChatMsg("It was a tie! No payouts on this roll!");
 	end
-	CrossGambling_AcceptOnes_Button:SetText("Open Entry");
-	CrossGambling_CHAT_Button:Enable();
 end
+
+
+
+function CrossGambling_Report2()
+print(name,"rolled a",roll,"out of",minRoll,"to",maxRoll)
+
+
+end
+
+
 
 function CrossGambling_Tiebreaker()
 	tierolls = 0;
@@ -850,12 +1646,12 @@ end
 function CrossGambling_ToggleHouse()
 	if (CrossGambling["isHouseCut"]) then
 		CrossGambling["isHouseCut"] = false
-		CrossGambling_HouseCut:SetText("House Cut Off");
-		Print("", "", "|cffffff00House cut has been turned off.");
+		 CrossGambling_HouseCut.Label:SetText("Guild Cut (OFF)");
+		Print("", "", "|cffffff00Guild cut has been turned off.");
 	else
 		CrossGambling["isHouseCut"] = true
-		CrossGambling_HouseCut:SetText("House Cut On");
-		Print("", "", "|cffffff00House cut has been turned on.");
+		 CrossGambling_HouseCut.Label:SetText("Guild Cut (ON)");
+		Print("", "", "|cffffff00Guild cut has been turned on.");
 	end
 end
 
@@ -992,12 +1788,9 @@ function CrossGambling_Reset()
 		totalentries = 0;
 		highplayername = "";
 		lowplayername = "";
-		CrossGambling_ROLL_Button:Disable();
-		CrossGambling_AcceptOnes_Button:Enable();
-		CrossGambling_LASTCALL_Button:Disable();
-		CrossGambling_CHAT_Button:Enable();
-		CrossGambling_AcceptOnes_Button:SetText("Open Entry");
-		Print("", "", "|cffffff00GCG has now been reset");
+		RollGame:Disable();
+		LastCall:Disable();
+		Print("", "", "|cffffff00CG has now been reset");
 
 end
 
