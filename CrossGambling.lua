@@ -2,7 +2,7 @@ CrossGambling1 = LibStub("AceAddon-3.0"):NewAddon("CrossGambling1")
 local CrossGambling1	= LibStub("AceAddon-3.0"):GetAddon("CrossGambling1")
 local AcceptOnes = "false";
 local AcceptRolls = "false";
-local HousePercent = 10;
+local HousePercent = 8;
 local Test = 100; 
 local totalrolls = 0
 local tierolls = 0;
@@ -95,7 +95,7 @@ GUI:SetScript("OnDragStop", GUI.StopMovingOrSizing)
 GUI:Hide()
 
 local Top = CreateFrame("Frame", nil, GUI)
-Top:SetSize(GUI:GetSize(), 21) -- Default is 228, 21
+Top:SetSize(GUI:GetSize(), 21)
 Top:SetPoint("BOTTOM", GUI, "TOP", 0, -1)
 SetTemplateDark(Top)
 
@@ -106,9 +106,8 @@ GUI.TopLabel:SetTextColor(unpack(FontColor))
 GUI.TopLabel:SetShadowOffset(1.25, -1.25)
 GUI.TopLabel:SetShadowColor(0, 0, 0)
 
--- Admin panel
 local Admin = CreateFrame("Frame", "CrossGambleAdmin", GUI)
-Admin:SetSize(112, 128) --Original Size: 120, 96
+Admin:SetSize(112, 128) 
 Admin:SetPoint("BOTTOMLEFT", GUI, "TOPLEFT", -111, -128)
 SetTemplate(Admin)
 Admin:Hide()
@@ -127,7 +126,7 @@ AdminTop.TopLabel:SetShadowOffset(1.25, -1.25)
 AdminTop.TopLabel:SetShadowColor(0, 0, 0)
 
 local Admin2 = CreateFrame("Frame", "CrossGambleAdmin", GUI)
-Admin2:SetSize(112, 128) --Original Size: 120, 96
+Admin2:SetSize(112, 128)
 Admin2:SetPoint("BOTTOMLEFT", GUI, "TOPRIGHT", 0, -128)
 SetTemplate(Admin2)
 Admin2:Hide()
@@ -144,15 +143,6 @@ Admin2Top.TopLabel:SetTextColor(unpack(FontColor))
 Admin2Top.TopLabel:SetShadowOffset(1.25, -1.25)
 Admin2Top.TopLabel:SetShadowColor(0, 0, 0)
 
-
-
--- Commands panel
-
------------------------
---    USER BUTTONS   --
------------------------
-
--- Button Enter and Button Leave Functions
 local ButtonOnEnter = function(self)
 	self:SetBackdropColor(0.17, 0.17, 0.17)
 	SetTemplateDark(GameTooltip)
@@ -164,7 +154,7 @@ local ButtonOnLeave = function(self)
 	GameTooltip:Hide()
 end
 
--- Enter Button
+
 EnterButton = CreateFrame("Frame", "CrossGambleJoinButton", GUI)
 EnterButton:SetSize(63, 21)
 EnterButton:SetPoint("LEFT", Top, 20, 0)
@@ -228,7 +218,7 @@ CG_MinimapButton.Label:SetText("     Join Game")
 CG_MinimapButton.Label:SetShadowColor(0, 0, 0)
 CG_MinimapButton.Label:SetShadowOffset(1.25, -1.25)
 
--- Pass Button
+
 PassButton = CreateFrame("Frame", "CrossGamblePassButton", GUI)
 PassButton:SetSize(63, 21)
 PassButton:SetPoint("LEFT", EnterButton, "RIGHT", 40, 0)
@@ -286,7 +276,7 @@ CrossGambling_CHAT_Button:SetShadowColor(0, 0, 0)
 
 
 local Bottom = CreateFrame("Frame", nil, GUI)
-Bottom:SetSize(GUI:GetSize(), 21) -- Default is 228
+Bottom:SetSize(GUI:GetSize(), 21) 
 Bottom:SetPoint("TOP", GUI, "BOTTOM", 0, 1)
 SetTemplateDark(Bottom)
 
@@ -299,10 +289,10 @@ GUI.BottomLabel:SetShadowOffset(1.25, -1.25)
 GUI.BottomLabel:SetShadowColor(0, 0, 0)
 GUI.BottomLabel:SetText("CrossGambling - Loyal@Stormrage")
 
--- Editbox
+
 local EditBoxDown = function(self)
 	self:SetAutoFocus(true)
-	self:SetText("") -- Clears the editbox whenever it is clicked on.
+	self:SetText("") 
 end
 
 local EditBoxOnEditFocusLost = function(self)
@@ -340,12 +330,6 @@ local EditBoxOnEnterPressed2 = function(self)
 	end
 end
 
-
-------------------------
---    ADMIN BUTTONS   --
-------------------------
-
-
 local EditBox = CreateFrame("Frame", nil, Admin)
 EditBox:SetPoint("TOPLEFT", Admin, 3, -3)
 EditBox:SetSize(Admin:GetSize()-6, 21)
@@ -368,9 +352,6 @@ CrossGambling_EditBox:SetScript("OnMouseDown", EditBoxOnMouseDown)
 CrossGambling_EditBox:SetScript("OnEscapePressed", EditBoxOnEscapePressed)
 CrossGambling_EditBox:SetScript("OnEnterPressed", EditBoxOnEnterPressed)
 CrossGambling_EditBox:SetScript("OnEditFocusLost", EditBoxOnEditFocusLost)
-
-
--- New Game Button
 
 AcceptRolls = CreateFrame("Frame", nil, Admin)
 AcceptRolls:SetSize(Admin:GetSize()-6, 21)
@@ -438,8 +419,6 @@ LastCall.Label:SetText("Last Call")
 LastCall.Label:SetShadowOffset(1.25, -1.25)
 LastCall.Label:SetShadowColor(0, 0, 0)
 
-
--- Close
 RollGame = CreateFrame("Frame", nil, Admin)
 RollGame:SetSize(Admin:GetSize()-6, 21)
 RollGame:SetPoint("TOPLEFT", LastCall, "BOTTOMLEFT", 0, -2)
@@ -474,7 +453,6 @@ RollGame.Label:SetText("Start Rolling")
 RollGame.Label:SetShadowOffset(1.25, -1.25)
 RollGame.Label:SetShadowColor(0, 0, 0)
 
--- Reset
 Reset = CreateFrame("Frame", nil, Admin)
 Reset:SetSize(Admin:GetSize()-6, 21)
 Reset:SetPoint("TOPLEFT", RollGame, "BOTTOMLEFT", 0, -2)
@@ -501,8 +479,6 @@ LastCall:Disable()
 EnterButton:Enable()
 PassButton:Enable()
 
-
--- Chat window
 local ChatFrame = CreateFrame("Frame", nil, GUI)
 ChatFrame:SetPoint("TOPLEFT", Top, "TOPRIGHT", 2, 0)
 ChatFrame:SetSize(260, 205)
@@ -526,7 +502,6 @@ ChatFrame.Chat:SetScript("OnMouseWheel", function(self, delta)
 	end
 end)
 
--- Editbox
 local EditBox2Down = function(self)
 	self:SetText("")
 	self:SetAutoFocus(true)
@@ -603,7 +578,7 @@ GameMode_Button:SetPoint("CENTER", GameMode, 0, 0)
 GameMode_Button:SetFont(Font, 14)
 GameMode_Button:SetJustifyH("CENTER")
 GameMode_Button:SetTextColor(unpack(FontColor))
-GameMode_Button:SetText("Munty's Casino")
+GameMode_Button:SetText("< Munty's Casino >")
 GameMode_Button:SetShadowOffset(1.25, -1.25)
 GameMode_Button:SetShadowColor(0, 0, 0)
 
@@ -703,9 +678,6 @@ CrossGambling_HouseCut.Label:SetTextColor(unpack(FontColor))
 CrossGambling_HouseCut.Label:SetShadowOffset(1.25, -1.25)
 CrossGambling_HouseCut.Label:SetShadowColor(0, 0, 0)
 
-
--- Chat toggle
-
 local AdminToggle = CreateFrame("Button", nil, GUI)
 AdminToggle:SetSize(21, 21)
 AdminToggle:SetPoint("TOPRIGHT", Top, "TOPRIGHT", 0, 0)
@@ -735,7 +707,6 @@ AdminToggle.Arrow:SetText("►")
 AdminToggle.Arrow:SetShadowOffset(1.25, -1.25)
 AdminToggle.Arrow:SetShadowColor(0, 0, 0)
 
--- Admin Toggle
 local AdminToggle = CreateFrame("Button", nil, Top)
 AdminToggle:SetSize(21, 21)
 AdminToggle:SetPoint("TOPLEFT", Top, "TOPLEFT", 0, 0)
@@ -761,7 +732,6 @@ AdminToggle.Arrow:SetText("◄")
 AdminToggle.Arrow:SetShadowOffset(1.25, -1.25)
 AdminToggle.Arrow:SetShadowColor(0, 0, 0)
 
--- Exit Button
 
 local Close = CreateFrame("Button", nil, Top)
 Close:SetSize(21, 21)
@@ -782,7 +752,6 @@ Close.X:SetText("×")
 Close.X:SetShadowOffset(1.25, -1.25)
 Close.X:SetShadowColor(0, 0, 0)
 
--- View Stats Button
 
 local ViewStats = CreateFrame("Button", nil, Bottom)
 ViewStats:SetSize(21, 21)
@@ -802,16 +771,6 @@ ViewStats.X:SetTextColor(unpack(FontColor))
 ViewStats.X:SetText("+")
 ViewStats.X:SetShadowOffset(1.25, -1.25)
 ViewStats.X:SetShadowColor(0, 0, 0)
-
-
--- Debug Stuff. Will be cleaned up.
-
-__IGAdd = AddPlayer
-__IGRem = RemovePlayer
-__IGRoll = PlayerRoll
-
-
-
 
 function CrossGambling_OnLoad(self)
 	DEFAULT_CHAT_FRAME:AddMessage("|cffffff00<Cross Gambling for Warcraft 8.2.5 and Classic!> loaded /cg to use");
@@ -835,7 +794,6 @@ end
 
 function CrossGambling1:OnInitialize()
 	
-	-- Member Initializers
 	local defaults = {
 	    global = {
 			minimap = {
@@ -844,7 +802,6 @@ function CrossGambling1:OnInitialize()
 		}
 	}
     self.db = LibStub("AceDB-3.0"):New("CrossGambling", defaults)
-	-- Register with the minimap icon frame
 	self:ConstructMiniMapIcon()
 end
 
@@ -1131,13 +1088,6 @@ function CrossGambling_OnEvent(self, event, ...)
 		CrossGambling_CHAT_Button:SetText(chatmethod); 
 
 
-		if CrossGambling["minimap"] then
-			-- show minimap
-			CrossGambling_Frame:Show()
-		else
-			CrossGambling_Frame:Hide()
-		end
-
 
 		if(CrossGambling["whispers"] == false) then
 
@@ -1198,11 +1148,11 @@ function Minimap_Toggle()
 	if CrossGambling["minimap"] then
 		-- minimap is shown, set to false, and hide
 		CrossGambling["minimap"] = false
-		CrossGambling_Frame:Hide()
+	    CrossGambling_Frame:Show()
 	else
 		-- minimap is now shown, set to true, and show
 		CrossGambling["minimap"] = true
-		CrossGambling_Frame:Show()
+		CrossGambling_Frame:Hide()
 	end
 end
 
@@ -1218,13 +1168,12 @@ end
 -- Will work on later 
 
 function CrossGambling_GameMode()
-if(CrossGambling["Test"] == false) then
+if CrossGambling_EditBox2:GetText() == "501" then
  GameMode_Button:SetText("< BigTwo >");
  CrossGambling_EditBox2:SetText("2");
  CrossGambling["isHouseCut"] = false
   CrossGambling_HouseCut.Label:SetText("Guild Cut (OFF)");
-		Print("", "", "|cffffff00Guild cut has been turned off.");
- else
+ elseif CrossGambling_EditBox2:GetText() == "2" then
  GameMode_Button:SetText("< Munty's Casino >");
   CrossGambling_EditBox2:SetText("501");
 end
