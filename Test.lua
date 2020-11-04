@@ -27,8 +27,8 @@ local rollCmd = SLASH_RANDOM1:upper();
 local debugLevel = 0;
 local virag_debug = false
 local chatmethods = {
-	"RAID",
 	"PARTY",
+	"RAID",
 	"GUILD",
 }
 local chatmethod = chatmethods[1];
@@ -123,7 +123,7 @@ end
 
 local ButtonOnLeave = function(self)
       self:SetBackdropColor(0.17, 0.17, 0.17)
-	  GameTooltip:Hide() 
+	  GameTooltip:Hide()
 end
 
 function CrossGambling_OnClickRoll()
@@ -489,7 +489,6 @@ Close:SetScript("OnMouseUp", function(self)
       GUI:Hide()
 end)
 
-
 Close.Label = Close:CreateFontString(nil, "OVERLAY")
 Close.Label:SetPoint("CENTER", Close, 0, 0)
 Close.Label:SetFont(Font, 14)
@@ -505,11 +504,6 @@ ViewStats:SetPoint("TOPRIGHT", Admin2, "BOTTOMRIGHT", -5, -2)
 ViewStats:SetFrameStrata("MEDIUM")
 SetTemplateDark(ViewStats)
 ViewStats:SetScript("OnEnter", ButtonOnEnter)
-ViewStats:HookScript("OnEnter", function(self)
-    GameTooltip:AddLine("Top 3 Winners/Losers", 1, 1, 1, true)
-    GameTooltip:Show()
-
-end)
 ViewStats:SetScript("OnLeave", ButtonOnLeave)
 ViewStats:SetScript("OnMouseUp", function(self)
 	CrossGambling_OnClickSTATS()
@@ -626,6 +620,8 @@ function CrossGambling_OnLoad(self)
 	LastCall:Disable();
 end
 
+
+
 function CrossGambling1:OnInitialize()
 	
 	local defaults = {
@@ -669,11 +665,6 @@ local function ChatMsg(msg, chatType, language, channel)
 	chatType = chatType or chatmethod
 	channelnum = GetChannelName(channel or CrossGambling["channel"] or "Channel Text Here")
 	SendChatMessage(msg, chatType, language, channelnum)
-end
-
-function hide_from_xml()
-	CrossGambling_SlashCmd("hide")
-	CrossGambling["active"] = 0;
 end
 
 function CrossGambling_SlashCmd(msg)
@@ -815,9 +806,6 @@ function CrossGambling_OnEvent(self, event, ...)
 				["bans"] = { },
 				["minimap"] = false,
 			}
-		-- fix older legacy items for new chat channels.  Probably need to iterate through each to see if it should be set.
-		elseif tostring(type(CrossGambling["chat"])) ~= "number" then
-			CrossGambling["chat"] = 1
 		end
 		if(not CrossGambling["lastroll"]) then CrossGambling["lastroll"] = 100; end
 		if(not CrossGambling["GameMode1"]) then CrossGambling["GameMode1"] = 501; end
@@ -837,13 +825,7 @@ function CrossGambling_OnEvent(self, event, ...)
 		else
 		CrossGambling_HouseCut.Label:SetText("Guild Cut (ON)");
 		end
-		if(CrossGambling["whispers"] == false) then
-
-			whispermethod = false;
-		else
-			CrossGambling_WHISPER_Button:SetText("(Whispers)");
-			whispermethod = true;
-		end
+	
 		if(CrossGambling["active"] == 1) then
 			GUI:Show();
 		else
@@ -852,13 +834,13 @@ function CrossGambling_OnEvent(self, event, ...)
 	end
 
 	-- IF IT'S A RAID MESSAGE... --
-	if ((event == "CHAT_MSG_RAID_LEADER" or event == "CHAT_MSG_RAID") and AcceptOnes=="true" and CrossGambling["chat"] == 1) then
-		local msg, _,_,_,name = ... -- name no realm
+	if ((event == "CHAT_MSG_PARTY_LEADER" or event == "CHAT_MSG_PARTY")and AcceptOnes=="true" and CrossGambling["chat"] == 1) then
+		local msg, name = ... -- name no realm
 		CrossGambling_ParseChatMsg(msg, name)
 	end
-
-	if ((event == "CHAT_MSG_PARTY_LEADER" or event == "CHAT_MSG_PARTY")and AcceptOnes=="true" and CrossGambling["chat"] == 2) then
-		local msg, name = ... -- name no realm
+	
+	if ((event == "CHAT_MSG_RAID_LEADER" or event == "CHAT_MSG_RAID") and AcceptOnes=="true" and CrossGambling["chat"] == 2) then
+		local msg, _,_,_,name = ... -- name no realm
 		CrossGambling_ParseChatMsg(msg, name)
 	end
 
@@ -884,7 +866,7 @@ end
 function CrossGambling_ResetStats()
 	CrossGambling["stats"] = { };
 	CrossGambling["house"] = 0;
-    Print("", "", "|cffffff00CG ALL STATS RESET!");
+	Print("", "", "|cffffff00CG All Stats Have Been Reset!");
 end
 
 function Minimap_Toggle()

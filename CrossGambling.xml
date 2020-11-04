@@ -13,8 +13,6 @@
 	<Script file="CrossGambling.lua" />
 	
 	<Frame name="CrossGambling_Frame" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
-		
-
 		<Scripts>
 			<OnLoad>
 				CrossGambling_OnLoad(self);
@@ -32,7 +30,4 @@
 			</OnDragStop>
 		</Scripts>
 	</Frame>
-	
-
-
 </Ui>
