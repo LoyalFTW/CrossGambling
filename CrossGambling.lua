@@ -10,6 +10,8 @@ local ChatGrabChannel
 local rollCmd = SLASH_RANDOM1:upper()
 local GameInProgress = false
 local AcceptingRolls = false
+local maxRoll
+local minRoll
 local ReportChannel = ""
 local chatmethods = {
 	"PARTY",
@@ -50,18 +52,27 @@ local tremove = tremove
 local tsort = table.sort
 local split = strsplit
 
-local  bv Comma = function(number)
+local DisableButton = function(button)
+	button:EnableMouse(false)
+	button.Label:SetTextColor(0.3, 0.3, 0.3)
+end
+
+local EnableButton = function(button)
+	button:EnableMouse(true)
+	button.Label:SetTextColor(1, 1, 1)
+end
+local Comma = function(number)
 	if (not number) then
 		return
 	end
-
+	
 	if (type(number) ~= "number") then
 		number = tonumber(number)
 	end
-
-	local Number = format("%.0f" , floor(number + 0.5) )
-   	local Left, Number, Right = strmatch(Number, "^([^%d]*%d)(%d+)(.-)$") 
-
+	
+	local Number = format("%.0f", floor(number + 0.5))
+   	local Left, Number, Right = strmatch(Number, "^([^%d]*%d)(%d+)(.-)$")
+	
 	return Left and Left .. reverse(gsub(reverse(Number), "(%d%d%d)", "%1,")) or number
 end
 
@@ -100,16 +111,16 @@ local SetTemplateDark = function(self)
 	self:SetBackdropColor(0.17, 0.17, 0.17)
 end
 
-local IsInRaid = IsInRaid
-local IsInGroup = IsInGroup
-local IsInGuild = IsInGuild
-local LE_PARTY_CATEGORY_HOME = LE_PARTY_CATEGORY_HOME
-local LE_PARTY_CATEGORY_INSTANCE = LE_PARTY_CATEGORY_INSTANCE
 local SendAddonMessage = SendAddonMessage
 
 local SendEvent = function(event, arg1)
 	local Channel
-
+	local IsInRaid = IsInRaid
+	local IsInGroup = IsInGroup
+	local IsInGuild = IsInGuild
+	local LE_PARTY_CATEGORY_HOME = LE_PARTY_CATEGORY_HOME
+	local LE_PARTY_CATEGORY_INSTANCE = LE_PARTY_CATEGORY_INSTANCE
+	local SendAddonMessage = SendAddonMessage
 -- ADD: Conditional variables to each that allow the current chat channel to be shown in the CGHost panel.
 	if IsInRaid() then
 		Channel = (not IsInRaid(LE_PARTY_CATEGORY_HOME) and IsInRaid(LE_PARTY_CATEGORY_INSTANCE)) and "INSTANCE_CHAT" or "RAID" or chatmethod
@@ -132,7 +143,7 @@ local SendEvent = function(event, arg1)
 end
 
 local GUI = CreateFrame("Frame", "CrossGambling", UIParent, BackdropTemplateMixin and "BackdropTemplate")
-GUI:SetSize(227, 121) 
+GUI:SetSize(227, 141) 
 GUI:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 SetTemplate(GUI)
 GUI:SetMovable(true)
@@ -146,7 +157,7 @@ GUI:Hide()
 
 local Top = CreateFrame("Frame", nil, GUI, BackdropTemplateMixin and "BackdropTemplate")
 Top:SetSize(GUI:GetSize(), 21)
-Top:SetPoint("BOTTOM", GUI, "TOP", 0, 0)
+Top:SetPoint("BOTTOM", GUI, "TOP", 0, -20)
 SetTemplateDark(Top)
 
 local CGHost = CreateFrame("Frame", "CrossGambleCGHost", GUI, BackdropTemplateMixin and "BackdropTemplate")
@@ -163,7 +174,7 @@ CGHost2:Hide()
 
 local CGHost2Top = CreateFrame("Frame", nil, CGHost2, BackdropTemplateMixin and "BackdropTemplate")
 CGHost2Top:SetSize(CGHost2:GetSize(), 21)
-CGHost2Top:SetPoint("BOTTOM", CGHost2, "TOP", 0, -1)
+CGHost2Top:SetPoint("BOTTOM", GUI, "TOP", 0, -20)
 SetTemplateDark(CGHost2Top)
 
 local ButtonOnEnter = function(self)
@@ -177,23 +188,23 @@ local ButtonOnLeave = function(self)
 	  GameTooltip:Hide() 
 end
 
-CHAT = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
-CHAT:SetSize(108, 20)
-CHAT:SetPoint("TOPLEFT", Top, "BOTTOMLEFT", 5, -2)
-SetTemplateDark(CHAT)
-CHAT:SetScript("OnEnter", ButtonOnEnter)
-CHAT:HookScript("OnEnter", function(self)
+local CGCHAT = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
+CGCHAT:SetSize(108, 20)
+CGCHAT:SetPoint("TOPLEFT", Top, "BOTTOMLEFT", 5, -2)
+SetTemplateDark(CGCHAT)
+CGCHAT:SetScript("OnEnter", ButtonOnEnter)
+CGCHAT:HookScript("OnEnter", function(self)
 	GameTooltip:SetText(chatmethod)
 	GameTooltip:AddLine("Change Chat Method", 1, 1, 1, true)
 	GameTooltip:Show()
 end)
-CHAT:SetScript("OnLeave", ButtonOnLeave)
-CHAT:SetScript("OnMouseUp", function(self)
+CGCHAT:SetScript("OnLeave", ButtonOnLeave)
+CGCHAT:SetScript("OnMouseUp", function(self)
 CrossGambling_OnClickCHAT()
 end)
 
-CrossGambling_CHAT_Button = CHAT:CreateFontString(nil, "OVERLAY")
-CrossGambling_CHAT_Button:SetPoint("CENTER", CHAT, 0, 0)
+local CrossGambling_CHAT_Button = CGCHAT:CreateFontString(nil, "OVERLAY")
+CrossGambling_CHAT_Button:SetPoint("CENTER", CGCHAT, 0, 0)
 CrossGambling_CHAT_Button:SetFont(Font, 12)
 CrossGambling_CHAT_Button:SetJustifyH("CENTER")
 CrossGambling_CHAT_Button:SetTextColor(unpack(FontColor))
@@ -239,12 +250,12 @@ end
 
 
 local EditBox = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
-EditBox:SetPoint("TOPLEFT", CHAT, 0, -23)
+EditBox:SetPoint("TOPLEFT", CGCHAT, 0, -23)
 EditBox:SetSize(CGHost:GetSize()-9, 21)
 SetTemplateDark(EditBox)
 EditBox:EnableMouse(true)
 
-CrossGambling_EditBox = CreateFrame("EditBox", nil, EditBox)
+local CrossGambling_EditBox = CreateFrame("EditBox", nil, EditBox)
 CrossGambling_EditBox:SetPoint("CENTER", EditBox, 0, 0)
 CrossGambling_EditBox:SetPoint("BOTTOMRIGHT", EditBox, -4, 2)
 CrossGambling_EditBox:SetFont(Font, 16)
@@ -260,7 +271,7 @@ CrossGambling_EditBox:SetScript("OnEscapePressed", EditBoxOnEscapePressed)
 CrossGambling_EditBox:SetScript("OnEnterPressed", EditBoxOnEnterPressed)
 CrossGambling_EditBox:SetScript("OnEditFocusLost", EditBoxOnEditFocusLost)
 
-AcceptRolls = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
+local AcceptRolls = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
 AcceptRolls:SetSize(108, 20)
 AcceptRolls:SetPoint("TOPLEFT", EditBox, "BOTTOMLEFT", 0, -2)
 SetTemplateDark(AcceptRolls)
@@ -289,32 +300,21 @@ AcceptRolls:SetScript("OnMouseUp", function(self)
 		AcceptingRolls = true
 end)
 
-AcceptRolls.Disable = function(self)
-	self.Label:SetTextColor(0.3, 0.3, 0.3)
-	self:EnableMouse(false)
-end
-
-AcceptRolls.Enable = function(self)
-	self.Label:SetTextColor(unpack(FontColor))
-	self:EnableMouse(true)
-end
-
 AcceptRolls.Label = AcceptRolls:CreateFontString(nil, "OVERLAY")
 AcceptRolls.Label:SetPoint("CENTER", AcceptRolls, 0, 0)
 AcceptRolls.Label:SetFont(Font, 12)
 AcceptRolls.Label:SetJustifyH("CENTER")
-AcceptRolls.Label:SetTextColor(unpack(FontColor))
 AcceptRolls.Label:SetText("New Game")
 AcceptRolls.Label:SetShadowOffset(1.25, -1.25)
 AcceptRolls.Label:SetShadowColor(0, 0, 0)
 
-local EditBox = CreateFrame("Frame", nil, CGHost2, BackdropTemplateMixin and "BackdropTemplate")
+local EditBox = CreateFrame("Frame", nil, CGHost2Top, BackdropTemplateMixin and "BackdropTemplate")
 EditBox:SetSize(108, 20)
-EditBox:SetPoint("TOPLEFT", CGHost2, "BOTTOMLEFT", 114, -24)
+EditBox:SetPoint("TOPLEFT", CGHost2Top, "BOTTOMLEFT", 114, -24)
 SetTemplateDark(EditBox)
 EditBox:EnableMouse(true)
 
-GuildCut = CreateFrame("EditBox", nil, EditBox)
+local GuildCut = CreateFrame("EditBox", nil, EditBox)
 GuildCut:SetPoint("CENTER", EditBox, 0, 0)
 GuildCut:SetPoint("BOTTOMRIGHT", EditBox, -4, 2)
 GuildCut:SetFont(Font, 16)
@@ -440,7 +440,7 @@ ChatToggle.Arrow:SetShadowOffset(1.25, -1.25)
 ChatToggle.Arrow:SetShadowColor(0, 0, 0)
 
 
-CGEnter = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
+local CGEnter = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
 CGEnter:SetSize(108, 20)
 CGEnter:SetPoint("TOPRIGHT", CrossGambling_EditBox, "BOTTOMRIGHT", 4, -4)
 SetTemplateDark(CGEnter)
@@ -454,16 +454,6 @@ CGEnter:SetScript("OnMouseUp", function(self)
 	 CrossGambling_OnClickRoll1()
 end 
 end)
-
-CGEnter.Disable = function()
-	CGEnter.Label:SetTextColor(0.3, 0.3, 0.3)
-	CGEnter:EnableMouse(false)
-end
-
-CGEnter.Enable = function(self)
-	CGEnter.Label:SetTextColor(unpack(FontColor))
-	CGEnter:EnableMouse(true)
-end
 
 CGEnter.Label = CGEnter:CreateFontString(nil, "OVERLAY")
 CGEnter.Label:SetPoint("CENTER", CGEnter, 0, 0)
@@ -489,7 +479,7 @@ function CrossGambling_OnClickRoll2()
    end
 end
 
-RollMe = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
+local RollMe = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
 RollMe:SetSize(108, 20)
 RollMe:SetPoint("TOPRIGHT", CGEnter, "BOTTOMRIGHT", 0, -2)
 SetTemplateDark(RollMe)
@@ -504,16 +494,6 @@ hash_SlashCmdList[rollCmd](CurrentRollValue)
 end
 end)
 
-RollMe.Disable = function(self)
-	self.Label:SetTextColor(0.3, 0.3, 0.3)
-	self:EnableMouse(false)
-end
-
-RollMe.Enable = function(self)
-	self.Label:SetTextColor(unpack(FontColor))
-	self:EnableMouse(true)
-end
-
 RollMe.Label = RollMe:CreateFontString(nil, "OVERLAY")
 RollMe.Label:SetPoint("CENTER", RollMe, 0, 0)
 RollMe.Label:SetFont(Font, 12)
@@ -523,7 +503,7 @@ RollMe.Label:SetText("Roll Me")
 RollMe.Label:SetShadowOffset(1.25, -1.25)
 RollMe.Label:SetShadowColor(0, 0, 0)
 
-GameMode_Button = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
+local GameMode_Button = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
 GameMode_Button:SetSize(108, 20)
 GameMode_Button:SetPoint("TOPRIGHT", Top, "BOTTOMRIGHT", -4, -2)
 SetTemplateDark(GameMode_Button)
@@ -548,7 +528,7 @@ GameMode_Button_Button:SetText("< Game Mode >")
 GameMode_Button_Button:SetShadowOffset(1.25, -1.25)
 GameMode_Button_Button:SetShadowColor(0, 0, 0)
 
-LastCall = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
+local LastCall = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
 LastCall:SetSize(108, 20)
 LastCall:SetPoint("TOPLEFT", AcceptRolls, "BOTTOMLEFT", 0, -2)
 SetTemplateDark(LastCall)
@@ -561,16 +541,6 @@ LastCall:SetScript("OnMouseUp", function(self)
 	SendEvent("LastCall")
 end)
 
-LastCall.Disable = function(self)
-	self.Label:SetTextColor(0.3, 0.3, 0.3)
-	self:EnableMouse(false)
-end
-
-LastCall.Enable = function(self)
-	self.Label:SetTextColor(unpack(FontColor))
-	self:EnableMouse(true)
-end
-
 LastCall.Label = LastCall:CreateFontString(nil, "OVERLAY")
 LastCall.Label:SetPoint("CENTER", LastCall, 0, 0)
 LastCall.Label:SetFont(Font, 12)
@@ -580,7 +550,7 @@ LastCall.Label:SetText("Last Call")
 LastCall.Label:SetShadowOffset(1.25, -1.25)
 LastCall.Label:SetShadowColor(0, 0, 0)
 
-RollGame = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
+local RollGame = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
 RollGame:SetSize(108, 20)
 RollGame:SetPoint("TOPLEFT", LastCall, "BOTTOMLEFT", 0, -2)
 SetTemplateDark(RollGame)
@@ -593,16 +563,6 @@ RollGame:SetScript("OnMouseUp", function(self)
 	SendEvent("CLOSE_GAME")
 end)
 
-RollGame.Disable = function(self)
-	self.Label:SetTextColor(0.3, 0.3, 0.3)
-	self:EnableMouse(false)
-end
-
-RollGame.Enable = function(self)
-	self.Label:SetTextColor(unpack(FontColor))
-	self:EnableMouse(true)
-end
-
 RollGame.Label = RollGame:CreateFontString(nil, "OVERLAY")
 RollGame.Label:SetPoint("CENTER", RollGame, 0, 0)
 RollGame.Label:SetFont(Font, 12)
@@ -612,10 +572,10 @@ RollGame.Label:SetText("Start Rolling")
 RollGame.Label:SetShadowOffset(1.25, -1.25)
 RollGame.Label:SetShadowColor(0, 0, 0)
 
-RollGame:Disable()
-LastCall:Disable()
-RollMe:Disable()
-CGEnter:Enable()
+DisableButton(RollGame)
+DisableButton(LastCall)
+DisableButton(RollMe)
+EnableButton(CGEnter)
 
 local CGHostToggle = CreateFrame("Button", nil, GUI, BackdropTemplateMixin and "BackdropTemplate")
 CGHostToggle:SetSize(63, 21)
@@ -657,7 +617,7 @@ CGHostToggle.Arrow:SetShadowOffset(1.25, -1.25)
 CGHostToggle.Arrow:SetShadowColor(0, 0, 0)
 
 
-Close = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
+local Close = CreateFrame("Frame", nil, CGHost, BackdropTemplateMixin and "BackdropTemplate")
 Close:SetSize(108, 20)
 Close:SetPoint("TOPRIGHT", RollMe, "BOTTOMRIGHT", 0, -2)
 SetTemplateDark(Close)
@@ -767,9 +727,9 @@ local ResetStats = function()
   end
 end
 
-local ViewStats = CreateFrame("Button", nil, CGHost2, BackdropTemplateMixin and "BackdropTemplate")
+local ViewStats = CreateFrame("Button", nil, CGHost2Top, BackdropTemplateMixin and "BackdropTemplate")
 ViewStats:SetSize(108, 20)
-ViewStats:SetPoint("TOPRIGHT", CGHost2, "BOTTOMRIGHT", -5, -2)
+ViewStats:SetPoint("TOPRIGHT", CGHost2Top, "BOTTOMRIGHT", -5, -2)
 ViewStats:SetFrameStrata("MEDIUM")
 SetTemplateDark(ViewStats)
 ViewStats:SetScript("OnEnter", ButtonOnEnter)
@@ -791,9 +751,9 @@ ViewStats.X:SetText("Fame/Shame")
 ViewStats.X:SetShadowOffset(1.25, -1.25)
 ViewStats.X:SetShadowColor(0, 0, 0)
 
-local ViewStats = CreateFrame("Button", nil, CGHost2, BackdropTemplateMixin and "BackdropTemplate")
+local ViewStats = CreateFrame("Button", nil, CGHost2Top, BackdropTemplateMixin and "BackdropTemplate")
 ViewStats:SetSize(108, 20)
-ViewStats:SetPoint("TOPLEFT", CGHost2, "BOTTOMLEFT", 5, -2)
+ViewStats:SetPoint("TOPLEFT", CGHost2Top, "BOTTOMLEFT", 5, -2)
 ViewStats:SetFrameStrata("MEDIUM")
 SetTemplateDark(ViewStats)
 ViewStats:SetScript("OnEnter", ButtonOnEnter)
@@ -810,7 +770,7 @@ ViewStats.X:SetText("Full Stats")
 ViewStats.X:SetShadowOffset(1.25, -1.25)
 ViewStats.X:SetShadowColor(0, 0, 0)
 
-CrossGambling_HouseCut = CreateFrame("Frame", nil, CGHost2, BackdropTemplateMixin and "BackdropTemplate")
+local CrossGambling_HouseCut = CreateFrame("Frame", nil, CGHost2, BackdropTemplateMixin and "BackdropTemplate")
 CrossGambling_HouseCut:SetSize(108, 20)
 CrossGambling_HouseCut:SetPoint("TOPLEFT", ViewStats, "BOTTOMLEFT", 0, -2)
 SetTemplateDark(CrossGambling_HouseCut)
@@ -835,7 +795,7 @@ CrossGambling_HouseCut.Label:SetTextColor(unpack(FontColor))
 CrossGambling_HouseCut.Label:SetShadowOffset(1.25, -1.25)
 CrossGambling_HouseCut.Label:SetShadowColor(0, 0, 0)
 
-CGReset = CreateFrame("Frame", nil, CGHost2, BackdropTemplateMixin and "BackdropTemplate")
+local CGReset = CreateFrame("Frame", nil, CGHost2, BackdropTemplateMixin and "BackdropTemplate")
 CGReset:SetSize(108, 20)
 CGReset:SetPoint("TOPRIGHT", CrossGambling_HouseCut, "BOTTOMRIGHT", 0, -55)
 SetTemplateDark(CGReset)
@@ -843,6 +803,7 @@ CGReset:SetScript("OnEnter", ButtonOnEnter)
 CGReset:SetScript("OnLeave", ButtonOnLeave)
 CGReset:SetScript("OnMouseUp", function(self)
       SendEvent("RESET_ALL")
+	  isCGHost = true
 end)
 
 CGReset.Label = CGReset:CreateFontString(nil, "OVERLAY")
@@ -868,28 +829,94 @@ GUI.BottomLabel:SetShadowOffset(1.25, -1.25)
 GUI.BottomLabel:SetShadowColor(0, 0, 0)
 GUI.BottomLabel:SetText("Silent On: Recommended every one has addon.")
 
-local PlayerSlotz = CreateFrame("Frame", nil, GUI, BackdropTemplateMixin and "BackdropTemplate")
-PlayerSlotz:SetPoint("TOPRIGHT", GUI, "TOPLEFT", 2, 0)
-PlayerSlotz:SetSize(220, 142)
-SetTemplate(PlayerSlotz)
-PlayerSlotz:Hide()
-
-PlayerSlotz.Chat = CreateFrame("ScrollingMessageFrame", nil, PlayerSlotz)
-PlayerSlotz.Chat:SetPoint("CENTER", PlayerSlotz, 2, 3)
-PlayerSlotz.Chat:SetSize(PlayerSlotz:GetWidth() - 8, PlayerSlotz:GetHeight() - 6)
-PlayerSlotz.Chat:SetFont(Font, 12)
-PlayerSlotz.Chat:SetShadowColor(0, 0, 0)
-PlayerSlotz.Chat:SetShadowOffset(1.25, -1.25)
-PlayerSlotz.Chat:SetFading(false)
-PlayerSlotz.Chat:SetJustifyH("LEFT")
-PlayerSlotz.Chat:SetMaxLines(50)
-PlayerSlotz.Chat:SetScript("OnMouseWheel", function(self, delta)
-	if (delta == 1) then
-		self:ScrollUp()
-	else
-		self:ScrollDown()
+local UIConfig
+local function ScrollFrame_OnMouseWheel(self, delta)
+	local newValue = self:GetVerticalScroll() - (delta * 20);
+	
+	if (newValue < 0) then
+		newValue = 0;
+	elseif (newValue > self:GetVerticalScrollRange()) then
+		newValue = self:GetVerticalScrollRange();
 	end
-end)
+	
+	self:SetVerticalScroll(newValue);
+end
+
+local function Tab_OnClick(self)
+	PanelTemplates_SetTab(self:GetParent(), self:GetID());
+	
+	local scrollChild = UIConfig.ScrollFrame:GetScrollChild();
+	if (scrollChild) then
+		scrollChild:Hide();
+	end
+	
+	UIConfig.ScrollFrame:SetScrollChild(self.content);
+	self.content:Show();	
+end
+
+local function SetTabs(frame, numTabs, ...)
+	frame.numTabs = numTabs;
+	
+	local contents = {};
+	local frameName = frame:GetName();
+	
+	for i = 1, numTabs do	
+		local tab = CreateFrame("Button", frameName.."Tab"..i, frame, "CharacterFrameTabButtonTemplate");
+		tab:SetID(i);
+		tab:SetText(select(i, ...));
+		tab:SetScript("OnClick", Tab_OnClick);
+		
+		tab.content = CreateFrame("Frame", nil, UIConfig.ScrollFrame);
+		tab.content:SetSize(308, 500);
+		tab.content:Hide();
+		
+		-- just for tutorial only:
+		table.insert(contents, tab.content);
+		
+	end
+	
+	Tab_OnClick(_G[frameName.."Tab1"]);
+	
+	return unpack(contents);
+end
+
+local SlotzContainer = CreateFrame("Frame", nil, GUI, BackdropTemplateMixin and "BackdropTemplate")
+SlotzContainer:SetPoint("TOPRIGHT", GUI, "TOPLEFT", 0, -20)
+SlotzContainer:SetSize(220, 141)
+SetTemplate(SlotzContainer)
+SlotzContainer:Hide()
+
+local Top = CreateFrame("Frame", nil, SlotzContainer, BackdropTemplateMixin and "BackdropTemplate")
+Top:SetSize(SlotzContainer:GetSize(), 21) 
+Top:SetPoint("TOP", SlotzContainer, "Top", 0, 21)
+Top:SetFrameLevel(15)
+SetTemplateDark(Top)
+
+GUI.BottomLabel = Top:CreateFontString(nil, "OVERLAY")
+GUI.BottomLabel:SetPoint("CENTER", Top, 2, 0)
+GUI.BottomLabel:SetFont(Font, 10)
+GUI.BottomLabel:SetTextColor(unpack(FontColor))
+GUI.BottomLabel:SetJustifyH("CENTER")
+GUI.BottomLabel:SetShadowOffset(1.25, -1.25)
+GUI.BottomLabel:SetShadowColor(0, 0, 0)
+GUI.BottomLabel:SetText("Roll Tracker")
+
+UIConfig = CreateFrame("Frame", "AuraTrackerConfig", SlotzContainer, "UIPanelDialogTemplate");
+UIConfig:SetSize(222, 167);
+UIConfig:SetPoint("CENTER", SlotzContainer, "CENTER", -2, 12)
+	
+UIConfig.ScrollFrame = CreateFrame("ScrollFrame", nil, UIConfig, "UIPanelScrollFrameTemplate");
+UIConfig.ScrollFrame:SetPoint("TOPLEFT", AuraTrackerConfigDialogBG, "TOPLEFT", 4, -8);
+UIConfig.ScrollFrame:SetPoint("BOTTOMRIGHT", AuraTrackerConfigDialogBG, "BOTTOMRIGHT", -3, 4);
+UIConfig.ScrollFrame:SetClipsChildren(true);
+UIConfig.ScrollFrame:SetScript("OnMouseWheel", ScrollFrame_OnMouseWheel);	
+local content1 = SetTabs(UIConfig, 1, "Appearance");
+	
+local PlayerSlotz = CreateFrame("Frame", nil, content1, BackdropTemplateMixin and "BackdropTemplate")
+PlayerSlotz:SetPoint("CENTER", content1, "CENTER", 2, 0)
+PlayerSlotz:SetSize(220, 10)
+PlayerSlotz:Show()
+
 local PlayerRoll = function(player)
 	for i = 1, #Players do
 		if (Players[i].Name == player and not Players[i].HasRolled) then
@@ -909,26 +936,12 @@ end
 local SortPlayers = function()
 	for i = 1, #Players do
 		if (i == 1) then
-			Players[i]:SetPoint("TOPLEFT", PlayerSlotz, "TOPLEFT", 0, -3)
+			Players[i]:SetPoint("TOPLEFT", content1, "TOPLEFT", 0, -3)
 		else
 			Players[i]:SetPoint("TOP", Players[i-1], "BOTTOM", 0, -2)
 		end
 	end
 end
-
-local Top = CreateFrame("Frame", nil, PlayerSlotz, BackdropTemplateMixin and "BackdropTemplate")
-Top:SetSize(PlayerSlotz:GetSize(), 21) 
-Top:SetPoint("TOP", PlayerSlotz, "Top", 0, 21)
-SetTemplateDark(Top)
-
-GUI.BottomLabel = Top:CreateFontString(nil, "OVERLAY")
-GUI.BottomLabel:SetPoint("CENTER", Top, 2, 0)
-GUI.BottomLabel:SetFont(Font, 10)
-GUI.BottomLabel:SetTextColor(unpack(FontColor))
-GUI.BottomLabel:SetJustifyH("CENTER")
-GUI.BottomLabel:SetShadowOffset(1.25, -1.25)
-GUI.BottomLabel:SetShadowColor(0, 0, 0)
-GUI.BottomLabel:SetText("Roll Tracker")
 
 
 local ChatAddPlayer = function(chatName)
@@ -956,11 +969,11 @@ ChatToggle:SetScript("OnMouseUp", function(self)
 		self.NeedsReset = false
 	end
 
-	if PlayerSlotz:IsShown() then
-		PlayerSlotz:Hide()
+	if SlotzContainer:IsShown() then
+		SlotzContainer:Hide()
 		self.Arrow:SetText("◄")
 	else
-		PlayerSlotz:Show()
+		SlotzContainer:Show()
 		self.Arrow:SetText("►")
 	end
 end)
@@ -980,7 +993,7 @@ local AddPlayer = function(name)
 	end
 
 	local PlayerSlot = CreateFrame("Frame", nil, PlayerSlotz, BackdropTemplateMixin and "BackdropTemplate")
-	PlayerSlot:SetSize(220, 21)
+	PlayerSlot:SetSize(220, 15)
 	SetTemplateDark(PlayerSlot)
 
 	PlayerSlot.Name = name
@@ -995,14 +1008,15 @@ local AddPlayer = function(name)
 	PlayerSlot.Label:SetShadowColor(0, 0, 0)
 
 	PlayerSlot.TotalFrame = CreateFrame("Frame", nil, PlayerSlot, BackdropTemplateMixin and "BackdropTemplate")
-	PlayerSlot.TotalFrame:SetSize(80, 21)
+	PlayerSlot.TotalFrame:SetSize(78, 15)
 	PlayerSlot.TotalFrame:SetPoint("RIGHT", PlayerSlot, 0, 0)
 	SetTemplateDark(PlayerSlot.TotalFrame)
 
+
 	PlayerSlot.Total = PlayerSlot.TotalFrame:CreateFontString(nil, "OVERLAY", BackdropTemplateMixin and "BackdropTemplate")
-	PlayerSlot.Total:SetPoint("LEFT", PlayerSlot.TotalFrame, 4, 0)
+	PlayerSlot.Total:SetPoint("CENTER", PlayerSlot.TotalFrame, 4, 0)
 	PlayerSlot.Total:SetFont(Font, 12)
-	PlayerSlot.Total:SetJustifyH("LEFT")
+	PlayerSlot.Total:SetJustifyH("CENTER")
 	PlayerSlot.Total:SetTextColor(unpack(FontColor))
 	PlayerSlot.Total:SetShadowOffset(1.25, -1.25)
 	PlayerSlot.Total:SetShadowColor(0, 0, 0)
@@ -1153,6 +1167,7 @@ function Minimap_Toggle()
 		-- minimap is now shown, set to true, and show
 		CrossGambling["minimap"] = true
 		GUI:Hide()
+		CrossGambling["active"] = 0;
 		isCGHost = false
 	end
 end
@@ -1205,10 +1220,12 @@ function CrossGambling_ToggleHouse()
 end
 
 Events["RESET_ALL"] = function()
+	if(isCGHost) then
 	for i = 1, #Players do
 		Players[1].HasRolled = false
 		Players[1].Total:SetText("")
 		RemovePlayer(Players[1].Name)
+	
 end
 
 
@@ -1216,19 +1233,20 @@ end
 	CrossGambling["house"] = 0
     DEFAULT_CHAT_FRAME:AddMessage("|cffffff00CG ALL STATS RESET!")
     isCGHost = false
-    AcceptRolls:Enable()
-    RollGame:Disable()
-	RollMe:Disable()
-	LastCall:Disable()
+	EnableButton(AcceptRolls)
+    DisableButton(RollGame)
+	DisableButton(RollMe)
+	DisableButton(LastCall)
    CGEnter.Label:SetText("Join Game")
+  end
 end
 
 Events["RESET_GAME"] = function()
 	    isCGHost = false
-        AcceptRolls:Enable()
-        RollGame:Disable()
-		RollMe:Disable()
-		LastCall:Disable()
+        EnableButton(AcceptRolls)
+        DisableButton(RollGame)
+		DisableButton(RollMe)
+		DisableButton(LastCall)
 	    CGEnter.Label:SetText("Join Game")
 end
 
@@ -1264,7 +1282,7 @@ end
 
 Events["START_GAME"] = function()
   if(ChatFrame:IsShown() == true and isCGHost == true ) then
-  LastCall:Enable()
+   EnableButton(LastCall)
   	if GameMode_Button_Button:GetText() == "< Game Mode >" then
 local RollNotification = "has started a roll!"
     SendEvent(format("CHAT_MSG:%s:%s:%s", PlayerName, PlayerClass, RollNotification))
@@ -1278,7 +1296,7 @@ local RollNotification = "has started a roll!"
 	CrossGambling["GameMode"] = CrossGambling["GameMode1"]
 end
     elseif(ChatFrame:IsShown() == false and isCGHost == true ) then
-	LastCall:Enable()
+	 EnableButton(LastCall)
 		if GameMode_Button_Button:GetText() == "< Game Mode >" then
 	SendChatMessage(format(" CrossGambling: User's Roll - ( %s %s", CurrentRollValue, ") - Type 1 to Join  (-1 to withdraw)"), ReportChannel, nil)
 	CrossGambling["lastroll"] = CrossGambling_EditBox:GetText()
@@ -1289,10 +1307,9 @@ end
 end
 
  end
- 
-        AcceptRolls:Disable()
-        RollGame:Disable()
-		RollMe:Disable()
+		DisableButton(AcceptRolls)
+        DisableButton(RollGame)
+		DisableButton(RollMe)
 		SendEvent("REMOVE_PLAYER", PlayerName)
 	    CGEnter.Label:SetText("Join Game")
 
@@ -1303,10 +1320,10 @@ Events["LastCall"] = function()
  if(ChatFrame:IsShown() == true and  isCGHost == true ) then
   	local RollNotification = "Last Call!"
     SendEvent(format("CHAT_MSG:%s:%s:%s", PlayerName, PlayerClass, RollNotification))
-	RollGame:Enable()
+	EnableButton(RollGame)
     elseif(ChatFrame:IsShown() == false and isCGHost == true) then
 	SendChatMessage(" Last Call to Enter", ReportChannel, nil)
-	RollGame:Enable()
+	EnableButton(RollGame)
 end
 
 end
@@ -1319,12 +1336,12 @@ Events["CLOSE_GAME"] = function()
     elseif(ChatFrame:IsShown() == false and isCGHost == true) then
 	SendChatMessage(" Entries have closed. Roll now!", ReportChannel, nil)
 	SendChatMessage(format(" Type /roll %s", CurrentRollValue), ReportChannel, nil)
-		AcceptRolls:Enable()
+		EnableButton(AcceptRolls)
 end
 	for i = 1, #Players do
 		if (Players[i].Name == PlayerName) then
-			RollMe:Enable()
-            AcceptRolls:Enable()
+			EnableButton(RollMe)
+            EnableButton(AcceptRolls)
 			break
 		end
 	end
@@ -1370,7 +1387,6 @@ function CrossGambling_SlashCmd(msg)
 	    Print("", "", "~Following Commands for CrossGambling~");
 		Print("", "", "show - Shows the frame");
 		Print("", "", "hide - Hides the frame");
-		Print("", "", "channel - Change the custom channel for gambling");
 		Print("", "", "reset - Resets the AddOn");
 		Print("", "", "fullstats - list full stats");
 		Print("", "", "resetstats - Resets the stats");
@@ -1394,13 +1410,11 @@ function CrossGambling_SlashCmd(msg)
 	GUI:IsShown();
 		GUI:Show();
 		isCGHost = false
-		CrossGambling["active"] = 1;
 		msgPrint = 1;
 	end
 	
 	if (msg == "reset") then
-		CrossGambling_Reset();
-		CrossGambling_ResetCmd()
+		SendEvent("RESET_ALL")
 		msgPrint = 1;
 	end
 	if (msg == "fullstats") then
@@ -1410,10 +1424,6 @@ function CrossGambling_SlashCmd(msg)
 	if (msg == "resetstats") then
 		Print("", "", "|cffffff00CG stats have now been reset");
 		SendEvent("RESET_ALL")
-		msgPrint = 1;
-	end
-	if (string.sub(msg, 1, 7) == "channel") then
-		CrossGambling_ChangeChannel(strsub(msg, 9));
 		msgPrint = 1;
 	end
 	if (string.sub(msg, 1, 9) == "joinstats") then
@@ -1491,7 +1501,7 @@ end)
 
 
 local EventChatPlayer = CreateFrame("Frame")
-DEFAULT_CHAT_FRAME:AddMessage("|cffffff00<Cross Gambling for Warcraft 9.0.1 and Classic!> loaded /cg to use")
+DEFAULT_CHAT_FRAME:AddMessage("|cffffff00<Cross Gambling for Warcraft 9.0.2 and Classic!> loaded /cg to use")
 EventChatPlayer:RegisterEvent("CHAT_MSG_PARTY")
 EventChatPlayer:RegisterEvent("CHAT_MSG_PARTY_LEADER")
 EventChatPlayer:RegisterEvent("CHAT_MSG_RAID")
@@ -1579,23 +1589,23 @@ end)
 function CrossGambling_JoinStats(msg)
 	local i = string.find(msg, " ");
 	if((not i) or i == -1 or string.find(msg, "[", 1, true) or string.find(msg, "]", 1, true)) then
-		ChatFrame1:AddMessage("");
+		CGChatFrame:AddMessage("");
 		return;
 	end
 	local mainname = string.sub(msg, 1, i-1);
 	local altname = string.sub(msg, i+1);
-	ChatFrame1:AddMessage(string.format("Joined alt '%s' -> main '%s'", altname, mainname));
+	CGChatFrame:AddMessage(string.format("Joined alt '%s' -> main '%s'", altname, mainname));
 	CrossGambling["joinstats"][altname] = mainname;
 end
 
 function CrossGambling_UnjoinStats(altname)
 	if(altname ~= nil and altname ~= "") then
-		ChatFrame1:AddMessage(string.format("Unjoined alt '%s' from any other characters", altname));
+		CGChatFrame:AddMessage(string.format("Unjoined alt '%s' from any other characters", altname));
 		CrossGambling["joinstats"][altname] = nil;
 	else
 		local i, e;
 		for i, e in pairs(CrossGambling["joinstats"]) do
-			ChatFrame1:AddMessage(string.format("currently joined: alt '%s' -> main '%s'", i, e));
+			CGChatFrame:AddMessage(string.format("currently joined: alt '%s' -> main '%s'", i, e));
 		end
 	end
 end

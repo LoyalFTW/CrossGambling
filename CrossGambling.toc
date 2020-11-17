@@ -1,8 +1,8 @@
-## Interface: 90001
+## Interface: 90002
 ## Title:|cffff7d0aCrossGambling
 ## Author: Loyal
-## 9.0.1 Maintainer: Loyal @ Stormrage
-## Version: 9.0.1
+## 9.0.2 Maintainer: Loyal @ Stormrage
+## Version: v3.0.3
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## Notes: A fun way to lose gold. Or win it.
