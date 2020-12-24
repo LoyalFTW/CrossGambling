@@ -1348,8 +1348,8 @@ end
 
 function ParseChatRoll(tempString2)
 	local tempString1 = tempString2
-	local player, junk, actualRoll, range = strsplit(" ", tempString1)
-
+	local player, actualRoll, minRoll, maxRoll = strmatch(tempString1, "^([^ ]+) .+ (%d+) %((%d+)-(%d+)%)%.$")
+	
 	function CheckPlayers(player)
 		for i=1, #Players do
 			if (Players[i].Name == tostring(player)) then
@@ -1359,13 +1359,10 @@ function ParseChatRoll(tempString2)
 		return false
 	end
 
-
-	if junk == "rolls" and CheckPlayers(player)==true then
-		minRoll, maxRoll = strsplit("-",range)
-		minRoll = tonumber(strsub(minRoll,2))
-		maxRoll = tonumber(strsub(maxRoll,1,-2))
+	if CheckPlayers(player)==true then
+		minRoll = tonumber(minRoll)
+		maxRoll = tonumber(maxRoll)
 		actualRoll = tonumber(actualRoll)
-
 
 		if(minRoll == 1 and maxRoll == CurrentRollValue) then
 			SendEvent("PLAYER_ROLL", player..":"..tostring(actualRoll))
