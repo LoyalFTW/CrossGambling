@@ -1348,7 +1348,7 @@ end
 
 function ParseChatRoll(tempString2)
 	local tempString1 = tempString2
-	local player, actualRoll, minRoll, maxRoll = strmatch(tempString1, "^([^ ]+) .+ (%d+) %((%d+)-(%d+)%)%.$")
+	local player, actualRoll, minRoll, maxRoll = strmatch(tempString1, "^([^ ]+) .+ (%d+) %((%d+)-(%d+)%)%.?$")
 	
 	function CheckPlayers(player)
 		for i=1, #Players do
