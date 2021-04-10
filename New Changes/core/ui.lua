@@ -1,6 +1,7 @@
 local PlayerName = UnitName("player")
 local PlayerClass = select(2, UnitClass("player"))
 local split = strsplit
+local CG = "Interface\\AddOns\\CrossGambling\\media\\CG.tga"
 local Font = "Fonts\\FRIZQT__.TTF"
 local FontColor = {220/255, 220/255, 220/255}
 
