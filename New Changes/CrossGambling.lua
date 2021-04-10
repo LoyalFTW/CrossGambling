@@ -1,6 +1,6 @@
 CrossGambling = LibStub("AceAddon-3.0"):NewAddon("CrossGambling", "AceConsole-3.0", "AceEvent-3.0")
 
--- GLOBAL VARS --
+-- GLOBALS
 local gameStates = {
     "IDLE",
     "START",
@@ -13,7 +13,7 @@ local gameModes = {
     "BigTwo"
 }
 
-local chatChannels = {
+local chatMethods = {
     "PARTY",
     "RAID",
     "GUILD"
@@ -24,6 +24,9 @@ local defaults = {
     global = {
         minimap = {
             hide = false,
+        },
+		 gamble = {
+            chatMethod = chatMethods[1],
         },
     }
 }
@@ -71,7 +74,29 @@ function CrossGambling:OnInitialize()
     })
 
     minimapIcon:Register("MinimapIcon", minimapLDB, self.db.global.minimap)
+	self:drawUi()
 end
 
+--ChatMethods
+function CrossGambling:chatMethod(direction)
+    local channelIndex
 
+    for i = 1, #chatMethods do
+        if (self.db.global.gamble.chatMethod == chatMethods[i]) then
+            channelIndex = i
+        end
+    end
+
+    if (channelIndex ~= nil) then
+        if (direction == "next") then
+            if (channelIndex == #chatMethods) then
+                self.db.global.gamble.chatMethod = chatMethods[1]
+            else
+                self.db.global.gamble.chatMethod = chatMethods[channelIndex + 1]
+            end
+        end
+    else
+        self.db.global.gamble.chatMethod = chatMethods[1]
+    end
+end
 
