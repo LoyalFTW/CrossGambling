@@ -1,0 +1,14 @@
+## Interface: 90005
+## Title:|cffff7d0aCrossGambling
+## Author: Azro
+## 9.0.5 Maintainer: Fire @ Mal'Ganis
+## Version: v1
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## Notes: A fun way to lose gold. Or win it.
+## SavedVariables: CrossGambling
+libs.xml
+
+CrossGambling.lua
+core/ui.lua
+
