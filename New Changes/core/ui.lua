@@ -69,8 +69,16 @@ local EnableButton = function(button)
 	button:EnableMouse(true)
 	button.Label:SetTextColor(1, 1, 1)
 end
-
-local GUI = CreateFrame("Frame", "CrossGambling", UIParent, BackdropTemplateMixin and "BackdropTemplate")
+local GUI
+function CrossGambling:toggleUi()
+    if (GUI:IsVisible()) then
+        GUI:Hide()
+    else
+        GUI:Show()
+    end
+end
+function CrossGambling:drawUi()
+GUI = CreateFrame("Frame", "CrossGambling", UIParent, BackdropTemplateMixin and "BackdropTemplate")
 GUI:SetSize(227, 141) 
 GUI:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 SetTemplate(GUI)
@@ -80,14 +88,8 @@ GUI:SetUserPlaced(true)
 GUI:RegisterForDrag("LeftButton")
 GUI:SetScript("OnDragStart", GUI.StartMoving)
 GUI:SetScript("OnDragStop", GUI.StopMovingOrSizing)
-GUI:Hide()
-function CrossGambling:toggleUi()
-    if (GUI:IsVisible()) then
-        GUI:Hide()
-    else
-        GUI:Show()
-    end
-end
+GUI:Show()
+
 
 local Top = CreateFrame("Frame", nil, GUI, BackdropTemplateMixin and "BackdropTemplate")
 Top:SetSize(GUI:GetSize(), 21)
@@ -128,14 +130,14 @@ CGCHAT:SetPoint("TOPLEFT", Top, "BOTTOMLEFT", 5, -2)
 SetTemplateDark(CGCHAT)
 CGCHAT:SetScript("OnEnter", ButtonOnEnter)
 CGCHAT:HookScript("OnEnter", function(self)
-	GameTooltip:SetText(self.db.global.game.chatChannel)
+	GameTooltip:SetText(self.db.global.gamble.chatMethod)
     GameTooltip:AddLine("Change Game Mode", 1, 1, 1, true)
     GameTooltip:Show()
 end)
 CGCHAT:SetScript("OnLeave", ButtonOnLeave)
 CGCHAT:SetScript("OnMouseUp", function()
-self:changeChannel("next")
-CrossGambling_CHAT_Button:SetText(self.db.global.game.chatChannel)
+self:chatMethod("next")
+CrossGambling_CHAT_Button:SetText(self.db.global.gamble.chatMethod)
 end)
 
 
@@ -871,6 +873,9 @@ local AddPlayer = function(name)
 	SortPlayers()
 	
 end
+
+end
+
 
 local Events = {}
 local EventFrame = CreateFrame("Frame")
