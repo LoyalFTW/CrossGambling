@@ -11,4 +11,4 @@ libs.xml
 
 CrossGambling.lua
 core/ui.lua
-
+core/stats.lua
