@@ -1,4 +1,4 @@
-## Interface: 11307
+## Interface: 90100
 ## Title:|cffff7d0aCrossGambling
 ## Author: Azro
 ## 1.13 Maintainer: Fire @ Mal'Ganis
@@ -11,6 +11,7 @@ Libs.xml
 
 CrossGambling.lua
 core/GUI.lua
+core/ClassicGUI.lua
 core/Game.lua
 core/Stats.lua
 core/Events.lua

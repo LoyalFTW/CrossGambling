@@ -18,6 +18,11 @@ local chatMethods = {
     "GUILD"
 }
 
+local uiThemes = {
+    "Classic",
+	"Slick"
+}
+
 local options = {
     name = "CrossGambling",
     handler = CrossGambling,
@@ -35,6 +40,12 @@ local options = {
             type = "execute",
             func = "HideGUI"
 		},
+        minimap = {
+            name = "Minimap",
+            desc = "Show/Hide Minimap Icon",
+            type = "execute",
+            func = "minimap"
+		}, 
         allstats = {
             name = "All Stats",
             desc = "Shows all Stats(Out of Order in Guild)",
@@ -104,7 +115,6 @@ local options = {
     }
 }
 
-
 -- Initialization --
 function CrossGambling:OnInitialize()
     -- Defaults for the DB
@@ -115,9 +125,13 @@ function CrossGambling:OnInitialize()
         },
 		    wager = 1000,
 			houseCut = 10,
+			themechoice = 1,
+			theme = uiThemes[2],
 			stats = {},
 			housestats = 0,
 			joinstats = {},
+			scale = 1,
+			scalevalue = 1,
 			bans = {},
 		},
 	}
@@ -128,13 +142,13 @@ function CrossGambling:OnInitialize()
 				state = gameStates[1],
 				chatframeOption = true,
 				house = false,
-				-- Quick Reminder, isGCHost, should be self.game.host for the other spots. 
 				host = false, 
 				players = {},
 				PlayerName = UnitName("player"),
 				PlayerClass = select(2, UnitClass("player")),
 				result = nil,
 			}
+			CGEvents = {}
     self.db = LibStub("AceDB-3.0"):New("CrossGambling", defaults, true)
 	if(CrossGambling["stats"]) then CrossGambling["stats"] = self.db.global.stats end
     LibStub("AceConfig-3.0"):RegisterOptionsTable("CrossGambling", options, {"CrossGambling", "cg"})
@@ -145,7 +159,11 @@ function CrossGambling:OnInitialize()
         type = "data source",
         text = "CrossGambling",
         icon = "Interface\\AddOns\\CrossGambling\\media\\icon",
-        OnClick = function() self:toggleUi() end,
+        OnClick = function() 
+		if (self.db.global.theme == uiThemes[1]) then
+			self:toggleUi2()
+        elseif (self.db.global.theme == uiThemes[2]) then
+			self:toggleUi() end end,
         OnTooltipShow = function(tooltip)
 		    tooltip:AddLine("CrossGambling", 1, 1, 1)
             tooltip:AddLine(" ", 1, 1, 1)
@@ -154,13 +172,42 @@ function CrossGambling:OnInitialize()
 
 		end,
     })
-	DEFAULT_CHAT_FRAME:AddMessage("|cffffff00<Cross Gambling for Warcraft 9.0.5 and Classic!> loaded /cg to use");
-	CGEvents = {}
+	DEFAULT_CHAT_FRAME:AddMessage("|cffffff00<Cross Gambling> loaded /cg to use");
     minimapIcon:Register("CrossGamblingIcon", minimapLDB, self.db.global.minimap)
-	self:ConstructUI()
+	if (self.db.global.theme == uiThemes[2]) then
+		self:ConstructUI()
+	elseif (self.db.global.theme == uiThemes[1]) then
+		self:ConstructUI2()
+	end
+	function CrossGambling:minimap(info)
+		if self.db.global.minimap.hide == false then 
+			minimapIcon:Hide("CrossGamblingIcon")
+			self.db.global.minimap.hide = true
+		elseif self.db.global.minimap.hide == true then
+			minimapIcon:Show("CrossGamblingIcon")
+			self.db.global.minimap.hide = false
+		end
+	end
+    
 	self:drawEvents()
 end
 
+
+function CrossGambling:ShowGUI(info)
+	if (self.db.global.theme == uiThemes[1]) then
+		CrossGambling:ShowClassic(info)
+    elseif (self.db.global.theme == uiThemes[2]) then
+		CrossGambling:ShowSlick(info)
+	end
+end
+
+function CrossGambling:HideGUI(info)
+	if (self.db.global.theme == uiThemes[1]) then
+		CrossGambling:HideClassic(info)
+    elseif (self.db.global.theme == uiThemes[2]) then
+		CrossGambling:HideSlick(info)
+	end
+end
 
 function CrossGambling:SendEvent(event, arg1)
 	-- Sends the game to proper chat channels for clients. 
@@ -315,7 +362,7 @@ function CrossGambling:CGRolls()
         local playersRoll = self:CheckRolls(self.game.players)
 
         for i = 1, #playersRoll do
-			if(self.game.chatframeOption == false and self.game.host == true) then
+			if(self.game.chatframeOption == false) then
 				local RollNotification = playersRoll[i] .. " still needs to roll!"
 				self:SendEvent(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
 			else
@@ -445,13 +492,14 @@ end
 
 function CrossGambling:CheckRolls(playerName)
     -- Shows who hasn't rolled.
-   local playersRoll = {}
-   for i = 1, #self.game.players do
-		if (self.game.players[i].Name == playerName and not self.game.players[i].roll) then
-			self.game.players[i].roll = nil
-			tinsert(playersRoll, self.game.players[i].name)
-		end
-	end
+	    local playersRoll = {}
+
+    for i = 1, #self.game.players do
+        if (self.game.players[i].roll == nil) then
+            tinsert(playersRoll, self.game.players[i].name)
+        end
+    end
+
     return playersRoll
 end
 
