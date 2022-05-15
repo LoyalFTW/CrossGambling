@@ -1,0 +1,32 @@
+name: Package addon
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+      - '!**-beta**'
+      - '!**-alpha**'
+      - '!**-rc*'
+    paths-ignore:
+      - '.github/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout addon
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Package
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -S
+        env:
+#          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}

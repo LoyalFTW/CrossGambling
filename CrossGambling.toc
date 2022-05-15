@@ -1,4 +1,7 @@
-## Interface: 90100
+## Interface: 90200
+## Interface-BCC: 20503
+## Interface-Classic: 11402
+
 ## Title:|cffff7d0aCrossGambling
 ## Author: Azro
 ## 1.13 Maintainer: Fire @ Mal'Ganis
@@ -7,6 +10,9 @@
 ## LoadOnDemand: 0
 ## Notes: A fun way to lose gold. Or win it.
 ## SavedVariables: CrossGambling
+
+## X-Curse-Project-ID: 86458
+
 Libs.xml
 
 CrossGambling.lua
