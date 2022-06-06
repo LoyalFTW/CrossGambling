@@ -32,17 +32,15 @@ jobs:
         with:
           fetch-depth: 0  # gets git history for changelogs
 
-      - name: Package and release for Retail
+      - name: Package and release
         uses: BigWigsMods/packager@v2
-        with:
-          args: -g 9.2.5 -w 0
 
       - name: Package and release for Burning Crusade Classic
         uses: BigWigsMods/packager@v2
         with:
-          args: -g 2.5.0-bcc -w 0
+          args: -g bcc -w 0
           
       - name: Package and release for Classic
         uses: BigWigsMods/packager@v2
         with:
-          args: -g 1.14.0-classic -w 0
+          args: -g classic -w 0
