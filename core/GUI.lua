@@ -16,12 +16,18 @@ local BackdropBorder = {
 }
 
 local SetTemplate = function(self)
+	if not self.SetBackdrop then
+		Mixin(self, BackdropTemplateMixin)
+	end
 	self:SetBackdrop(Backdrop)
 	self:SetBackdropBorderColor(0, 0, 0)
 	self:SetBackdropColor(0.27, 0.27, 0.27)
 end
 
 local SetTemplateDark = function(self)
+	if not self.SetBackdrop then
+		Mixin(self, BackdropTemplateMixin)
+	end
 	self:SetBackdrop(Backdrop)
 	self:SetBackdropBorderColor(0, 0, 0)
 	self:SetBackdropColor(0.17, 0.17, 0.17)
