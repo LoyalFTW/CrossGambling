@@ -1,4 +1,4 @@
-name: Package addon
+name: Package and release
 
 on:
   push:
@@ -14,19 +14,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+
+  release:
+
     runs-on: ubuntu-latest
 
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
+      WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }} 
+
     steps:
-      - name: Checkout addon
+
+      - name: Clone project
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # gets git history for changelogs
 
-      - name: Package
+      - name: Package and release
+        uses: BigWigsMods/packager@v2
+
+      # another example where we supply additional arguments, this example is specifically to release
+      # for the Burning Crusade Classic version of the game and doesn't upload to WoWInterface
+      - name: Package and release for Burning Crusade Classic
         uses: BigWigsMods/packager@v2
         with:
-          args: -S
-        env:
-#          CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+          args: -g bcc -w 0
