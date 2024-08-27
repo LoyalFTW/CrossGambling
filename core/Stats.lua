@@ -1,5 +1,5 @@
 function CrossGambling:Copy_Table(src, dest)
-    --Adding the old stats to the new table. 
+	--Adding the old stats to the new table. 
 	for index, value in pairs(CrossGambling["stats"]) do
 		if type(value) == "table" then
 			dest[index] = {}
@@ -11,85 +11,109 @@ function CrossGambling:Copy_Table(src, dest)
 end
 
 function CrossGambling:reportStats(full)
-    -- Post the stats to the chat channel
-    SendChatMessage("-- CrossGambling All Time Stats --", self.game.chatMethod)
-		SendChatMessage(string.format("The house has taken %s total.", (self.db.global.housestats)), self.game.chatMethod);
-	local sortlistname = {};
-	local sortlistamount = {};
-	local n = 0;
-	local i, j, k;
+	-- Post the stats to the chat channel
+	SendChatMessage("-- CrossGambling All Time Stats --", self.game.chatMethod)
+	SendChatMessage(string.format("The house has taken %s total.", (self.db.global.housestats)), self.game.chatMethod)
+	
+	local sortlistname = {}
+	local sortlistamount = {}
+	local n = 0
+	
 	-- Allows for the old stats to be removed and updated to the new table. 
 	if CrossGambling["stats"] then
-	self:Copy_Table(dt, self.db.global.stats)
-	CrossGambling["stats"] = nil
+		self:Copy_Table(dt, self.db.global.stats)
+		CrossGambling["stats"] = nil
 	end
+
 	for i, j in pairs(self.db.global.stats) do
-		local name = i;
-		if(self.db.global.joinstats [strlower(i)] ~= nil) then
-			name = self.db.global.joinstats [strlower(i)]:gsub("^%l", string.upper);
+		local name = i
+		if self.db.global.joinstats[strlower(i)] ~= nil then
+			name = self.db.global.joinstats[strlower(i)]:gsub("^%l", string.upper)
 		end
-		for k=0,n do
-			if(k == n) then
-				sortlistname[n] = name;
-				sortlistamount[n] = j;
-				n = n + 1;
-				break;
-			elseif(strlower(name) == strlower(sortlistname[k])) then
-				sortlistamount[k] = (sortlistamount[k] or 0) + j;
-				break;
+
+		-- Find the appropriate position to insert or update
+		local found = false
+		for k = 1, n do
+			if strlower(name) == strlower(sortlistname[k]) then
+				sortlistamount[k] = (sortlistamount[k] or 0) + j
+				found = true
+				break
 			end
+		end
+		
+		if not found then
+			n = n + 1
+			sortlistname[n] = name
+			sortlistamount[n] = j
 		end
 	end
 
-	for i = 0, n-1 do
-		for j = i+1, n-1 do
-			if(sortlistamount[j] > sortlistamount[i]) then
-				sortlistamount[i], sortlistamount[j] = sortlistamount[j], sortlistamount[i];
-				sortlistname[i], sortlistname[j] = sortlistname[j], sortlistname[i];
-			end
-		end
+	-- Define a comparator function for sorting in descending order
+	local function compare(i, j)
+		return sortlistamount[i] > sortlistamount[j]
 	end
+
+	-- Create an index table to keep track of original indices
+	local indices = {}
+	for i = 1, n do
+		indices[i] = i
+	end
+
+	-- Sort indices based on the comparator function
+	table.sort(indices, compare)
+
+	-- Rearrange sortlistamount and sortlistname based on sorted indices
+	local sortedAmounts = {}
+	local sortedNames = {}
+	for i, idx in ipairs(indices) do
+		sortedAmounts[i] = sortlistamount[idx]
+		sortedNames[i] = sortlistname[idx]
+	end
+
+	-- Update the original lists
+	sortlistamount = sortedAmounts
+	sortlistname = sortedNames
 	
 	if full then
-		for k = 0,  #sortlistamount do
-			local sortsign = "won";
-			if(sortlistamount[k] < 0) then sortsign = "lost"; end
-			SendChatMessage(string.format("%d.  %s %s %d total", k+1, sortlistname[k], sortsign, math.abs(sortlistamount[k])), self.game.chatMethod);
+		for i = 1, n do
+			local sortsign = "won"
+			if sortlistamount[i] < 0 then sortsign = "lost" end
+			SendChatMessage(string.format("%d. %s %s %d total", i, sortlistname[i], sortsign, math.abs(sortlistamount[i])), self.game.chatMethod)
 		end
-
 		return
 	end
 
-	local x1 = 3-1;
-	local x2 = n-3;
-	if(x1 >= n) then x1 = n-1; end
-	if(x2 <= x1) then x2 = x1+1; end
-	SendChatMessage("-- Top 3 Winners --", self.game.chatMethod)
-	for i = 0, x1 do
-		local sortsign = "won";
-		if(sortlistamount[i] < 0) then sortsign = "lost"; end
-		SendChatMessage(string.format("%d.  %s %s %d total", i+1, sortlistname[i], sortsign, math.abs(sortlistamount[i])), self.game.chatMethod);
+	-- Top 3 Winners
+	local x1 = math.min(3, n)
+	if x1 > 0 then
+		SendChatMessage("-- Top 3 Winners --", self.game.chatMethod)
+		for i = 1, x1 do
+			local sortsign = "won"
+			if sortlistamount[i] < 0 then sortsign = "lost" end
+			SendChatMessage(string.format("%d. %s %s %d total", i, sortlistname[i], sortsign, math.abs(sortlistamount[i])), self.game.chatMethod)
+		end
 	end
-	
-	
-    
-	SendChatMessage("-- Top 3 Losers --", self.game.chatMethod)
-	for i = x2, n-1 do
-		local sortsign = "won";
-		if(sortlistamount[i] < 0) then sortsign = "lost"; end
-		SendChatMessage(string.format("%d.  %s %s %d total", i+1, sortlistname[i], sortsign, math.abs(sortlistamount[i])), self.game.chatMethod);
-		
+
+	-- Top 3 Losers
+	local x2 = math.min(3, n)
+	if x2 > 0 then
+		SendChatMessage("-- Top 3 Losers --", self.game.chatMethod)
+		for i = 1, x2 do
+			local sortsign = "won"
+			if sortlistamount[n - i + 1] < 0 then sortsign = "lost" end
+			SendChatMessage(string.format("%d. %s %s %d total", i, sortlistname[n - i + 1], sortsign, math.abs(sortlistamount[n - i + 1])), self.game.chatMethod)
+		end
 	end
-	
 end
 
-function CrossGambling:updatePlayerStat(playerName, amount)
-    -- Update a given player's stats by adding the given amount.
-    if (self.db.global.stats[playerName] == nil) then
-        self.db.global.stats[playerName] = 0
-    end
 
-    self.db.global.stats[playerName] = self.db.global.stats[playerName] + amount
+function CrossGambling:updatePlayerStat(playerName, amount)
+	-- Update a given player's stats by adding the given amount.
+	if (self.db.global.stats[playerName] == nil) then
+		self.db.global.stats[playerName] = 0
+	end
+
+	self.db.global.stats[playerName] = self.db.global.stats[playerName] + amount
 end
 
 function CrossGambling:joinStats(info, args)
@@ -118,39 +142,39 @@ end
 
 
 function CrossGambling:listAlts(info, mainname, altname)
-    -- Alt List
-    for mainname, altname in pairs(self.db.global.joinstats) do
-        local nameString = altname
-        self:Print("[main] " .. mainname .. " is merged with [alt] " .. nameString)
-    end
+	-- Alt List
+	for mainname, altname in pairs(self.db.global.joinstats) do
+		local nameString = altname
+		self:Print("[main] " .. mainname .. " is merged with [alt] " .. nameString)
+	end
 end
 
 function CrossGambling:updateStat(info, args)
-    local player, amount = strsplit(" ", args)
-    amount = tonumber(amount)
+	local player, amount = strsplit(" ", args)
+	amount = tonumber(amount)
 
-    if (player ~= nil and amount ~= nil) then
-        local oldAmount = self.db.global.stats[player]
+	if (player ~= nil and amount ~= nil) then
+		local oldAmount = self.db.global.stats[player]
 
-        if (oldAmount == nil) then
-            oldAmount = 0
-        end
+		if (oldAmount == nil) then
+			oldAmount = 0
+		end
 
-        self:updatePlayerStat(player, amount)
-        self:Print("Successfully updated stats for " .. player .. " (" .. oldAmount .. " -> " .. self.db.global.stats[player] .. ")")
-    else
-        self:Print("Could not add given amount (" .. tostring(amount) .. ") to " .. tostring(player) .. "'s stats due to invalid input.")
-    end
+		self:updatePlayerStat(player, amount)
+		self:Print("Successfully updated stats for " .. player .. " (" .. oldAmount .. " -> " .. self.db.global.stats[player] .. ")")
+	else
+		self:Print("Could not add given amount (" .. tostring(amount) .. ") to " .. tostring(player) .. "'s stats due to invalid input.")
+	end
 end
 
 function CrossGambling:deleteStat(info, player)
-    if (self.db.global.stats[player] ~= nil) then
-        self.db.global.stats[player] = nil
-    end
-    self:Print("Successfully removed stats for " .. player .. ".")
+	if (self.db.global.stats[player] ~= nil) then
+		self.db.global.stats[player] = nil
+	end
+	self:Print("Successfully removed stats for " .. player .. ".")
 end
 
 function CrossGambling:resetStats(info)
    self.db.global.stats = { }
-   self.db.global.joinstats  = { }
+   self.db.global.joinstats	 = { }
 end
