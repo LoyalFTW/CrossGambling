@@ -637,10 +637,7 @@ end
     self.game.state = "START"
     self.game.players = {}
     self.game.result = nil
-    self.db.global.stats = {}
-	self.db.global.joinstats = {}
-	self.db.global.housestats = 0
-	DEFAULT_CHAT_FRAME:AddMessage("ALL STATS RESET!")
+    self:resetStats(info)
 end)
 
 -- Create a button to toggle the realm filter

@@ -307,6 +307,7 @@ function CrossGambling:handleSystemMessage(_, text)
             return
         end
 
+        -- Check if it's the player's turn
         if playerName ~= currentPlayer.name then
             -- Show the current player's name correctly when it's not their turn
             SendChatMessage(format("%s, it's not your turn! It's %s's turn.", playerName, currentPlayer.name), self.game.chatMethod)
@@ -316,48 +317,46 @@ function CrossGambling:handleSystemMessage(_, text)
         -- Use the existing function to record the player's roll
         CGCall["PLAYER_ROLL"](playerName, actualRoll)
 
+        -- Handle deathroll logic when a player rolls a 1
         if actualRoll == 1 then
             local loser = currentPlayer
             local winner = self.game.players[3 - self.currentPlayerIndex]  -- Switch player index
-            local amountWon = self.db.global.wager  -- Assuming the entire wager is won
-            SendChatMessage(format("%s rolls a 1 and loses! %s wins the game and takes %d!", loser.name, winner.name, amountWon), self.game.chatMethod)
+            SendChatMessage(format("%s rolls a 1 and loses! %s wins the game!", loser.name, winner.name), self.game.chatMethod)
 
-            -- Update player stats
-            self:updatePlayerStat(loser.name, -amountWon, true) -- Record loss for loser in deathroll stats
-            self:updatePlayerStat(winner.name, amountWon, true) -- Record win for winner in deathroll stats
+            -- Update Deathroll stats (no wager, only the player stats are updated)
+            self:updatePlayerStat(loser.name, -self.db.global.wager, true) -- Loser loses the wager
+            self:updatePlayerStat(winner.name, self.db.global.wager, true) -- Winner gains the wager
+
+            -- Reset the game state for a new round if needed
+            self:ResetDeathroll()
 
             return
         else
+            -- Continue the game if neither player has rolled a 1
             self.currentRoll = actualRoll
             self.currentPlayerIndex = 3 - self.currentPlayerIndex
             self:PromptNextRoll()
         end
     else
-        -- Regular game handling for other modes
-        if minRoll ~= 1 or maxRoll ~= self.db.global.wager then
-            return
+        -- Regular game handling for other modes (if needed)
+        if minRoll == 1 and maxRoll == self.db.global.wager then
+            for i = 1, #self.game.players do
+                if self.game.players[i].name == playerName and self.game.players[i].roll == nil then
+                    self.game.players[i].roll = actualRoll
+                    self:SendMsg("PLAYER_ROLL", playerName .. ":" .. tostring(actualRoll))
+                end
+            end
         end
 
-        local player = self:getPlayerByName(playerName)
-        if not player then
-            return
-        end
-
-        if player.roll then
-            return
-        end
-
-        player.roll = actualRoll
-        self:SendMsg("PLAYER_ROLL", playerName .. ":" .. tostring(actualRoll))
-
-        -- Update regular game stats
-        self:updatePlayerStat(playerName, actualRoll, false) -- Regular roll update
-
-        if not self:hasPendingRolls() then
+        -- When all rolls are completed, determine the results
+        if #self:CheckRolls() == 0 then
             self:CGResults()
         end
     end
 end
+
+
+
 
 function CrossGambling:banPlayer(info, playerName)
     if not playerName or playerName == "" then
