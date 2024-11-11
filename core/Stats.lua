@@ -13,16 +13,16 @@ function CrossGambling:joinStats(info, args)
         self.db.global.deathrollStats[mainname] = self.db.global.deathrollStats[mainname] or 0
 
         -- Debug: Print current stats before merging
-        print("Before merge - Main stats:", self.db.global.stats[mainname], "Alt stats:", self.db.global.stats[altname])
-        print("Before merge - Main deathrollStats:", self.db.global.deathrollStats[mainname], "Alt deathrollStats:", self.db.global.deathrollStats[altname])
+       -- print("Before merge - Main stats:", self.db.global.stats[mainname], "Alt stats:", self.db.global.stats[altname])
+       -- print("Before merge - Main deathrollStats:", self.db.global.deathrollStats[mainname], "Alt deathrollStats:", self.db.global.deathrollStats[altname])
 
         -- Merge alt's stats into the main's stats
         self.db.global.stats[mainname] = self.db.global.stats[mainname] + self.db.global.altStats[altname].stats
         self.db.global.deathrollStats[mainname] = self.db.global.deathrollStats[mainname] + self.db.global.altStats[altname].deathrollStats
 
         -- Debug: Print current stats after merging but before clearing alt stats
-        print("After merge - Main stats:", self.db.global.stats[mainname], "Alt stats:", self.db.global.stats[altname])
-        print("After merge - Main deathrollStats:", self.db.global.deathrollStats[mainname], "Alt deathrollStats:", self.db.global.deathrollStats[altname])
+        --print("After merge - Main stats:", self.db.global.stats[mainname], "Alt stats:", self.db.global.stats[altname])
+       -- print("After merge - Main deathrollStats:", self.db.global.deathrollStats[mainname], "Alt deathrollStats:", self.db.global.deathrollStats[altname])
 
         -- Move clearing of alt stats to the end, to avoid potential interference
         self.db.global.joinstats[altname] = mainname
