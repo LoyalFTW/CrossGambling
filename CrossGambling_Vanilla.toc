@@ -1,12 +1,25 @@
-## Interface: 11506
-## Title:|cffff7d0aCrossGambling
+## Interface: 11507
+## Title:Cross|cffff7d0aGambling
 ## Author: Jay
 ## 1.3 Maintainer: Jay @ Tichondrius
 ## Version: v4
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
-## Notes: A fun way to lose gold. Or win it.
+## Notes: Win big or go broke—test your luck!
 ## SavedVariables: CrossGambling
+## IconTexture: Interface\AddOns\CrossGambling\Media\Texture\CGIcon
+## Category-enUS: Gambling
+## Category-deDE: Glücksspiel
+## Category-esES: Juegos de azar
+## Category-esMX: Juegos de azar
+## Category-frFR: Jeux de hasard
+## Category-itIT: Gioco d'azzardo
+## Category-koKR: 도박
+## Category-ptBR: Jogos de azar
+## Category-ruRU: Азартные игры
+## Category-zhCN: 赌博
+## Category-zhTW: 賭博
+
 Libs.xml
 
 CrossGambling.lua

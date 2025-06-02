@@ -9,7 +9,6 @@ end
 end
 
 function CrossGambling:ShowClassic(info)
-    -- Show Inerface
 	if (CrossGamblingUI:IsVisible() ~= true) then
         CrossGamblingUI:Show()
 		LoadColor()
@@ -19,14 +18,12 @@ function CrossGambling:ShowClassic(info)
 end
 
 function CrossGambling:HideClassic(info)
-    -- Hide Interface
     if (CrossGamblingUI:IsVisible()) then
         CrossGamblingUI:Hide()
     end
 end 
 
 function CrossGambling:DrawMainEvents2()
---Create Main UI
 CrossGamblingUI = CreateFrame("Frame", "CrossGamblingClassic", UIParent, "InsetFrameTemplate")
 CrossGamblingUI:SetSize(320, 195) 
 CrossGamblingUI:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
@@ -41,21 +38,20 @@ CrossGamblingUI:SetClampedToScreen(true)
 self.db.global.scale = self.db.global.scale
 CrossGamblingUI:SetScale(self.db.global.scale)
 CrossGamblingUI:Hide()
--- Header to hold options
+
 local MainHeader = CreateFrame("Frame", nil, CrossGamblingUI, "InsetFrameTemplate")
 MainHeader:SetSize(CrossGamblingUI:GetSize(), 21)
 MainHeader:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
 
--- Main Button
 local MainMenu = CreateFrame("Frame", nil, CrossGamblingUI, "InsetFrameTemplate")
 MainMenu:SetSize(CrossGamblingUI:GetSize(), 21)
 MainMenu:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
---Options Button
+
 local OptionsButton = CreateFrame("Frame", nil, CrossGamblingUI, "InsetFrameTemplate")
 OptionsButton:SetSize(CrossGamblingUI:GetSize(), 21)
 OptionsButton:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
 OptionsButton:Hide()
--- Main Menu
+
 local CGMainMenu = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTemplate")
 CGMainMenu:SetSize(100, 21)
 CGMainMenu:SetPoint("TOPLEFT", MainHeader, "TOPLEFT", 30, 0)
@@ -69,13 +65,13 @@ CGMainMenu:SetScript("OnMouseUp", function(self)
 	end
 	
 end)
--- Footer
+
 local MainFooter = CreateFrame("Button", nil, CrossGamblingUI, "InsetFrameTemplate")
 MainFooter:SetSize(CrossGamblingUI:GetSize(), 15)
 MainFooter:SetPoint("BOTTOMLEFT", CrossGamblingUI, 0, 0)
 MainFooter:SetText("CrossGambling - Jay@Tichondrius")
 MainFooter:SetNormalFontObject("GameFontNormal")
--- Options Menu
+
 local CGOptions = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTemplate")
 CGOptions:SetSize(100, 21)
 CGOptions:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", -25, 0)
@@ -130,7 +126,7 @@ CGAcceptOnes:SetText("New Game")
 CGAcceptOnes:SetNormalFontObject("GameFontNormal")
 
 CGAcceptOnes:SetScript("OnClick", function()
-    CGAcceptOnes:Disable()  -- Disable the button during processing
+    CGAcceptOnes:Disable()  
 
     if CGAcceptOnes:GetText() == "Host Game" then
         CGAcceptOnes:SetText("New Game")
@@ -139,22 +135,15 @@ CGAcceptOnes:SetScript("OnClick", function()
         self:SendMsg("R_NewGame")
         self.game.host = true
         self:SendMsg("New_Game")
-
-        -- Sets same roll for everyone.
         self:SendMsg("SET_WAGER", CGEditBox:GetText())
-
-        -- Switches everyone to the same gamemode.
         self:SendMsg("GAME_MODE", CGGameMode:GetText())
 
-        -- Switches everyone to the proper chat method.
         self:SendMsg("Chat_Method", GCchatMethod:GetText())
-
         self:SendMsg("SET_HOUSE", CGGuildPercent:GetText())
 
-        -- Starts a new game but only if they're the host.
     end
 
-    CGAcceptOnes:Enable()   -- Enable the button after processing
+    CGAcceptOnes:Enable()  
 end)
 
 local CGLastCall = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
@@ -210,8 +199,6 @@ CGCloseGame:SetScript("OnClick", function()
   CrossGamblingUI:Hide()
 end)
 
--- Options Menu Buttons
-
 -- Left Options
 local CGFullStats = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
 CGFullStats:SetSize(150, 28)
@@ -222,7 +209,6 @@ CGFullStats:SetScript("OnClick", function(full)
   self:reportStats(full)
 end)
 
--- Left Options
 local CGDeathStats = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
 CGDeathStats:SetSize(150, 28)
 CGDeathStats:SetPoint("TOPLEFT", CGFullStats, "BOTTOMLEFT", -0, -3)
@@ -267,14 +253,12 @@ end
 	self:resetStats(info)
 end)
 
--- Create a button to toggle the realm filter
 local CGRealmFilter = CreateFrame("Button", "CGRealmFilter", OptionsButton, "UIPanelButtonTemplate")
 CGRealmFilter:SetPoint("TOPLEFT", CGReset, "BOTTOMLEFT", -0, -3)
 CGRealmFilter:SetSize(150, 28)
 CGRealmFilter:SetText("Realm Filter(OFF)")
 CGRealmFilter:Show()
 
--- Function to toggle the realm filter
 local function ToggleRealmFilter()
   if(self.game.realmFilter == false) then
     CGRealmFilter:SetText("Realm Filter(ON)")
@@ -285,11 +269,8 @@ local function ToggleRealmFilter()
   end
 end
 
--- Set the button's OnClick behavior to toggle the realm filter
 CGRealmFilter:SetScript("OnClick", ToggleRealmFilter)
 
-
--- Right Options 
 local CGFameShame = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
 CGFameShame:SetSize(150, 28)
 CGFameShame:SetPoint("TOPRIGHT", MainHeader, "BOTTOMRIGHT", -4, -3)
@@ -308,9 +289,221 @@ CGSession:SetScript("OnClick", function()
   self:reportSessionStats()
 end)
 
+local auditFrame = CreateFrame("Frame", "CrossGamblingAuditLogFrame", UIParent, "BasicFrameTemplateWithInset")
+auditFrame:SetSize(CrossGamblingUI:GetSize())
+auditFrame:SetPoint("TOP", CrossGamblingUI, "BOTTOM", 0, 30)
+auditFrame:SetResizeBounds(300, 200, 800, 800)
+auditFrame:SetMovable(true)
+auditFrame:SetResizable(true)
+auditFrame:EnableMouse(true)
+auditFrame:RegisterForDrag("LeftButton")
+auditFrame:SetScript("OnDragStart", auditFrame.StartMoving)
+auditFrame:SetScript("OnDragStop", auditFrame.StopMovingOrSizing)
+auditFrame:Hide()
+
+auditFrame.TitleText:SetText("History Log")
+
+local resizeButton = CreateFrame("Button", nil, auditFrame)
+resizeButton:SetSize(16, 16)
+resizeButton:SetPoint("BOTTOMRIGHT", -4, 4)
+resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+resizeButton:SetScript("OnMouseDown", function(_, btn)
+    if btn == "LeftButton" then auditFrame:StartSizing("BOTTOMRIGHT") end
+end)
+resizeButton:SetScript("OnMouseUp", function(_, btn)
+    if btn == "LeftButton" then
+        auditFrame:StopMovingOrSizing()
+        auditFrame:UpdateLayout()
+    end
+end)
+
+local searchBox = CreateFrame("EditBox", nil, auditFrame, "InputBoxTemplate")
+searchBox:SetSize(200, 20)
+searchBox:SetPoint("TOPLEFT", 15, -35)
+searchBox:SetAutoFocus(false)
+
+local purgeButton = CreateFrame("Button", nil, auditFrame, "UIPanelButtonTemplate")
+purgeButton:SetSize(70, 24)
+purgeButton:SetPoint("TOPRIGHT", -10, -33)
+purgeButton:SetText("Purge Now")
+purgeButton:SetScript("OnClick", function()
+    CrossGambling.global.auditLog = {}
+    CrossGambling:UpdateAuditLogText(searchBox:GetText())
+end)
+
+local retentionDays = {5, 10, 30, "Never"}
+local retentionCheckboxes = {}
+
+local function OnRetentionChanged(self)
+    for _, cb in pairs(retentionCheckboxes) do cb:SetChecked(false) end
+    self:SetChecked(true)
+    CrossGambling.db.global.auditRetention = self.days
+end
+
+local lastCB
+for i, val in ipairs(retentionDays) do
+    local cb = CreateFrame("CheckButton", nil, auditFrame, "UICheckButtonTemplate")
+    cb:SetSize(20, 20)
+    cb:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", (i-1)*55, -10)
+    cb.Text:SetText(type(val) == "number" and val .. "d" or "Never")
+    cb.days = val
+    cb:SetScript("OnClick", OnRetentionChanged)
+    retentionCheckboxes[i] = cb
+    lastCB = cb
+end
+
+local scrollFrame = CreateFrame("ScrollFrame", nil, auditFrame, "UIPanelScrollFrameTemplate")
+scrollFrame:SetPoint("TOPLEFT", 15, -100)
+scrollFrame:SetPoint("BOTTOMRIGHT", -35, 15)
+
+local content = CreateFrame("Frame", nil, scrollFrame)
+scrollFrame:SetScrollChild(content)
+
+auditFrame.searchBox = searchBox
+auditFrame.scrollFrame = scrollFrame
+auditFrame.content = content
+
+function auditFrame:UpdateLayout()
+    local width, height = self:GetSize()
+    scrollFrame:SetWidth(width - 50)
+    content:SetWidth(scrollFrame:GetWidth())
+    CrossGambling:UpdateAuditLogText(searchBox:GetText())
+end
+auditFrame:SetScript("OnSizeChanged", auditFrame.UpdateLayout)
+
+searchBox:SetScript("OnTextChanged", function(self, userInput)
+    if userInput then
+        CrossGambling:UpdateAuditLogText(self:GetText())
+    end
+end)
+
+local purgeButton = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
+purgeButton:SetSize(150, 28)
+purgeButton:SetPoint("TOPRIGHT", CGSession, "BOTTOMRIGHT", -2, -35)
+purgeButton:SetText("History Log")
+purgeButton:SetNormalFontObject("GameFontNormal")
+purgeButton:SetScript("OnClick", function()
+    if auditFrame:IsShown() then
+        auditFrame:Hide()
+    else
+        CrossGambling:PurgeOldAuditEntries()
+        auditFrame:Show()
+        auditFrame:UpdateLayout()
+    end
+end)
+
+CrossGambling.auditFrame = auditFrame
+
+function CrossGambling:PurgeOldAuditEntries()
+    local retention = self.db.global.auditRetention
+    if not retention or retention == "Never" then return end
+    local cutoff = time() - (retention * 86400)
+    local newLog = {}
+    for _, entry in ipairs(self.global.auditLog or {}) do
+        if tonumber(entry.timestamp) > cutoff then
+            table.insert(newLog, entry)
+        end
+    end
+    self.global.auditLog = newLog
+end
+
+C_Timer.After(0.1, function()
+    for _, cb in pairs(retentionCheckboxes) do
+        if CrossGambling.db.global.auditRetention == cb.days then
+            cb:SetChecked(true)
+        end
+    end
+end)
+
+local function FormatTimestamp(ts)
+    local t = date("*t", ts)
+    return string.format("%04d-%02d-%02d %02d:%02d:%02d", t.year, t.month, t.day, t.hour, t.min, t.sec)
+end
+
+function CrossGambling:UpdateAuditLogText(filter)
+
+    if self.auditFrame.content then
+        self.auditFrame.content:Hide()
+        self.auditFrame.content:SetParent(nil)
+    end
+
+    local scrollFrame = self.auditFrame.scrollFrame
+
+    local content = CreateFrame("Frame", nil, scrollFrame)
+    content:SetPoint("TOPLEFT")
+    content:SetPoint("RIGHT")
+    scrollFrame:SetScrollChild(content)
+
+    self.auditFrame.content = content 
+
+    content:SetSize(1, 1)
+
+
+    local log = self.global.auditLog or {}
+    if #log == 0 then
+        local noEntry = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        noEntry:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
+        noEntry:SetText("No audit entries found.")
+        content:SetHeight(30)
+        self.auditFrame.scrollFrame:SetVerticalScroll(0) 
+        return
+    end
+
+    local yOffset, spacing = -10, 10
+    local maxWidth = 560
+
+    for _, entry in ipairs(log) do
+        if type(entry) == "table" then
+            local ts = FormatTimestamp(tonumber(entry.timestamp) or 0)
+            local textLine
+
+            if entry.action == "updateStat" then
+                textLine = string.format(
+                    "|cff999999[%s]|r\n|cffffd100•|r Stats updated for |cffffff00%s|r\n    Before: |cffffff00%d|r\n    Change: |cffff8800%+d|r    After: |cff00ff00%d|r",
+                    ts, entry.player or "?", entry.oldAmount or 0, entry.addedAmount or 0, entry.newAmount or 0)
+            elseif entry.action == "joinStats" then
+                textLine = string.format(
+                    "|cff999999[%s]|r\n|cffffd100•|r Joined alt |cffffff00%s|r to main |cffffff00%s|r\n    +%d stats, +%d deathroll",
+                    ts, entry.altname or "?", entry.mainname or "?", entry.statsAdded or 0, entry.deathrollStatsAdded or 0)
+            elseif entry.action == "unjoinStats" then
+                textLine = string.format(
+                    "|cff999999[%s]|r\n|cffffd100•|r Unjoined alt |cffffff00%s|r from main |cffffff00%s|r\n    -%d stats, -%d deathroll",
+                    ts, entry.altname or "?", entry.mainname or "?", entry.pointsRemoved or 0, entry.deathrollStatsRemoved or 0)
+            elseif entry.action == "debt" then
+                textLine = string.format(
+                    "|cff999999[%s]|r\n|cffffd100•|r |cffffff00%s|r owes |cffffff00%s|r %dg",
+                    ts, entry.loser or "?", entry.winner or "?", entry.amount or 0)
+            else
+                local extra = {}
+                for k, v in pairs(entry) do
+                    table.insert(extra, k .. "=" .. tostring(v))
+                end
+                textLine = string.format("|cff999999[%s]|r Unknown entry:\n%s", ts, table.concat(extra, ", "))
+            end
+
+            if not filter or filter == "" or textLine:lower():find(filter:lower(), 1, true) then
+                local fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                fs:SetPoint("TOPLEFT", 10, yOffset)
+                fs:SetWidth(maxWidth)
+                fs:SetJustifyH("LEFT")
+                fs:SetWordWrap(true)
+                fs:SetText(textLine)
+                yOffset = yOffset - fs:GetStringHeight() - spacing
+            end
+        end
+    end
+
+    local totalHeight = math.max(30, -yOffset + spacing)
+    content:SetHeight(totalHeight)
+    self.auditFrame.scrollFrame:SetVerticalScroll(0)
+end
+
+
 local CGTheme = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
 CGTheme:SetSize(150, 28)
-CGTheme:SetPoint("TOPRIGHT", CGSession, "BOTTOMRIGHT", -2, -35)
+CGTheme:SetPoint("TOPRIGHT", CGSession, "BOTTOMRIGHT", -2, -65)
 CGTheme:SetText("Slick Theme")
 CGTheme:SetNormalFontObject("GameFontNormal")
 CGTheme:SetScript("OnClick", function()
@@ -318,7 +511,6 @@ CGTheme:SetScript("OnClick", function()
 	  ReloadUI()
 end)
 
--- Right Side Menu
 local CGRightMenu = CreateFrame("Frame", "CGRightMenu", CrossGamblingUI, "InsetFrameTemplate")
 CGRightMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 0, 0)
 CGRightMenu:SetSize(220, 150)
@@ -353,7 +545,6 @@ CGRightMenu:SetScript("OnMouseUp", function(self, button)
     end
 end)
 
--- Create the text field frame within the right side menu frame
 CGRightMenu.TextField = CreateFrame("ScrollingMessageFrame", nil, CGRightMenu)
 CGRightMenu.TextField:SetPoint("CENTER", CGRightMenu, 2, -0)
 CGRightMenu.TextField:SetSize(CGRightMenu:GetWidth()-8, -140)
@@ -368,7 +559,6 @@ CGRightMenu.TextField:SetScript("OnMouseWheel", function(self, delta)
         self:ScrollDown()
     end
 end)
-
 
 local function OnChatSubmit(CGChatBox)
     local message = CGChatBox:GetText()
@@ -426,8 +616,7 @@ local valuescale = function(val,valStep)
 		 	self.db.global.scalevalue = val
     return floor(val/valStep)*valStep
   end
-  
-	--basic slider func
+
 	local CreateBasicSlider = function(parent, name, title, minVal, maxVal, valStep)
 	local slider = CreateFrame("Slider", name, CrossGamblingUI, "OptionsSliderTemplate")
 	slider:SetSize(CrossGamblingUI:GetSize(), 21)
@@ -470,7 +659,6 @@ local valuescale = function(val,valStep)
 		CrossGamblingUI:SetScale(self.db.global.scale)
 	end
 	
--- Left Side Menu
 local CGLeftMenu = CreateFrame("Frame", "CGLeftMenu", CrossGamblingUI, "InsetFrameTemplate")
 CGLeftMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPLEFT", -300, -20)
 CGLeftMenu:SetSize(300, 180)
@@ -529,14 +717,11 @@ CGMenuToggle:SetScript("OnMouseDown", function(self)
 end)
 
 function CrossGambling:RemovePlayer(name)
-    -- loop through the "CGPlayers" table
+
     for i, player in pairs(CGPlayers) do
         if player.name == name then
-            -- remove the player from the "CGPlayers" table
             table.remove(CGPlayers, i)
-            -- update the player list
             UpdatePlayerList()
-            -- player found and removed, exit the function
             return
         end
     end
@@ -544,39 +729,29 @@ end
 
 
 function CrossGambling:AddPlayer(playerName)
-    -- First, check if the player already exists in the "CGPlayers" table
     for i, player in pairs(CGPlayers) do
         if player.name == playerName then
-            -- player already exists, exit the function
             return
         end
     end
-    -- create a new table to store the player's information
     local newPlayer = {
         name = playerName,
         total = 0,
     }
-    -- insert the new player into the "CGPlayers" table
     table.insert(CGPlayers, newPlayer)
-
-    -- sort the "CGPlayers" table by name
     table.sort(CGPlayers, function(a, b)
         return a.name < b.name
     end)
     UpdatePlayerList()
 end
 
--- Create the main frame for the player list
 local playerListFrame = CreateFrame("Frame", "PlayerListFrame", CGLeftMenu)
 playerListFrame:SetSize(300, 150)
 playerListFrame:SetPoint("CENTER")
 
--- Create a scroll frame to hold the player list
 local scrollFrame = CreateFrame("ScrollFrame", "PlayerListScrollFrame", playerListFrame, "UIPanelScrollFrameTemplate")
 scrollFrame:SetSize(266, 170)
 scrollFrame:SetPoint("TOPLEFT", 10, 15)
-
--- Enable scrolling with the mouse wheel
 scrollFrame:EnableMouseWheel(true)
 scrollFrame:SetScript("OnMouseWheel", function(self, delta)
     local currentValue = scrollFrame:GetVerticalScroll()
@@ -588,19 +763,16 @@ scrollFrame:SetScript("OnMouseWheel", function(self, delta)
 end)
 
 local playerButtonsFrame = CreateFrame("Frame", "PlayerButtonsFrame", scrollFrame)
-playerButtonsFrame:SetSize(280, 1)  -- Set the height to 1 for dynamic sizing
+playerButtonsFrame:SetSize(280, 1) 
 scrollFrame:SetScrollChild(playerButtonsFrame)
 
--- create a new table to store the player buttons
 playerButtons = {}
 
 function UpdatePlayerList()
-    -- Sort CGPlayers table alphabetically by player name
     table.sort(CGPlayers, function(a, b)
         return a.name < b.name
     end)
 
-    -- Remove all current player buttons
     for i, button in ipairs(playerButtons) do
         button:Hide()
         button:SetParent(nil)
@@ -632,10 +804,9 @@ end
 
 
 CGCall["PLAYER_ROLL"] = function(playerName, value)
-    -- find the player in the "CGPlayers" table
     for i, player in pairs(CGPlayers) do
         if player.name == playerName then
-            player.roll = value -- change roll to value
+            player.roll = value 
             break
         end
     end

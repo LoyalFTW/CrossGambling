@@ -1,6 +1,6 @@
 CrossGambling = LibStub("AceAddon-3.0"):NewAddon("CrossGambling", "AceConsole-3.0", "AceEvent-3.0")
 local CrossGambling = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
--- GLOBALS
+
 local gameStates = {
     "START",
     "REGISTER",
@@ -117,6 +117,12 @@ local options = {
             type = "execute",
             func = "listBans"
         },
+		audit = { 
+			name = "List Merges",
+			desc = "See all merged players or changes",
+			type = "execute",
+			func = "auditMerges" 
+		},
     }
 }
 
@@ -153,6 +159,8 @@ function CrossGambling:InitDB()
             scalevalue = 1,
 			fontvalue = 14, 
             bans = {},
+			auditLog = {},
+			auditRetention = -1,
 },
 }
 
@@ -175,7 +183,7 @@ function CrossGambling:InitDB()
 	self.db = LibStub("AceDB-3.0"):New("CrossGambling", defaults, true)
 	LibStub("AceConfig-3.0"):RegisterOptionsTable("CrossGambling", options, {"CrossGambling", "cg"})
 	if(CrossGambling["stats"]) then CrossGambling["stats"] = self.db.global.stats end
-	 self.game.chatframeOption = true
+	
 end
 
 function CrossGambling:InitMinimap()
@@ -355,9 +363,6 @@ function CrossGambling:handleSystemMessage(_, text)
     end
 end
 
-
-
-
 function CrossGambling:banPlayer(info, playerName)
     if not playerName or playerName == "" then
         self:Print("Error: No name provided.")
@@ -522,20 +527,18 @@ function CrossGambling:CloseGame()
         if (#self.game.result.losers > 0 and #self.game.result.winners > 0) then
             local houseAmount = 0
 
-            -- Check and make sure housecut is turned on.
             if (self.game.house == true) then
                 houseAmount = math.floor(self.game.result.amountOwed * (self.db.global.houseCut / 100))
                 self.game.result.amountOwed = self.game.result.amountOwed - houseAmount
             end
 
-            -- Update players house/stats
             for i = 1, #self.game.result.losers do
                 local RollNotification = ""
                 if (self.game.house == false) then
                     RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. add_commas(self.game.result.amountOwed) .. " gold!"
                 elseif (self.game.house == true) then
                     RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. add_commas(self.game.result.amountOwed) .. " gold!" .. " plus " .. add_commas(houseAmount) .. " to the guild"
-                    self:updatePlayerStat("guild", houseAmount) -- Update guild's stats
+                    self:updatePlayerStat("guild", houseAmount) 
                 end
 
                 if (self.game.chatframeOption == false and self.game.host == true) then
@@ -545,11 +548,22 @@ function CrossGambling:CloseGame()
                 end
 
                 self:updatePlayerStat(self.game.result.losers[i].name, self.game.result.amountOwed * -1)
+                self:updatePlayerStat(self.game.result.winners[i].name, self.game.result.amountOwed * #self.game.result.losers)
+
+
+                local loserName = self.game.result.losers[i].name
+                local winnerName = self.game.result.winners[i].name
+                local amountOwed = self.game.result.amountOwed
+
+                table.insert(self.db.global.auditLog, {
+                    timestamp = time(),
+                    action = "debt",
+                    loser = loserName,
+                    winner = winnerName,
+                    amount = amountOwed,
+                })
             end
 
-            for i = 1, #self.game.result.winners do
-                self:updatePlayerStat(self.game.result.winners[i].name, self.game.result.amountOwed * #self.game.result.losers)
-            end
         else
             if (self.game.chatframeOption == false and self.game.host == true) then
                 local RollNotification = "No winners this round!"
@@ -566,6 +580,7 @@ function CrossGambling:CloseGame()
     self.game.players = {}
     self.game.result = nil
 end
+
 
 function CrossGambling:registerPlayer(playerName, playerRoll)
     for i = 1, #self.game.players do
