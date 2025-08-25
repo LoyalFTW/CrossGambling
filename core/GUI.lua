@@ -334,14 +334,39 @@ end)
 CGGameMode:SetScript("OnClick", function() self:changeGameMode() CGGameMode:SetText(self.game.mode) end)
 
 local CGEditBox = CreateFrame("EditBox", nil, MainMenu, "InputBoxTemplate")
-CGEditBox:SetSize(200, 30)
 CGEditBox:SetSize(MainHeader:GetSize()-25, 25)
 CGEditBox:SetPoint("TOPLEFT", GCchatMethod, 10, -30)
 CGEditBox:SetAutoFocus(false)
 CGEditBox:SetTextInsets(10, 10, 5, 5)
 CGEditBox:SetMaxLetters(6)
 CGEditBox:SetJustifyH("CENTER")
-CGEditBox:SetText(self.db.global.wager)
+CGEditBox:SetText(self.db.global.wager or "")
+
+CGEditBox:SetScript("OnEnterPressed", function(box)
+    local value = tonumber(box:GetText())
+    if value then
+        CrossGambling.db.global.wager = value
+    end
+    box:ClearFocus()
+end)
+
+CGEditBox:SetScript("OnTextChanged", function(box, userInput)
+    if userInput then
+        local value = tonumber(box:GetText())
+        if value then
+            CrossGambling.db.global.wager = value
+        end
+    end
+end)
+
+CGEditBox:SetScript("OnEditFocusLost", function(box)
+    local value = tonumber(box:GetText())
+    if value then
+        CrossGambling.db.global.wager = value
+    end
+end)
+
+
 -- Left Side Controls
 local CGAcceptOnes = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
 CGAcceptOnes:SetSize(105, 30)
@@ -374,24 +399,27 @@ CGGuildPercent:SetText(self.db.global.houseCut)
 CGGuildPercent:SetScript("OnEnterPressed", EditBoxOnEnterPressed)
 
 CGAcceptOnes:SetScript("OnClick", function()
-    CGAcceptOnes:Disable() 
+    CGAcceptOnes:Disable()  
 
     if CGAcceptOnes:GetText() == "Host Game" then
         CGAcceptOnes:SetText("New Game")
     else
         self.game.state = "START"
         self:SendMsg("R_NewGame")
-        self:SendMsg("SET_WAGER", CGEditBox:GetText())
+        self.game.host = true
+        self:SendMsg("New_Game")
+        self.db.global.wager = tonumber(CGEditBox:GetText()) or self.db.global.wager
+		self:SendMsg("SET_WAGER", self.db.global.wager)
         self:SendMsg("GAME_MODE", CGGameMode:GetText())
         self:SendMsg("Chat_Method", GCchatMethod:GetText())
         self:SendMsg("SET_HOUSE", CGGuildPercent:GetText())
-		
-		self.game.host = true
-        self:SendMsg("New_Game")
     end
+
+
 
     CGAcceptOnes:Enable()  
 end)
+
 
 
 local CGLastCall = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
@@ -604,19 +632,24 @@ end)
 CGReset:SetScript("OnLeave", function(self)
     highlight:Hide()
 end)
+
 CGReset:SetScript("OnMouseDown", function()
-self.game.host = false
-for i = 1, #CGPlayers do
-		CGPlayers[1].HasRolled = false
-		CrossGambling:RemovePlayer(CGPlayers[1].Name)
-	    
-end
-	CGEnter:SetText("Join Game")
+    self.game.host = false
+    for i = 1, #CGPlayers do
+        CGPlayers[1].HasRolled = false
+        CrossGambling:RemovePlayer(CGPlayers[1].Name)
+    end
+
+    CGEnter:SetText("Join Game")
+
+		CGStartRoll:SetText("Start Rolling")
+
     self.game.state = "START"
     self.game.players = {}
     self.game.result = nil
     self:resetStats(info)
 end)
+
 
 local CGRealmFilter = CreateFrame("Button", "CGRealmFilter", OptionsButton, "BackdropTemplate")
 CGRealmFilter:SetPoint("TOPLEFT", CGReset, "BOTTOMLEFT", -0, -3)
@@ -858,12 +891,19 @@ function CrossGambling:PurgeOldAuditEntries()
 end
 
 C_Timer.After(0.1, function()
+    if not CrossGambling.db or not CrossGambling.db.global then
+        return 
+    end
+
     for _, cb in pairs(retentionCheckboxes) do
         if CrossGambling.db.global.auditRetention == cb.days then
             cb:SetChecked(true)
         end
     end
 end)
+
+
+
 
 local function FormatTimestamp(ts)
     local t = date("*t", ts)
@@ -1389,29 +1429,40 @@ function UpdatePlayerList()
     local column = 0
 
     for i, player in ipairs(CGPlayers) do
-        local playerButton = CreateFrame("Button", "PlayerButton" .. i, playerButtonsFrame, "BackdropTemplate")
-        playerButton:SetSize(250, 30)
-        playerButton:SetPoint("TOPLEFT", 0, -row * 30)
-        ButtonColors(playerButton)
-		LoadColor()
+    local playerButton = CreateFrame("Button", "PlayerButton"..i, playerButtonsFrame, "BackdropTemplate")
+    playerButton:SetSize(250, 30)
+    playerButton:SetPoint("TOPLEFT", 0, -row * 30)
+    ButtonColors(playerButton)
+    LoadColor()
 
-        local buttonText = playerButton:CreateFontString(nil, "OVERLAY")
-        buttonText:SetFont("Fonts\\FRIZQT__.TTF", 20)
-        buttonText:SetPoint("LEFT", 5, 0)
-        playerButton.text = buttonText
+    local buttonText = playerButton:CreateFontString(nil, "OVERLAY")
+    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 20)
+    buttonText:SetPoint("LEFT", 5, 0)
+    playerButton.text = buttonText
 
-        local classColor = RAID_CLASS_COLORS[select(2, UnitClass(player.name))]
-        local playerNameColor = "|c" .. classColor.colorStr
+    local _, class = UnitClass(player.name)
+    local classColor = class and RAID_CLASS_COLORS[class]
 
-        if player.roll ~= nil then
-            buttonText:SetText(playerNameColor .. player.name .. "|r : |cFF000000" .. player.roll .. "|r")
+    if classColor and classColor.colorStr then
+        local playerNameColor = "|c"..classColor.colorStr
+        if player.roll then
+            buttonText:SetText(playerNameColor..player.name.."|r : |cFF000000"..player.roll.."|r")
         else
-            buttonText:SetText(playerNameColor .. player.name .. "|r")
+            buttonText:SetText(playerNameColor..player.name.."|r")
         end
+    else
 
-        table.insert(playerButtons, playerButton)
-        row = row + 1
+        if player.roll then
+            buttonText:SetText("|cffffffff"..player.name.."|r : |cFF000000"..player.roll.."|r")
+        else
+            buttonText:SetText("|cffffffff"..player.name.."|r")
+        end
     end
+
+		table.insert(playerButtons, playerButton)
+		row = row + 1
+	end
+
 
     playerButtonsFrame:SetHeight(row * 30)
 	
@@ -1434,6 +1485,7 @@ CGCall["R_NewGame"] = function()
         CrossGambling:RemovePlayer(CGPlayers[i].name)
     end
 	CGEnter:SetText("Join Game")
+	CGStartRoll:SetText("Start Rolling")
 	CGEnter:Enable()
 end
 

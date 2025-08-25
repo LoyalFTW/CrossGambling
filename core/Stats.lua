@@ -203,16 +203,19 @@ function CrossGambling:reportStats(full)
     end
 
     SendChatMessage("-- Top 3 Winners --", self.game.chatMethod)
-    for i = 1, math.min(3, #winners) do
-        local sortsign = winners[i].amount < 0 and "lost" or "won"
-        SendChatMessage(string.format("%d. %s %s %d total", i, winners[i].name, sortsign, math.abs(winners[i].amount)), self.game.chatMethod)
-    end
+		for i = 1, math.min(3, #winners) do
+			SendChatMessage(string.format("%d. %s won %d total", i, winners[i].name, math.abs(winners[i].amount)), self.game.chatMethod)
+		end
 
-    SendChatMessage("-- Top 3 Losers --", self.game.chatMethod)
-    for i = 1, math.min(3, #losers) do
-        local sortsign = losers[i].amount < 0 and "lost" or "won"
-        SendChatMessage(string.format("%d. %s %s %d total", i, losers[i].name, sortsign, math.abs(losers[i].amount)), self.game.chatMethod)
-    end
+		table.sort(losers, function(a, b)
+			return a.amount < b.amount
+		end)
+
+		SendChatMessage("-- Top 3 Losers --", self.game.chatMethod)
+		for i = 1, math.min(3, #losers) do
+			SendChatMessage(string.format("%d. %s lost %d total", i, losers[i].name, math.abs(losers[i].amount)), self.game.chatMethod)
+		end
+
 end
 
 function CrossGambling:getMainName(playerName)

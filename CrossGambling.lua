@@ -329,15 +329,11 @@ function CrossGambling:handleSystemMessage(_, text)
         if actualRoll == 1 then
             local loser = currentPlayer
             local winner = self.game.players[3 - self.currentPlayerIndex]  -- Switch player index
-            SendChatMessage(format("%s rolls a 1 and loses! %s wins the game!", loser.name, winner.name), self.game.chatMethod)
+            SendChatMessage(format("%s rolls a 1 and loses! %s owes %s %s", loser.name, loser.name, winner.name, self.db.global.wager), self.game.chatMethod)
 
             -- Update Deathroll stats (no wager, only the player stats are updated)
             self:updatePlayerStat(loser.name, -self.db.global.wager, true) -- Loser loses the wager
             self:updatePlayerStat(winner.name, self.db.global.wager, true) -- Winner gains the wager
-
-            -- Reset the game state for a new round if needed
-            self:ResetDeathroll()
-
             return
         else
             -- Continue the game if neither player has rolled a 1

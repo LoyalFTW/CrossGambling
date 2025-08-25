@@ -1,8 +1,8 @@
-## Interface: 110105, 110107
+## Interface: 110107, 110200
 ## Title:Cross|cffff7d0aGambling
 ## Author: Jay
 ## 1.3 Maintainer: Jay @ Tichondrius
-## Version: v4
+## Version: @project-version@
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## Notes: Win big or go broke—test your luck!

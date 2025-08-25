@@ -11,7 +11,6 @@ end
 function CrossGambling:ShowClassic(info)
 	if (CrossGamblingUI:IsVisible() ~= true) then
         CrossGamblingUI:Show()
-		LoadColor()
 	else 
 		CrossGamblingUI:Hide()
 	end
@@ -100,15 +99,39 @@ CGGameMode:SetNormalFontObject("GameFontNormal")
 CGGameMode:SetScript("OnClick", function() self:changeGameMode() CGGameMode:SetText(self.game.mode) end)
 
 local CGEditBox = CreateFrame("EditBox", nil, MainMenu, "InputBoxTemplate")
-CGEditBox:SetSize(200, 30)
 CGEditBox:SetSize(MainHeader:GetSize()-25, 25)
 CGEditBox:SetPoint("TOPLEFT", GCchatMethod, 10, -30)
 CGEditBox:SetAutoFocus(false)
 CGEditBox:SetTextInsets(10, 10, 5, 5)
 CGEditBox:SetMaxLetters(6)
 CGEditBox:SetJustifyH("CENTER")
-CGEditBox:SetText(self.db.global.wager)
-CGEditBox:SetScript("OnEnterPressed", EditBoxOnEnterPressed)
+CGEditBox:SetText(self.db.global.wager or "")
+
+CGEditBox:SetScript("OnEnterPressed", function(box)
+    local value = tonumber(box:GetText())
+    if value then
+        CrossGambling.db.global.wager = value
+    end
+    box:ClearFocus()
+end)
+
+CGEditBox:SetScript("OnTextChanged", function(box, userInput)
+    if userInput then
+        local value = tonumber(box:GetText())
+        if value then
+            CrossGambling.db.global.wager = value
+        end
+    end
+end)
+
+CGEditBox:SetScript("OnEditFocusLost", function(box)
+    local value = tonumber(box:GetText())
+    if value then
+        CrossGambling.db.global.wager = value
+    end
+end)
+
+
 -- Left Side Controls
 local CGGuildPercent = CreateFrame("EditBox", nil, OptionsButton, "InputBoxTemplate")
 CGGuildPercent:SetSize(140, 30)
@@ -135,16 +158,16 @@ CGAcceptOnes:SetScript("OnClick", function()
         self:SendMsg("R_NewGame")
         self.game.host = true
         self:SendMsg("New_Game")
-        self:SendMsg("SET_WAGER", CGEditBox:GetText())
+        self.db.global.wager = tonumber(CGEditBox:GetText()) or self.db.global.wager
+		self:SendMsg("SET_WAGER", self.db.global.wager)
         self:SendMsg("GAME_MODE", CGGameMode:GetText())
-
         self:SendMsg("Chat_Method", GCchatMethod:GetText())
         self:SendMsg("SET_HOUSE", CGGuildPercent:GetText())
-
     end
 
     CGAcceptOnes:Enable()  
 end)
+
 
 local CGLastCall = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGLastCall:SetSize(150, 28)
@@ -410,12 +433,17 @@ function CrossGambling:PurgeOldAuditEntries()
 end
 
 C_Timer.After(0.1, function()
+    if not CrossGambling.db or not CrossGambling.db.global then
+        return 
+    end
+
     for _, cb in pairs(retentionCheckboxes) do
         if CrossGambling.db.global.auditRetention == cb.days then
             cb:SetChecked(true)
         end
     end
 end)
+
 
 local function FormatTimestamp(ts)
     local t = date("*t", ts)
@@ -818,6 +846,7 @@ CGCall["R_NewGame"] = function()
         CrossGambling:RemovePlayer(CGPlayers[i].name)
     end
 CGEnter:SetText("Join Game")
+CGStartRoll:SetText("Start Rolling")
 CGEnter:Enable()
 end
 
