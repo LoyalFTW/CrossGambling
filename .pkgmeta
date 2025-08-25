@@ -1,0 +1,35 @@
+package-as: CrossGambling
+
+enable-nolib-creation: no
+
+ignore:
+  - .github
+  - .git
+  - .gitignore
+
+game-versions:
+  # Retail (Mainline)
+  - game-version: 110205
+    toc: CrossGambling_Mainline.toc
+
+  # Cataclysm Classic
+  - game-version: 50500
+    toc: CrossGambling_Cata.toc
+
+  # Mists of Pandaria (future-proofing)
+  - game-version: 110000
+    toc: CrossGambling_Mists.toc
+
+  # Wrath Classic
+  - game-version: 40402
+    toc: CrossGambling_Wrath.toc
+
+  # Burning Crusade Classic
+  - game-version: 30405
+    toc: CrossGambling_TBC.toc
+
+  # Vanilla Classic (SoD/Era)
+  - game-version: 11507
+    toc: CrossGambling_Vanilla.toc
+
+manual-changelog: CHANGELOG.md
