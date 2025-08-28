@@ -22,7 +22,6 @@
 
 
 Libs.xml
-
 CrossGambling.lua
 core/Stats.lua
 core/GUI.lua

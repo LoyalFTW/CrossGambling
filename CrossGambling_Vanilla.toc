@@ -21,7 +21,6 @@
 ## Category-zhTW: 賭博
 
 Libs.xml
-
 CrossGambling.lua
 core/GUI.lua
 core/ClassicGUI.lua
