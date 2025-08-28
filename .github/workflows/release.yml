@@ -1,41 +1,24 @@
-name: CI & Release CrossGambling
+name: Release
 
 on:
   push:
-    branches:
-      - master
     tags:
-      - "*"
-  pull_request:
-    branches:
-      - master
+      - "v*"
 
 jobs:
-  test:
-    name: Testing
+  release:
     runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          path: ./workspace
-
-  deploy:
-    name: Deployment
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' }}
-    needs:
-      - test
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Package and Release CrossGambling
+      - name: Package and Upload
         uses: BigWigsMods/packager@master
+        with:
+          args: -g
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
           WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
           WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
