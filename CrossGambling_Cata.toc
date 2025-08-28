@@ -8,6 +8,8 @@
 ## Notes: Win big or go broke—test your luck!
 ## SavedVariables: CrossGambling
 ## IconTexture: Interface\AddOns\CrossGambling\Media\Texture\CGIcon
+## X-Curse-Project-ID: 86458
+## X-Wago-ID: WL6JgxKv
 ## Category-enUS: Gambling
 ## Category-deDE: Glücksspiel
 ## Category-esES: Juegos de azar
@@ -19,6 +21,7 @@
 ## Category-ruRU: Азартные игры
 ## Category-zhCN: 赌博
 ## Category-zhTW: 賭博
+
 
 Libs.xml
 CrossGambling.lua
