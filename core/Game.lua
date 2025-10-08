@@ -1,6 +1,5 @@
 function CrossGambling:GameStart()
   if self.game.mode == "1v1DeathRoll" then
-        -- Initialize current roll to the wager for 1v1 Deathroll
         self.currentRoll = self.db.global.wager
         self.currentPlayerIndex = 1
     end
@@ -14,11 +13,8 @@ function CrossGambling:GameStart()
 end
 
 function CrossGambling:RegisterGame(text, playerName)
-        -- Handle player joining
     if text == "1" then
-        -- For 1v1DeathRoll mode, enforce exactly 2 players
         if self.game.mode == "1v1DeathRoll" then
-            -- Allow the player to join only if the game has fewer than 2 players
             if #self.game.players == 2 then
                 SendChatMessage("CrossGambling: This is a 1v1 DeathRoll. Only 2 players can join.", self.game.chatMethod)
                 return
@@ -46,7 +42,6 @@ end
 
 
 function CrossGambling:String(players)
-    -- Add an And or Comma between names of tied players. 
     local nameString = players[1].name
 
     if (#players > 1) then
@@ -68,10 +63,8 @@ function CrossGambling:CResult()
     local amountOwed = 0
 	
     for i = 2, #self.game.players do
-        -- New loser.
         if (self.game.players[i].roll < losers[1].roll) then
             losers = {self.game.players[i]}
-        -- New winner.
         elseif (self.game.players[i].roll > winners[1].roll) then
             winners = {self.game.players[i]}
         else
@@ -85,7 +78,6 @@ function CrossGambling:CResult()
         end
     end
 
-    -- Incase all players tie. 
     if (winners[1].name == losers[1].name) then
         losers = {}
     else
@@ -103,7 +95,6 @@ end
 
 
 function CrossGambling:detectTie()
-    -- Determine the type of tiebreaker (High/Low).
     local tieType = ""
     if #self.game.result.winners > 1 then
         tieType = "High"
@@ -121,7 +112,6 @@ function CrossGambling:detectTie()
         end
 
         if #tiedPlayers > 1 then
-            -- Continue game until no more ties.
             self.game.players = tiedPlayers
 
             for i = 1, #self.game.players do

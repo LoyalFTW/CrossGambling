@@ -13,23 +13,18 @@ function CrossGambling:joinStats(info, args)
     }
     self.db.global.altStats[altname] = altStats
 
-    -- Ensure main exists
     self.db.global.stats[mainname] = self.db.global.stats[mainname] or 0
     self.db.global.deathrollStats[mainname] = self.db.global.deathrollStats[mainname] or 0
 
-    -- Add alt's stats to main
     self.db.global.stats[mainname] = self.db.global.stats[mainname] + altStats.stats
     self.db.global.deathrollStats[mainname] = self.db.global.deathrollStats[mainname] + altStats.deathrollStats
 
-    -- Save join
     self.db.global.joinstats = self.db.global.joinstats or {}
     self.db.global.joinstats[altname] = mainname
 
-    -- Remove alt stats
     self.db.global.stats[altname] = nil
     self.db.global.deathrollStats[altname] = nil
 
-    -- Audit logs
     self.db.global.mergeAudit = self.db.global.mergeAudit or {}
     self.db.global.mergeAudit[altname] = {
         mainname = mainname,
@@ -72,19 +67,15 @@ function CrossGambling:unjoinStats(info, altname)
         return
     end
 
-    -- Subtract from main
     self.db.global.stats[mainname] = (self.db.global.stats[mainname] or 0) - altStats.stats
     self.db.global.deathrollStats[mainname] = (self.db.global.deathrollStats[mainname] or 0) - altStats.deathrollStats
 
-    -- Restore alt
     self.db.global.stats[altname] = altStats.stats
     self.db.global.deathrollStats[altname] = altStats.deathrollStats
 
-    -- Cleanup
     self.db.global.joinstats[altname] = nil
     self.db.global.altStats[altname] = nil
 
-    -- Audit
     self.db.global.mergeAudit = self.db.global.mergeAudit or {}
     self.db.global.mergeAudit[altname .. "_unmerged_" .. time()] = {
         action = "unmerge",
@@ -283,7 +274,6 @@ function CrossGambling:updateStat(info, args)
         local newAmount = self.db.global.stats[player] or 0
 		
 		self.db.global.auditLog = self.db.global.auditLog or {}
-        -- Audit log: keep a history of manual updates
         table.insert(self.db.global.auditLog, {
             action = "updateStat",
             player = player,

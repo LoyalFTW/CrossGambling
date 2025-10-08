@@ -131,8 +131,6 @@ CGEditBox:SetScript("OnEditFocusLost", function(box)
     end
 end)
 
-
--- Left Side Controls
 local CGGuildPercent = CreateFrame("EditBox", nil, OptionsButton, "InputBoxTemplate")
 CGGuildPercent:SetSize(140, 30)
 CGGuildPercent:SetPoint("TOPLEFT", CGOptions, -22, -85)
@@ -187,7 +185,7 @@ CGStartRoll:SetScript("OnClick", function()
 self:CGRolls()
 CGStartRoll:SetText("Whos Left?")
 end)
--- Right Side Controls 
+
 local CGEnter = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGEnter:SetSize(150, 28)
 CGEnter:SetPoint("TOPLEFT", CGGameMode, "BOTTOMLEFT", -0, -25)
@@ -222,7 +220,6 @@ CGCloseGame:SetScript("OnClick", function()
   CrossGamblingUI:Hide()
 end)
 
--- Left Options
 local CGFullStats = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
 CGFullStats:SetSize(150, 28)
 CGFullStats:SetPoint("TOPLEFT", MainHeader, "BOTTOMLEFT", 5, -2)
@@ -678,7 +675,6 @@ local valuescale = function(val,valStep)
  
     local slider = CreateBasicSlider(parent, "CGSlider", "", 0, 1, 0.001)
     slider:HookScript("OnMouseUp", function(self,value)
-      --save value
 	  CrossScale(self)
     end)
 
@@ -822,11 +818,6 @@ function UpdatePlayerList()
         table.insert(playerButtons, playerButton)
     end
 
-	-- For testing
-	--for i = 1, 40 do
-  --  local randomName = "Player " .. math.random(1, 20)
-   -- CrossGambling:AddPlayer(randomName)
---end
 end
 
 

@@ -1,4 +1,4 @@
-## Interface: 50500
+## Interface: 50501
 ## Title:Cross|cffff7d0aGambling
 ## Author: Jay
 ## 1.3 Maintainer: Jay @ Tichondrius

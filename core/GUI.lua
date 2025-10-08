@@ -366,8 +366,6 @@ CGEditBox:SetScript("OnEditFocusLost", function(box)
     end
 end)
 
-
--- Left Side Controls
 local CGAcceptOnes = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
 CGAcceptOnes:SetSize(105, 30)
 CGAcceptOnes:SetPoint("TOPLEFT", GCchatMethod, "BOTTOMLEFT", -0, -25)
@@ -539,7 +537,6 @@ CGCloseGame:SetScript("OnClick", function()
   CrossGamblingUI:Hide()
 end)
 
--- Left Options
 local CGFullStats = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 CGFullStats:SetSize(105, 14)
 CGFullStats:SetPoint("TOPLEFT", MainHeader, "BOTTOMLEFT", 5, -2)
@@ -970,7 +967,6 @@ function CrossGambling:UpdateAuditLogText(filter)
                 textLine = string.format("|cff999999[%s]|r Unknown entry:\n%s", ts, table.concat(extra, ", "))
             end
 
-            -- Apply filter if needed
             if not filter or filter == "" or textLine:lower():find(filter:lower(), 1, true) then
                 local fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
                 fs:SetPoint("TOPLEFT", 10, yOffset)
@@ -1091,7 +1087,6 @@ ChangeColorReset:SetScript("OnLeave", function(self)
 end)
 ChangeColorReset:SetScript("OnMouseUp", function() changeColor("resetColors") end)
 
--- Right Side Menu
 local CGRightMenu = CreateFrame("Frame", "CGRightMenu", CrossGamblingUI, "BackdropTemplate")
 CGRightMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 0, 0)
 CGRightMenu:SetSize(220, 150)
@@ -1151,7 +1146,6 @@ local function OnChatSubmit(CGChatBox)
         local messageWithPlayerInfo = string.format("%s:%s", playerNameColor .. playerName, formattedMessage)
         self:SendMsg("CHAT_MSG", messageWithPlayerInfo)
 
-        -- Reset chat box
         CGChatBox:SetText("")
         CGChatBox:ClearFocus()
     end
@@ -1160,7 +1154,7 @@ end
 
 local fontColorButton = CreateFrame("Button", nil, CGRightMenu, "BackdropTemplate")
 fontColorButton:SetSize(220, 20) 
-fontColorButton:SetPoint("BOTTOMLEFT", CGRightMenu, "BOTTOMLEFT", 0, -40) -- change position
+fontColorButton:SetPoint("BOTTOMLEFT", CGRightMenu, "BOTTOMLEFT", 0, -40) 
 fontColorButton:SetText("Font Color")
 fontColorButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
 local highlight = fontColorButton:GetHighlightTexture()
@@ -1300,7 +1294,6 @@ local valuescale = function(val,valStep)
 		CrossGamblingUI:SetScale(self.db.global.scale)
 	end
 	
--- Left Side Menu
 local CGLeftMenu = CreateFrame("Frame", "CGLeftMenu", CrossGamblingUI, "BackdropTemplate")
 CGLeftMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPLEFT", -300, -20)
 CGLeftMenu:SetSize(300, 180)

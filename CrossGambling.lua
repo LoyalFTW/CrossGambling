@@ -126,7 +126,6 @@ local options = {
     }
 }
 
--- Initialization --
 
 function CrossGambling:OnInitialize()
 	self:InitDB()
@@ -243,22 +242,17 @@ end
 
 function CrossGambling:RegisterChatEvents()
     if self.game.chatMethod == chatMethods[1] then
-        -- Party chat
         self:RegisterEvent("CHAT_MSG_PARTY", "handleChatMsg")
         self:RegisterEvent("CHAT_MSG_PARTY_LEADER", "handleChatMsg")
     elseif self.game.chatMethod == chatMethods[2] then
-        -- Raid chat
         self:RegisterEvent("CHAT_MSG_RAID", "handleChatMsg")
         self:RegisterEvent("CHAT_MSG_RAID_LEADER", "handleChatMsg")
-        self:RegisterEvent("CHAT_MSG_INSTANCE_CHAT", "handleChatMsg")  -- Add instance chat for raids
+        self:RegisterEvent("CHAT_MSG_INSTANCE_CHAT", "handleChatMsg") 
     else
-        -- Guild chat
         self:RegisterEvent("CHAT_MSG_GUILD", "handleChatMsg")
     end
 end
 
-
---ChatMethods
 function CrossGambling:chatMethod()
     local channelNum
     for i = 1, #chatMethods do
@@ -285,7 +279,6 @@ end
 
 
 function CrossGambling:handleChatMsg(_, text, playerName)
-    -- Record Player Registration
     if (self.game.state == gameStates[2]) then
         local playerName = strsplit("-", playerName, 2)
         self:RegisterGame(text, playerName)
@@ -302,7 +295,6 @@ function CrossGambling:handleSystemMessage(_, text)
     minRoll, maxRoll = tonumber(minRoll), tonumber(maxRoll)
     actualRoll = tonumber(actualRoll)
 
-    -- 1v1 Deathroll Mode Handling
     if self.game.mode == "1v1DeathRoll" then
         if minRoll ~= 1 or maxRoll ~= self.currentRoll then
             SendChatMessage("Error: Roll does not match expected range.", self.game.chatMethod)
@@ -315,34 +307,27 @@ function CrossGambling:handleSystemMessage(_, text)
             return
         end
 
-        -- Check if it's the player's turn
         if playerName ~= currentPlayer.name then
-            -- Show the current player's name correctly when it's not their turn
             SendChatMessage(format("%s, it's not your turn! It's %s's turn.", playerName, currentPlayer.name), self.game.chatMethod)
             return
         end
 
-        -- Use the existing function to record the player's roll
         CGCall["PLAYER_ROLL"](playerName, actualRoll)
 
-        -- Handle deathroll logic when a player rolls a 1
         if actualRoll == 1 then
             local loser = currentPlayer
-            local winner = self.game.players[3 - self.currentPlayerIndex]  -- Switch player index
+            local winner = self.game.players[3 - self.currentPlayerIndex]  
             SendChatMessage(format("%s rolls a 1 and loses! %s owes %s %s", loser.name, loser.name, winner.name, self.db.global.wager), self.game.chatMethod)
 
-            -- Update Deathroll stats (no wager, only the player stats are updated)
-            self:updatePlayerStat(loser.name, -self.db.global.wager, true) -- Loser loses the wager
-            self:updatePlayerStat(winner.name, self.db.global.wager, true) -- Winner gains the wager
+            self:updatePlayerStat(loser.name, -self.db.global.wager, true) 
+            self:updatePlayerStat(winner.name, self.db.global.wager, true) 
             return
         else
-            -- Continue the game if neither player has rolled a 1
             self.currentRoll = actualRoll
             self.currentPlayerIndex = 3 - self.currentPlayerIndex
             self:PromptNextRoll()
         end
     else
-        -- Regular game handling for other modes (if needed)
         if minRoll == 1 and maxRoll == self.db.global.wager then
             for i = 1, #self.game.players do
                 if self.game.players[i].name == playerName and self.game.players[i].roll == nil then
@@ -352,7 +337,6 @@ function CrossGambling:handleSystemMessage(_, text)
             end
         end
 
-        -- When all rolls are completed, determine the results
         if #self:CheckRolls() == 0 then
             self:CGResults()
         end
@@ -432,7 +416,6 @@ function CrossGambling:changeGameMode()
     end
 end
 
--- Update PromptNextRoll to call rollMe each turn
 function CrossGambling:PromptNextRoll()
     local currentPlayer = self.game.players[self.currentPlayerIndex]
     if currentPlayer then
@@ -463,7 +446,6 @@ end
 
 function CrossGambling:CGRolls()
     if (self.game.state == gameStates[2]) then
-        -- Need at least two or more players to play. 
         if (#self.game.players > 1) then
             self:UnRegisterChatEvents()
             self:RegisterEvent("CHAT_MSG_SYSTEM", "handleSystemMessage")
@@ -492,14 +474,12 @@ function CrossGambling:CheckRolls(playerName)
 end
 
 function CrossGambling:CGResults()
-    -- Results for winners/losers.
     local result = {}
 	result = self:CResult()
 
     if  (self.game.result == nil) then
         self.game.result = result
-    else
-        -- If theres a tie breaker. 
+    else 
         if (#self.game.result.winners > 1) then
             if (#result.winners > 0) then
                 self.game.result.winners = result.winners
@@ -584,8 +564,7 @@ function CrossGambling:registerPlayer(playerName, playerRoll)
             return
         end
     end
-	
-	    -- Check Ban List
+
     for i = 1, #self.db.global.bans do
         if (self.db.global.bans[i] == playerName) then
 		    if(self.game.chatframeOption == false and self.game.host == true) then
@@ -598,7 +577,6 @@ function CrossGambling:registerPlayer(playerName, playerRoll)
         end
     end
 
-    -- Register a new player.
     local newRegister = {
         name = playerName,
         roll = playerRoll
@@ -608,7 +586,6 @@ function CrossGambling:registerPlayer(playerName, playerRoll)
 end
 
 function CrossGambling:unregisterPlayer(playerName)
-    -- Unregisters the player.
     for i = 1, #self.game.players do
         if (self.game.players[i].name == playerName) then         
 		   tremove(self.game.players, i)
