@@ -1,4 +1,4 @@
-name: Release CrossGambling
+name: Release
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -15,8 +16,6 @@ jobs:
 
       - name: Package and Upload
         uses: BigWigsMods/packager@master
-        with:
-          args: -g
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
