@@ -1,4 +1,4 @@
-## Interface: 110200, 110205, 120000
+## Interface: 110205, 110207, 120000
 ## Title:Cross|cffff7d0aGambling
 ## Author: Jay
 ## 1.3 Maintainer: Jay @ Tichondrius
@@ -31,4 +31,5 @@ core/GUI.lua
 core/ClassicGUI.lua
 core/Game.lua
 core/Events.lua
+
 
