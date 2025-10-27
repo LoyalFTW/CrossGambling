@@ -6,6 +6,8 @@
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## Notes: Win big or go broke—test your luck!
+## Notes-ruRU: Выигрывайте крупно или проигрывайте всё — испытайте удачу!
+## Notes-frFR: Gagnez gros ou perdez tout — testez votre chance !
 ## SavedVariables: CrossGambling
 ## IconTexture: Interface\AddOns\CrossGambling\Media\Texture\CGIcon
 ## X-Curse-Project-ID: 86458
@@ -31,5 +33,6 @@ core/GUI.lua
 core/ClassicGUI.lua
 core/Game.lua
 core/Events.lua
+
 
 
