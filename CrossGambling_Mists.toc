@@ -1,8 +1,10 @@
 ## Interface: 50501, 50502
 ## Title:Cross|cffff7d0aGambling
 ## Author: Jay
-## 1.3 Maintainer: Jay @ Tichondrius
 ## Version: @project-version@
+## X-Website: https://www.curseforge.com/wow/addons/crossgambling
+## X-Category: Minigames, Auction/Economy, Chat/Communication, Guild
+## X-Localizations: enUS, frFR, ruRU
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## Notes: Win big or go broke—test your luck!
@@ -25,6 +27,7 @@
 ## Category-zhCN: 赌博
 ## Category-zhTW: 賭博
 
+
 Libs.xml
 CrossGambling.lua
 core/GUI.lua
@@ -32,6 +35,7 @@ core/ClassicGUI.lua
 core/Game.lua
 core/Stats.lua
 core/Events.lua
+
 
 
 
