@@ -205,7 +205,7 @@ end,
             end
             tooltip:AddDoubleLine("Cross Gambling", "|cFFAAAAAA" .. version .. "|r", 1, 0.82, 0, 1, 1, 1)
             tooltip:AddLine(" ")
-            tooltip:AddDoubleLine("|cFF66BBFFLeft-Click|r", "|cFFFFFFFFToggle CrossGambling Window|r")
+            tooltip:AddDoubleLine("|cFF00BBFFLeft-Click|r", "|cFFFFFFFFToggle CrossGambling Window|r")
         end,
 })
 minimapIcon:Register("CrossGamblingIcon", minimapLDB, self.db.global.minimap)
