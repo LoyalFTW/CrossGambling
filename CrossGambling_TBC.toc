@@ -1,4 +1,4 @@
-## Interface: 20504, 20505
+## Interface: 20505
 ## Title:Cross|cffff7d0aGambling
 ## Author: Jay
 ## Version: @project-version@
@@ -35,5 +35,6 @@ core/ClassicGUI.lua
 core/Game.lua
 core/Stats.lua
 core/Events.lua
+
 
 
