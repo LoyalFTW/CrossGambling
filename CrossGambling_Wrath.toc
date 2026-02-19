@@ -30,6 +30,8 @@
 
 Libs.xml
 CrossGambling.lua
+core/chat/Chat.lua
+core/chat/ChatHandlers.lua
 core/GUI.lua
 core/ClassicGUI.lua
 core/Game.lua
