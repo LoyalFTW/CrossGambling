@@ -1,10 +1,5 @@
 function CrossGambling:DrawSecondEvents()
 
-function add_commas(value) 
-return #tostring(value) > 3 and tostring(value):gsub("^(-?%d+)(%d%d%d)", "%1,%2"):gsub("(%d)(%d%d%d)", ",%1,%2") or tostring(value) 
-end
-
-
 CGCall["New_Game"] = function()
     if (self.game.state == "START" and self.game.host == true) then
         self:RegisterChatEvents()
