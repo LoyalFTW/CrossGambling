@@ -1,4 +1,4 @@
-local CG = CrossGambling  -- forward-ref; populated after addon load
+local CG = CrossGambling  
 
 CrossGambling_Themes = {
     {

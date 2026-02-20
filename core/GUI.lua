@@ -7,47 +7,43 @@ local Backdrop = {
 	insets = {left = 1, right = 1, top = 1, bottom = 1},
 
 }
-local frameColor = {r = 0.27, g = 0.27, b = 0.27}
-local buttonColor = {r = 0.30, g = 0.30, b = 0.30}
-local sideColor = {r = 0.20, g = 0.20, b = 0.20}
 local playerNameColor = "|c" .. RAID_CLASS_COLORS[select(2, UnitClass("player"))].colorStr
-local fontColor = ""
-local BtnClr, SideClr = {}, {}
+
 local ButtonColors = function(self)
-if not self.SetBackdrop then
-Mixin(self, BackdropTemplateMixin)
-end
-self:SetBackdrop(Backdrop)
-self:SetBackdropBorderColor(0, 0, 0)
-table.insert(BtnClr, self)
+    if not self.SetBackdrop then
+        Mixin(self, BackdropTemplateMixin)
+    end
+    self:SetBackdrop(Backdrop)
+    self:SetBackdropBorderColor(0, 0, 0)
+    CrossGambling:ColorsRegisterButton(self)
 end
 
 local SideColor = function(self)
-if not self.SetBackdrop then
-Mixin(self, BackdropTemplateMixin)
-end
-self:SetBackdrop(Backdrop)
-self:SetBackdropBorderColor(0, 0, 0)
-table.insert(SideClr, self)
+    if not self.SetBackdrop then
+        Mixin(self, BackdropTemplateMixin)
+    end
+    self:SetBackdrop(Backdrop)
+    self:SetBackdropBorderColor(0, 0, 0)
+    CrossGambling:ColorsRegisterSide(self)
 end
 local CrossGamblingUI
 
 function CrossGambling:toggleUi()
-if (CrossGamblingUI:IsVisible()) then
-CrossGamblingUI:Hide()
-else
-LoadColor()
-CrossGamblingUI:Show()
-end
+    if CrossGamblingUI:IsVisible() then
+        CrossGamblingUI:Hide()
+    else
+        CrossGambling:ColorsLoad()
+        CrossGamblingUI:Show()
+    end
 end
 
 function CrossGambling:ShowSlick(info)
-	if (CrossGamblingUI:IsVisible() ~= true) then
+    if not CrossGamblingUI:IsVisible() then
         CrossGamblingUI:Show()
-		LoadColor()
-	else
-		CrossGamblingUI:Hide()
-	end
+        CrossGambling:ColorsLoad()
+    else
+        CrossGamblingUI:Hide()
+    end
 end
 
 function CrossGambling:HideSlick(info)
@@ -75,6 +71,8 @@ CrossGamblingUI:SetClampedToScreen(true)
 self.db.global.scale = self.db.global.scale
 CrossGamblingUI:SetScale(self.db.global.scale)
 CrossGamblingUI:Hide()
+
+CrossGambling:ColorsSetMainFrame(CrossGamblingUI)
 
 local MainHeader = CreateFrame("Frame", nil, CrossGamblingUI, "BackdropTemplate")
 MainHeader:SetSize(CrossGamblingUI:GetSize(), 21)
@@ -123,105 +121,6 @@ CGOptions:SetScript("OnMouseUp", function(self)
 	CrossGambling:ToggleOptionsMenu()
 end)
 
-
-local fontColor = {r = 1.0, g = 1.0, b = 1.0}
-function setFontColor(r, g, b)
-    fontColor.r, fontColor.g, fontColor.b = r, g, b
-end
-function LoadColor()
-    frameColor.r, frameColor.g, frameColor.b = self.db.global.colors.frameColor.r, self.db.global.colors.frameColor.g, self.db.global.colors.frameColor.b
-    CrossGamblingUI:SetBackdropColor(frameColor.r, frameColor.g, frameColor.b)
-
-    buttonColor.r, buttonColor.g, buttonColor.b = self.db.global.colors.buttonColor.r, self.db.global.colors.buttonColor.g, self.db.global.colors.buttonColor.b
-    sideColor.r, sideColor.g, sideColor.b = self.db.global.colors.sideColor.r, self.db.global.colors.sideColor.g, self.db.global.colors.sideColor.b
-
-    local fontColorRGB = self.db.global.colors.fontColor
-    fontColor.r, fontColor.g, fontColor.b = fontColorRGB.r, fontColorRGB.g, fontColorRGB.b
-    setFontColor(fontColor.r, fontColor.g, fontColor.b)
-
-    for i = 1, #SideClr do
-        SideClr[i]:SetBackdropColor(sideColor.r, sideColor.g, sideColor.b)
-    end
-    for i = 1, #BtnClr do
-        BtnClr[i]:SetBackdropColor(buttonColor.r, buttonColor.g, buttonColor.b)
-    end
-end
-
-
-function SaveColor()
-	self.db.global.colors.frameColor.r, self.db.global.colors.frameColor.g, self.db.global.colors.frameColor.b = frameColor.r, frameColor.g, frameColor.b
-    self.db.global.colors.buttonColor.r, self.db.global.colors.buttonColor.g, self.db.global.colors.buttonColor.b = buttonColor.r, buttonColor.g, buttonColor.b
-    self.db.global.colors.sideColor.r, self.db.global.colors.sideColor.g, self.db.global.colors.sideColor.b = sideColor.r, sideColor.g, sideColor.b
-	self.db.global.colors.fontColor = fontColor
-end
-
-
-function changeColor(element)
-    local color
-    if element == "frame" then
-        color = frameColor
-    elseif element == "buttons" then
-        color = buttonColor
-    elseif element == "sidecolor" then
-        color = sideColor
-    elseif element == "fontcolor" then
-        color = fontColor
-    elseif element == "resetColors" then
-        frameColor = { r = 0.27, g = 0.27, b = 0.27 }
-        CrossGamblingUI:SetBackdropColor(frameColor.r, frameColor.g, frameColor.b)
-        buttonColor = { r = 0.30, g = 0.30, b = 0.30 }
-        for i, button in ipairs(BtnClr) do
-            button:SetBackdropColor(buttonColor.r, buttonColor.g, buttonColor.b)
-        end
-        sideColor = { r = 0.20, g = 0.20, b = 0.20 }
-        for i, button in ipairs(SideClr) do
-            button:SetBackdropColor(sideColor.r, sideColor.g, sideColor.b)
-        end
-        SaveColor()
-        return
-    end
-
-    local function ShowColorPicker(r, g, b, a, changedCallback)
-        ColorPickerFrame.hasOpacity = false
-        ColorPickerFrame.func, ColorPickerFrame.opacityFunc, ColorPickerFrame.cancelFunc = changedCallback, changedCallback, changedCallback
-        ColorPickerFrame:Hide()
-        ColorPickerFrame:Show()
-    end
-
-	ColorPickerFrame.swatchFunc = function()
-        local r, g, b = ColorPickerFrame:GetColorRGB()
-    end
-
-
-local function ColorCallback(restore)
-    local newR, newG, newB = ColorPickerFrame:GetColorRGB()
-
-		if element == "fontcolor" then
-
-		setFontColor(newR, newG, newB)
-		else
-        color.r, color.g, color.b = newR, newG, newB
-
-        if element == "frame" then
-            CrossGamblingUI:SetBackdropColor(color.r, color.g, color.b)
-        elseif element == "buttons" then
-            for i, button in ipairs(BtnClr) do
-                button:SetBackdropColor(color.r, color.g, color.b)
-            end
-        elseif element == "sidecolor" then
-            for i, button in ipairs(SideClr) do
-                button:SetBackdropColor(color.r, color.g, color.b)
-            end
-        end
-    end
-
-    if not restore then
-        SaveColor()
-    end
-end
-
-    ShowColorPicker(color.r, color.g, color.b, nil, ColorCallback)
-end
 
 local GCchatMethod = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
 GCchatMethod:SetSize(105, 30)
@@ -929,7 +828,7 @@ end)
 ChangeColorButton:SetScript("OnLeave", function(self)
     highlight:Hide()
 end)
-ChangeColorButton:SetScript("OnMouseUp", function() changeColor("buttons") end)
+ChangeColorButton:SetScript("OnMouseUp", function() CrossGambling:ColorsOpenPicker("buttonColor") end)
 
 local ChangeColorSide = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 ChangeColorSide:SetSize(ChangeColorButton:GetSize())
@@ -949,7 +848,7 @@ end)
 ChangeColorSide:SetScript("OnLeave", function(self)
     highlight:Hide()
 end)
-ChangeColorSide:SetScript("OnMouseUp", function() changeColor("sidecolor") end)
+ChangeColorSide:SetScript("OnMouseUp", function() CrossGambling:ColorsOpenPicker("sideColor") end)
 
 local ChangeColorFrame = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 ChangeColorFrame:SetSize(ChangeColorButton:GetSize())
@@ -969,7 +868,7 @@ end)
 ChangeColorFrame:SetScript("OnLeave", function(self)
     highlight:Hide()
 end)
-ChangeColorFrame:SetScript("OnMouseUp", function() changeColor("frame") end)
+ChangeColorFrame:SetScript("OnMouseUp", function() CrossGambling:ColorsOpenPicker("frameColor") end)
 
 local ChangeColorReset = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 ChangeColorReset:SetSize(ChangeColorButton:GetSize())
@@ -989,7 +888,7 @@ end)
 ChangeColorReset:SetScript("OnLeave", function(self)
     highlight:Hide()
 end)
-ChangeColorReset:SetScript("OnMouseUp", function() changeColor("resetColors") end)
+ChangeColorReset:SetScript("OnMouseUp", function() CrossGambling:ColorsReset() end)
 
 local CGRightMenu = CreateFrame("Frame", "CGRightMenu", CrossGamblingUI, "BackdropTemplate")
 CGRightMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 0, 0)
@@ -1028,6 +927,7 @@ end)
 
 CGRightMenu.TextField = CreateFrame("ScrollingMessageFrame", nil, CGRightMenu)
 CrossGambling.ChatTextField = CGRightMenu.TextField
+CrossGambling:ColorsSetTextField(CGRightMenu.TextField)
 CGRightMenu.TextField:SetPoint("TOPLEFT", CGRightMenu, 4, -4)
 CGRightMenu.TextField:SetSize(CGRightMenu:GetWidth()-8, 120)
 CGRightMenu.TextField:SetFont("Fonts\\FRIZQT__.TTF", self.db.global.fontvalue, "")
@@ -1096,7 +996,7 @@ fontColorButton:SetScript("OnLeave", function(self)
 end)
 fontColorButton:SetNormalFontObject("GameFontNormal")
 ButtonColors(fontColorButton)
-fontColorButton:SetScript("OnMouseUp", function() changeColor("fontcolor") end)
+fontColorButton:SetScript("OnMouseUp", function() CrossGambling:ColorsOpenPicker("fontColor") end)
 
 local fontSizeSlider = CreateFrame("Slider", nil, fontColorButton, "OptionsSliderTemplate")
 fontSizeSlider:SetPoint("BOTTOMLEFT", 0, -20)
@@ -1367,7 +1267,7 @@ function UpdatePlayerList()
     playerButton:SetSize(250, 30)
     playerButton:SetPoint("TOPLEFT", 0, -row * 30)
     ButtonColors(playerButton)
-    LoadColor()
+    CrossGambling:ColorsApplyAll()
 
     local buttonText = playerButton:CreateFontString(nil, "OVERLAY")
     buttonText:SetFont("Fonts\\FRIZQT__.TTF", 20)

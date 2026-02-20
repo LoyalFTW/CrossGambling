@@ -1,35 +1,24 @@
-local function MakeBackdrop()
-    local CG_TEX = "Interface\\AddOns\\CrossGambling\\media\\CG.tga"
+-- ============================================================
+--  CrossGambling – OptionsMenu.lua  (refactored)
+--  Modular helpers, proper colour swatches, polished toggles.
+-- ============================================================
+
+-- ──────────────────────────────────────────────────────────
+--  Module: Backdrop factory
+-- ──────────────────────────────────────────────────────────
+local CG_TEX = "Interface\\AddOns\\CrossGambling\\media\\CG.tga"
+
+local function MakeBackdrop(edgeSize)
     return {
-        bgFile   = CG_TEX,
-        edgeFile = CG_TEX,
-        tile     = false, tileSize = 0, edgeSize = 1,
-        insets   = { left = 1, right = 1, top = 1, bottom = 1 },
+        bgFile = CG_TEX, edgeFile = CG_TEX,
+        tile = false, tileSize = 0, edgeSize = edgeSize or 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
     }
 end
 
-local function MakeButton(parent, w, h, text, isClassic)
-    local btn
-    if isClassic then
-        btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    else
-        btn = CreateFrame("Button", nil, parent, "BackdropTemplate")
-        if btn.SetBackdrop then
-            btn:SetBackdrop(MakeBackdrop())
-            btn:SetBackdropBorderColor(0, 0, 0)
-            btn:SetBackdropColor(0.28, 0.28, 0.28)
-        end
-        btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-        local hl = btn:GetHighlightTexture()
-        hl:SetBlendMode("ADD")
-        hl:SetAllPoints()
-    end
-    btn:SetSize(w, h)
-    btn:SetText(text)
-    btn:SetNormalFontObject("GameFontNormal")
-    return btn
-end
-
+-- ──────────────────────────────────────────────────────────
+--  Module: Basic primitives
+-- ──────────────────────────────────────────────────────────
 local function MakeLabel(parent, text, fontObj)
     local fs = parent:CreateFontString(nil, "OVERLAY", fontObj or "GameFontNormalSmall")
     fs:SetText(text)
@@ -39,7 +28,7 @@ end
 local function MakeSep(parent, width)
     local line = parent:CreateTexture(nil, "ARTWORK")
     line:SetSize(width or 260, 1)
-    line:SetColorTexture(0.4, 0.4, 0.4, 0.5)
+    line:SetColorTexture(0.4, 0.4, 0.4, 0.4)
     return line
 end
 
@@ -50,57 +39,142 @@ local function MakeSectionHeader(parent, text)
     return fs
 end
 
+-- ──────────────────────────────────────────────────────────
+--  Module: Row container
+-- ──────────────────────────────────────────────────────────
+local ROW_H = 28
+
 local function MakeRow(parent, width, yOff, isClassic)
-    local ROW_H = 28
     local row = CreateFrame("Frame", nil, parent, isClassic and nil or "BackdropTemplate")
     row:SetSize(width, ROW_H)
     row:SetPoint("TOPLEFT", parent, 8, yOff)
     if not isClassic and row.SetBackdrop then
         row:SetBackdrop(MakeBackdrop())
-        row:SetBackdropColor(0.20, 0.20, 0.20)
-        row:SetBackdropBorderColor(0.35, 0.35, 0.35)
+        row:SetBackdropColor(0.17, 0.17, 0.17)
+        row:SetBackdropBorderColor(0.32, 0.32, 0.32)
     end
-    return row, ROW_H
+    return row
 end
 
-local function MakeColorSwatch(parent, label, getColor, onChanged, isClassic)
-    local w = isClassic and 120 or 110
-    local btn = MakeButton(parent, w, 26, label, isClassic)
-    btn:SetScript("OnClick", function()
-        local r, g, b = getColor()
-        if ColorPickerFrame.SetupColorPickerAndShow then
-            ColorPickerFrame:SetupColorPickerAndShow({
-                r = r, g = g, b = b,
-                hasOpacity = false,
-                swatchFunc  = function() onChanged(ColorPickerFrame:GetColorRGB()) end,
-                cancelFunc  = function(prev) onChanged(prev.r, prev.g, prev.b) end,
-                previousValues = { r = r, g = g, b = b },
-            })
-        else
-            ColorPickerFrame.hasOpacity     = false
-            ColorPickerFrame.previousValues = { r = r, g = g, b = b }
-            ColorPickerFrame.func           = function() onChanged(ColorPickerFrame:GetColorRGB()) end
-            ColorPickerFrame.cancelFunc     = function(prev) onChanged(prev.r, prev.g, prev.b) end
-            ColorPickerFrame:Hide()
-            ColorPickerFrame:Show()
+-- ──────────────────────────────────────────────────────────
+--  Module: Action button
+-- ──────────────────────────────────────────────────────────
+local function MakeButton(parent, w, h, text, isClassic)
+    local btn
+    if isClassic then
+        btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    else
+        btn = CreateFrame("Button", nil, parent, "BackdropTemplate")
+        if btn.SetBackdrop then
+            btn:SetBackdrop(MakeBackdrop())
+            btn:SetBackdropBorderColor(0, 0, 0)
+            btn:SetBackdropColor(0.26, 0.26, 0.26)
         end
-    end)
+        local hl = btn:CreateTexture(nil, "HIGHLIGHT")
+        hl:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+        hl:SetBlendMode("ADD")
+        hl:SetAllPoints()
+    end
+    btn:SetSize(w, h)
+    btn:SetText(text)
+    btn:SetNormalFontObject("GameFontNormal")
     return btn
 end
 
+-- ──────────────────────────────────────────────────────────
+--  Module: Toggle button  (ON / OFF with tinted background)
+-- ──────────────────────────────────────────────────────────
+local function MakeToggle(parent, w, h, isClassic)
+    local btn = MakeButton(parent, w, h, "OFF", isClassic)
+
+    function btn:SetState(on)
+        self._state = on
+        self:SetText(on and "|cff55dd55ON|r" or "|cffaa4444OFF|r")
+        if not isClassic and self.SetBackdropColor then
+            if on then
+                self:SetBackdropColor(0.14, 0.36, 0.14)
+                self:SetBackdropBorderColor(0.25, 0.55, 0)
+            else
+                self:SetBackdropColor(0.26, 0.26, 0.26)
+                self:SetBackdropBorderColor(0.10, 0.10, 0)
+            end
+        end
+    end
+
+    btn:SetState(false)
+    return btn
+end
+
+-- ──────────────────────────────────────────────────────────
+--  Module: Colour swatch  (coloured square button)
+--  Delegates to Colors.lua for picker + apply logic.
+-- ──────────────────────────────────────────────────────────
+local function MakeColorSwatch(parent, colorKey, isClassic)
+    local swatch = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    swatch:SetSize(26, 22)
+    if swatch.SetBackdrop then
+        swatch:SetBackdrop(MakeBackdrop(2))
+        swatch:SetBackdropBorderColor(0, 0, 0)
+    end
+
+    local colorTex = swatch:CreateTexture(nil, "OVERLAY")
+    colorTex:SetAllPoints(swatch)
+
+    local function RefreshColor()
+        if not (CrossGambling.db and CrossGambling.db.global and CrossGambling.db.global.colors) then return end
+        local c = CrossGambling.db.global.colors[colorKey]
+        if c then colorTex:SetColorTexture(c.r, c.g, c.b, 1) end
+    end
+
+    local hlTex = swatch:CreateTexture(nil, "HIGHLIGHT")
+    hlTex:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+    hlTex:SetBlendMode("ADD")
+    hlTex:SetAllPoints()
+
+    -- Delegate entirely to Colors.lua – it saves, applies live, handles both APIs
+    swatch:SetScript("OnClick", function()
+        CrossGambling:ColorsOpenPicker(colorKey, RefreshColor)
+    end)
+
+    swatch.Refresh = RefreshColor
+    C_Timer.After(0.05, RefreshColor)
+    return swatch
+end
+
+-- ──────────────────────────────────────────────────────────
+--  Module: Colour row  (label left, swatch right)
+-- ──────────────────────────────────────────────────────────
+local function MakeColorRow(parent, width, yOff, rowLabel, colorKey, isClassic)
+    local row = MakeRow(parent, width, yOff, isClassic)
+    row:SetHeight(30)
+
+    local lbl = MakeLabel(row, rowLabel, "GameFontNormalSmall")
+    lbl:SetPoint("LEFT", row, "LEFT", 10, 0)
+    lbl:SetTextColor(0.85, 0.85, 0.85)
+
+    local swatch = MakeColorSwatch(row, colorKey, isClassic)
+    swatch:SetPoint("RIGHT", row, "RIGHT", -6, 0)
+
+    return row, swatch
+end
+
+-- ══════════════════════════════════════════════════════════
+--  BuildOptionsMenu
+-- ══════════════════════════════════════════════════════════
 function CrossGambling:BuildOptionsMenu()
     if CrossGambling.OptionsMenuFrame then return end
 
     local isClassic = self:IsClassicTheme()
 
-    local PANEL_W    = 320
-    local PANEL_H    = 460
-    local TAB_H      = 26
-    local HEADER_H   = 22
+    local PANEL_W     = 320
+    local PANEL_H     = 470
+    local TAB_H       = 26
+    local HEADER_H    = 22
     local CONTENT_TOP = -(HEADER_H + TAB_H + 6)
-    local ROW_W      = PANEL_W - 18
-    local PAD        = 8
+    local ROW_W       = PANEL_W - 18
+    local PAD         = 8
 
+    -- ── Panel ──────────────────────────────────────────
     local panel
     if isClassic then
         panel = CreateFrame("Frame", "CGOptionsMenuFrame", UIParent, "BasicFrameTemplateWithInset")
@@ -112,20 +186,20 @@ function CrossGambling:BuildOptionsMenu()
         if panel.SetBackdrop then
             panel:SetBackdrop(MakeBackdrop())
             panel:SetBackdropBorderColor(0, 0, 0)
-            panel:SetBackdropColor(0.13, 0.13, 0.13)
+            panel:SetBackdropColor(0.12, 0.12, 0.12)
         end
 
         local titleBar = CreateFrame("Frame", nil, panel, "BackdropTemplate")
         titleBar:SetSize(PANEL_W, HEADER_H)
-        titleBar:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, 0)
+        titleBar:SetPoint("TOPLEFT", panel, 0, 0)
         if titleBar.SetBackdrop then
             titleBar:SetBackdrop(MakeBackdrop())
-            titleBar:SetBackdropColor(0.20, 0.20, 0.20)
+            titleBar:SetBackdropColor(0.19, 0.19, 0.19)
             titleBar:SetBackdropBorderColor(0, 0, 0)
         end
         local titleText = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         titleText:SetPoint("CENTER")
-        titleText:SetText("CrossGambling — Options")
+        titleText:SetText("|cffffd700Cross|r|cffffffffGambling|r  —  Options")
 
         local closeBtn = CreateFrame("Button", nil, panel)
         closeBtn:SetSize(18, 18)
@@ -146,6 +220,7 @@ function CrossGambling:BuildOptionsMenu()
     panel:SetScript("OnDragStop",  panel.StopMovingOrSizing)
     panel:Hide()
 
+    -- ── Tabs ────────────────────────────────────────────
     local TABS        = { "Game", "Theme", "Colors", "History" }
     local tabButtons  = {}
     local tabContents = {}
@@ -153,17 +228,17 @@ function CrossGambling:BuildOptionsMenu()
 
     local function ShowTab(idx)
         activeTab = idx
-        for i, content in ipairs(tabContents) do
-            content:SetShown(i == idx)
-        end
+        for i, content in ipairs(tabContents) do content:SetShown(i == idx) end
         for i, btn in ipairs(tabButtons) do
             if isClassic then
                 btn:SetNormalFontObject(i == idx and "GameFontHighlight" or "GameFontNormal")
             else
-                local r = (i == idx) and 0.40 or 0.22
-                if btn.SetBackdropColor then btn:SetBackdropColor(r, r, r) end
+                local on = (i == idx)
+                if btn.SetBackdropColor then
+                    btn:SetBackdropColor(on and 0.32 or 0.18, on and 0.32 or 0.18, on and 0.32 or 0.18)
+                end
                 if btn.SetBackdropBorderColor then
-                    btn:SetBackdropBorderColor(i == idx and 0.6 or 0.30, i == idx and 0.50 or 0.30, 0)
+                    btn:SetBackdropBorderColor(on and 0.7 or 0.28, on and 0.55 or 0.28, 0)
                 end
             end
         end
@@ -183,14 +258,17 @@ function CrossGambling:BuildOptionsMenu()
         tabContents[i] = pane
     end
 
+    -- ════════════════════════════════════════════════════
+    --  Tab 1 – Game
+    -- ════════════════════════════════════════════════════
     do
         local g    = tabContents[1]
         local FULL = ROW_W
         local HALF = math.floor((FULL - 6) / 2)
         local yOff = -8
 
-        local hdr1 = MakeSectionHeader(g, "STATISTICS")
-        hdr1:SetPoint("TOPLEFT", g, PAD + 2, yOff)
+        -- Statistics
+        MakeSectionHeader(g, "STATISTICS"):SetPoint("TOPLEFT", g, PAD + 2, yOff)
         yOff = yOff - 18
 
         local fullStats = MakeButton(g, HALF, 26, "Full Stats", isClassic)
@@ -213,31 +291,25 @@ function CrossGambling:BuildOptionsMenu()
 
         MakeSep(g, FULL):SetPoint("TOPLEFT", g, PAD, yOff)
         yOff = yOff - 10
-        local hdr2 = MakeSectionHeader(g, "GAME SETTINGS")
-        hdr2:SetPoint("TOPLEFT", g, PAD + 2, yOff)
+        MakeSectionHeader(g, "GAME SETTINGS"):SetPoint("TOPLEFT", g, PAD + 2, yOff)
         yOff = yOff - 18
 
-        local guildRow, guildRowH = MakeRow(g, FULL, yOff, isClassic)
-        local guildLbl = MakeLabel(guildRow, "Guild Cut", "GameFontNormalSmall")
-        guildLbl:SetPoint("LEFT", guildRow, "LEFT", 10, 0)
-        guildLbl:SetTextColor(0.85, 0.85, 0.85)
-        local guildToggle = MakeButton(guildRow, 70, 20, "OFF", isClassic)
+        -- Guild Cut toggle
+        local guildRow = MakeRow(g, FULL, yOff, isClassic)
+        MakeLabel(guildRow, "Guild Cut", "GameFontNormalSmall"):SetPoint("LEFT", guildRow, "LEFT", 10, 0)
+        local guildToggle = MakeToggle(guildRow, 64, 20, isClassic)
         guildToggle:SetPoint("RIGHT", guildRow, "RIGHT", -6, 0)
-        guildToggle:SetScript("OnClick", function()
+        guildToggle:SetScript("OnClick", function(self)
             CrossGambling.game.house = not CrossGambling.game.house
             local on = CrossGambling.game.house
-            guildToggle:SetText(on and "ON" or "OFF")
-            if not isClassic and guildToggle.SetBackdropColor then
-                guildToggle:SetBackdropColor(on and 0.15 or 0.28, on and 0.32 or 0.28, on and 0.15 or 0.28)
-            end
+            self:SetState(on)
             DEFAULT_CHAT_FRAME:AddMessage("|cffffff00CrossGambling:|r Guild cut " .. (on and "ON" or "OFF") .. ".")
         end)
-        yOff = yOff - guildRowH - 4
+        yOff = yOff - ROW_H - 4
 
-        local houseRow, houseRowH = MakeRow(g, FULL, yOff, isClassic)
-        local houseLbl = MakeLabel(houseRow, "House Cut %", "GameFontNormalSmall")
-        houseLbl:SetPoint("LEFT", houseRow, "LEFT", 10, 0)
-        houseLbl:SetTextColor(0.85, 0.85, 0.85)
+        -- House Cut %
+        local houseRow = MakeRow(g, FULL, yOff, isClassic)
+        MakeLabel(houseRow, "House Cut %", "GameFontNormalSmall"):SetPoint("LEFT", houseRow, "LEFT", 10, 0)
         local houseBox = CreateFrame("EditBox", nil, houseRow, "InputBoxTemplate")
         houseBox:SetSize(60, 20)
         houseBox:SetPoint("RIGHT", houseRow, "RIGHT", -8, 0)
@@ -250,31 +322,27 @@ function CrossGambling:BuildOptionsMenu()
             if v and CrossGambling.db then CrossGambling.db.global.houseCut = v end
             self:ClearFocus()
         end)
-        yOff = yOff - houseRowH - 4
+        yOff = yOff - ROW_H - 4
 
-        local realmRow, realmRowH = MakeRow(g, FULL, yOff, isClassic)
-        local realmLbl = MakeLabel(realmRow, "Realm Filter", "GameFontNormalSmall")
-        realmLbl:SetPoint("LEFT", realmRow, "LEFT", 10, 0)
-        realmLbl:SetTextColor(0.85, 0.85, 0.85)
-        local realmToggle = MakeButton(realmRow, 70, 20, "OFF", isClassic)
+        -- Realm Filter toggle
+        local realmRow = MakeRow(g, FULL, yOff, isClassic)
+        MakeLabel(realmRow, "Realm Filter", "GameFontNormalSmall"):SetPoint("LEFT", realmRow, "LEFT", 10, 0)
+        local realmToggle = MakeToggle(realmRow, 64, 20, isClassic)
         realmToggle:SetPoint("RIGHT", realmRow, "RIGHT", -6, 0)
-        realmToggle:SetScript("OnClick", function()
+        realmToggle:SetScript("OnClick", function(self)
             CrossGambling.game.realmFilter = not CrossGambling.game.realmFilter
-            local on = CrossGambling.game.realmFilter
-            realmToggle:SetText(on and "ON" or "OFF")
-            if not isClassic and realmToggle.SetBackdropColor then
-                realmToggle:SetBackdropColor(on and 0.15 or 0.28, on and 0.32 or 0.28, on and 0.15 or 0.28)
-            end
+            self:SetState(CrossGambling.game.realmFilter)
         end)
-        yOff = yOff - realmRowH - 4
+        yOff = yOff - ROW_H - 4
 
-        local joinRow, joinRowH = MakeRow(g, FULL, yOff, isClassic)
+        -- Join Word
+        local joinRow = MakeRow(g, FULL, yOff, isClassic)
         local joinLbl = MakeLabel(joinRow, "Join Word", "GameFontNormalSmall")
         joinLbl:SetPoint("LEFT", joinRow, "LEFT", 10, 0)
         joinLbl:SetTextColor(0.85, 0.85, 0.85)
-        local joinSubLbl = MakeLabel(joinRow, "players type this to enter", "GameFontNormalSmall")
-        joinSubLbl:SetPoint("LEFT", joinLbl, "RIGHT", 8, 0)
-        joinSubLbl:SetTextColor(0.45, 0.45, 0.45)
+        local joinSub = MakeLabel(joinRow, "players type this to enter", "GameFontNormalSmall")
+        joinSub:SetPoint("LEFT", joinLbl, "RIGHT", 8, 0)
+        joinSub:SetTextColor(0.40, 0.40, 0.40)
         local joinBox = CreateFrame("EditBox", nil, joinRow, "InputBoxTemplate")
         joinBox:SetSize(70, 20)
         joinBox:SetPoint("RIGHT", joinRow, "RIGHT", -8, 0)
@@ -282,28 +350,23 @@ function CrossGambling:BuildOptionsMenu()
         joinBox:SetMaxLetters(20)
         joinBox:SetJustifyH("CENTER")
         joinBox:SetText(CrossGambling.db and CrossGambling.db.global.joinWord or "1")
-        joinBox:SetScript("OnEnterPressed", function(self)
-            local word = self:GetText():match("^%s*(.-)%s*$")
-            if word ~= "" and CrossGambling.db then
-                CrossGambling.db.global.joinWord = word
-            end
+        local function SaveJoin(self)
+            local w = self:GetText():match("^%s*(.-)%s*$")
+            if w ~= "" and CrossGambling.db then CrossGambling.db.global.joinWord = w end
             self:ClearFocus()
-        end)
-        joinBox:SetScript("OnEditFocusLost", function(self)
-            local word = self:GetText():match("^%s*(.-)%s*$")
-            if word ~= "" and CrossGambling.db then
-                CrossGambling.db.global.joinWord = word
-            end
-        end)
-        yOff = yOff - joinRowH - 4
+        end
+        joinBox:SetScript("OnEnterPressed", SaveJoin)
+        joinBox:SetScript("OnEditFocusLost", SaveJoin)
+        yOff = yOff - ROW_H - 4
 
-        local leaveRow, leaveRowH = MakeRow(g, FULL, yOff, isClassic)
+        -- Leave Word
+        local leaveRow = MakeRow(g, FULL, yOff, isClassic)
         local leaveLbl = MakeLabel(leaveRow, "Leave Word", "GameFontNormalSmall")
         leaveLbl:SetPoint("LEFT", leaveRow, "LEFT", 10, 0)
         leaveLbl:SetTextColor(0.85, 0.85, 0.85)
-        local leaveSubLbl = MakeLabel(leaveRow, "players type this to withdraw", "GameFontNormalSmall")
-        leaveSubLbl:SetPoint("LEFT", leaveLbl, "RIGHT", 8, 0)
-        leaveSubLbl:SetTextColor(0.45, 0.45, 0.45)
+        local leaveSub = MakeLabel(leaveRow, "players type this to withdraw", "GameFontNormalSmall")
+        leaveSub:SetPoint("LEFT", leaveLbl, "RIGHT", 8, 0)
+        leaveSub:SetTextColor(0.40, 0.40, 0.40)
         local leaveBox = CreateFrame("EditBox", nil, leaveRow, "InputBoxTemplate")
         leaveBox:SetSize(70, 20)
         leaveBox:SetPoint("RIGHT", leaveRow, "RIGHT", -8, 0)
@@ -311,33 +374,28 @@ function CrossGambling:BuildOptionsMenu()
         leaveBox:SetMaxLetters(20)
         leaveBox:SetJustifyH("CENTER")
         leaveBox:SetText(CrossGambling.db and CrossGambling.db.global.leaveWord or "-1")
-        leaveBox:SetScript("OnEnterPressed", function(self)
-            local word = self:GetText():match("^%s*(.-)%s*$")
-            if word ~= "" and CrossGambling.db then
-                CrossGambling.db.global.leaveWord = word
-            end
+        local function SaveLeave(self)
+            local w = self:GetText():match("^%s*(.-)%s*$")
+            if w ~= "" and CrossGambling.db then CrossGambling.db.global.leaveWord = w end
             self:ClearFocus()
-        end)
-        leaveBox:SetScript("OnEditFocusLost", function(self)
-            local word = self:GetText():match("^%s*(.-)%s*$")
-            if word ~= "" and CrossGambling.db then
-                CrossGambling.db.global.leaveWord = word
-            end
-        end)
-        yOff = yOff - leaveRowH - 10
+        end
+        leaveBox:SetScript("OnEnterPressed", SaveLeave)
+        leaveBox:SetScript("OnEditFocusLost", SaveLeave)
+        yOff = yOff - ROW_H - 10
 
         MakeSep(g, FULL):SetPoint("TOPLEFT", g, PAD, yOff)
         yOff = yOff - 10
-        local hdr3 = MakeLabel(g, "DANGER ZONE", "GameFontNormalSmall")
-        hdr3:SetPoint("TOPLEFT", g, PAD + 2, yOff)
-        hdr3:SetTextColor(0.85, 0.25, 0.25)
+
+        local dangerLbl = MakeLabel(g, "DANGER ZONE", "GameFontNormalSmall")
+        dangerLbl:SetPoint("TOPLEFT", g, PAD + 2, yOff)
+        dangerLbl:SetTextColor(0.85, 0.25, 0.25)
         yOff = yOff - 18
 
         local resetBtn = MakeButton(g, FULL, 26, "Reset All Stats", isClassic)
         resetBtn:SetPoint("TOPLEFT", g, PAD, yOff)
         if not isClassic and resetBtn.SetBackdropColor then
-            resetBtn:SetBackdropColor(0.30, 0.12, 0.12)
-            resetBtn:SetBackdropBorderColor(0.5, 0.1, 0.1)
+            resetBtn:SetBackdropColor(0.28, 0.10, 0.10)
+            resetBtn:SetBackdropBorderColor(0.55, 0.08, 0.08)
         end
         resetBtn:SetScript("OnClick", function()
             CrossGambling.game.host    = false
@@ -349,6 +407,9 @@ function CrossGambling:BuildOptionsMenu()
         end)
     end
 
+    -- ════════════════════════════════════════════════════
+    --  Tab 2 – Theme
+    -- ════════════════════════════════════════════════════
     do
         local g    = tabContents[2]
         local FULL = ROW_W
@@ -361,18 +422,17 @@ function CrossGambling:BuildOptionsMenu()
 
         local subTxt = MakeLabel(g, "Your UI will reload after confirming.", "GameFontNormalSmall")
         subTxt:SetPoint("TOP", g, "TOP", 0, yOff)
-        subTxt:SetTextColor(0.55, 0.55, 0.55)
+        subTxt:SetTextColor(0.50, 0.50, 0.50)
         yOff = yOff - 22
 
         local PREVIEW_W = 134
         local PREVIEW_H = 86
         local GAP       = math.floor((FULL - PREVIEW_W * 2) / 3)
-        local selectedThemeKey = CrossGambling.db and CrossGambling.db.global.theme or "Slick"
+        local selectedThemeKey    = CrossGambling.db and CrossGambling.db.global.theme or "Slick"
         local selectionIndicators = {}
 
         for idx, themeData in ipairs(CrossGambling_Themes) do
             local xBase = PAD + (idx - 1) * (PREVIEW_W + GAP + 2)
-
             local previewBox = CreateFrame("Frame", nil, g, "BackdropTemplate")
             previewBox:SetSize(PREVIEW_W, PREVIEW_H + 22)
             previewBox:SetPoint("TOPLEFT", g, xBase, yOff)
@@ -381,21 +441,17 @@ function CrossGambling:BuildOptionsMenu()
                 previewBox:SetBackdropColor(0.18, 0.18, 0.18)
                 previewBox:SetBackdropBorderColor(0.38, 0.38, 0.38)
             end
-
             local tex = previewBox:CreateTexture(nil, "ARTWORK")
             tex:SetPoint("TOPLEFT",     previewBox, 2, -2)
             tex:SetPoint("BOTTOMRIGHT", previewBox, -2, 22)
             tex:SetTexture(themeData.previewTex)
-
             local nameLabel = MakeLabel(previewBox, themeData.label, "GameFontNormalSmall")
             nameLabel:SetPoint("BOTTOM", previewBox, "BOTTOM", 0, 5)
-
             local selBorder = previewBox:CreateTexture(nil, "OVERLAY")
             selBorder:SetAllPoints(previewBox)
-            selBorder:SetColorTexture(1, 0.82, 0, 0.30)
+            selBorder:SetColorTexture(1, 0.82, 0, 0.28)
             selBorder:Hide()
             selectionIndicators[themeData.dbKey] = selBorder
-
             previewBox:EnableMouse(true)
             previewBox:SetScript("OnMouseDown", function()
                 selectedThemeKey = themeData.dbKey
@@ -413,24 +469,24 @@ function CrossGambling:BuildOptionsMenu()
 
         local confirmBtn = MakeButton(g, 160, 28, "Confirm & Reload", isClassic)
         confirmBtn:SetPoint("TOP", g, "TOP", 0, yOff)
-        confirmBtn:SetScript("OnClick", function()
-            CrossGambling:SetTheme(selectedThemeKey)
-        end)
+        confirmBtn:SetScript("OnClick", function() CrossGambling:SetTheme(selectedThemeKey) end)
         yOff = yOff - 38
 
         local infoTxt = MakeLabel(g,
             "Classic: native WoW window frames.\nSlick: custom dark UI with customisable colours.",
             "GameFontNormalSmall")
         infoTxt:SetPoint("TOP", g, "TOP", 0, yOff)
-        infoTxt:SetTextColor(0.55, 0.55, 0.55)
+        infoTxt:SetTextColor(0.50, 0.50, 0.50)
         infoTxt:SetJustifyH("CENTER")
         infoTxt:SetWidth(FULL)
     end
 
+    -- ════════════════════════════════════════════════════
+    --  Tab 3 – Colors
+    -- ════════════════════════════════════════════════════
     do
         local g    = tabContents[3]
         local FULL = ROW_W
-        local HALF = math.floor((FULL - 6) / 2)
         local yOff = -8
 
         if isClassic then
@@ -439,80 +495,42 @@ function CrossGambling:BuildOptionsMenu()
                 "GameFontNormal")
             notice:SetPoint("CENTER", g, "CENTER", 0, 0)
             notice:SetJustifyH("CENTER")
-            notice:SetTextColor(0.65, 0.65, 0.65)
+            notice:SetTextColor(0.60, 0.60, 0.60)
         else
             local hdr = MakeLabel(g, "Slick Theme Colours", "GameFontNormal")
             hdr:SetPoint("TOP", g, "TOP", 0, yOff)
             hdr:SetTextColor(1, 0.82, 0)
-            yOff = yOff - 26
+            yOff = yOff - 22
 
-            local BtnClrFrames  = {}
-            local SideClrFrames = {}
+            local hint = MakeLabel(g, "Click a colour swatch to change it", "GameFontNormalSmall")
+            hint:SetPoint("TOP", g, "TOP", 0, yOff)
+            hint:SetTextColor(0.45, 0.45, 0.45)
+            yOff = yOff - 20
 
-            local function ApplyLive()
-                local c = CrossGambling.db.global.colors
-                for _, f in ipairs(BtnClrFrames) do
-                    if f.SetBackdropColor then f:SetBackdropColor(c.buttonColor.r, c.buttonColor.g, c.buttonColor.b) end
-                end
-                for _, f in ipairs(SideClrFrames) do
-                    if f.SetBackdropColor then f:SetBackdropColor(c.sideColor.r, c.sideColor.g, c.sideColor.b) end
-                end
-                if CrossGamblingSlick and CrossGamblingSlick.SetBackdropColor then
-                    CrossGamblingSlick:SetBackdropColor(c.frameColor.r, c.frameColor.g, c.frameColor.b)
-                end
+            -- Four colour rows – each swatch calls ColorsOpenPicker and refreshes itself
+            local colorDefs = {
+                { label = "Frame Color",  key = "frameColor"  },
+                { label = "Button Color", key = "buttonColor" },
+                { label = "Side Color",   key = "sideColor"   },
+                { label = "Font Color",   key = "fontColor"   },
+            }
+            local allSwatches = {}
+            for _, def in ipairs(colorDefs) do
+                local _, sw = MakeColorRow(g, FULL, yOff, def.label, def.key, isClassic)
+                -- Wire up the swatch click to the Colors module
+                sw:SetScript("OnClick", function()
+                    CrossGambling:ColorsOpenPicker(def.key, function()
+                        if sw.Refresh then sw:Refresh() end
+                    end)
+                end)
+                table.insert(allSwatches, sw)
+                yOff = yOff - 34
             end
-
-            local frameSwatch = MakeColorSwatch(g, "Frame Color",
-                function()
-                    local c = CrossGambling.db.global.colors.frameColor
-                    return c.r, c.g, c.b
-                end,
-                function(r, g2, b)
-                    CrossGambling:SaveThemeColors({r=r,g=g2,b=b}, nil, nil, nil)
-                    ApplyLive()
-                end, isClassic)
-            frameSwatch:SetPoint("TOPLEFT", g, PAD, yOff)
-
-            local btnSwatch = MakeColorSwatch(g, "Button Color",
-                function()
-                    local c = CrossGambling.db.global.colors.buttonColor
-                    return c.r, c.g, c.b
-                end,
-                function(r, g2, b)
-                    CrossGambling:SaveThemeColors(nil, {r=r,g=g2,b=b}, nil, nil)
-                    ApplyLive()
-                end, isClassic)
-            btnSwatch:SetPoint("TOPLEFT", g, PAD + HALF + 6, yOff)
-            yOff = yOff - 34
-
-            local sideSwatch = MakeColorSwatch(g, "Side Color",
-                function()
-                    local c = CrossGambling.db.global.colors.sideColor
-                    return c.r, c.g, c.b
-                end,
-                function(r, g2, b)
-                    CrossGambling:SaveThemeColors(nil, nil, {r=r,g=g2,b=b}, nil)
-                    ApplyLive()
-                end, isClassic)
-            sideSwatch:SetPoint("TOPLEFT", g, PAD, yOff)
-
-            local fontSwatch = MakeColorSwatch(g, "Font Color",
-                function()
-                    local c = CrossGambling.db.global.colors.fontColor
-                    return c.r, c.g, c.b
-                end,
-                function(r, g2, b)
-                    CrossGambling:SaveThemeColors(nil, nil, nil, {r=r,g=g2,b=b})
-                    if CrossGambling.ChatTextField then
-                        CrossGambling.ChatTextField:SetTextColor(r, g2, b)
-                    end
-                end, isClassic)
-            fontSwatch:SetPoint("TOPLEFT", g, PAD + HALF + 6, yOff)
-            yOff = yOff - 38
 
             MakeSep(g, FULL):SetPoint("TOPLEFT", g, PAD, yOff)
             yOff = yOff - 14
 
+            -- Font size slider
             local fsLabel = MakeLabel(g, "Chat Font Size:", "GameFontNormalSmall")
             fsLabel:SetPoint("TOPLEFT", g, PAD, yOff)
             fsLabel:SetTextColor(0.85, 0.85, 0.85)
@@ -547,16 +565,26 @@ function CrossGambling:BuildOptionsMenu()
             MakeSep(g, FULL):SetPoint("TOPLEFT", g, PAD, yOff)
             yOff = yOff - 14
 
+            -- Reset colours button
             local resetColBtn = MakeButton(g, FULL, 26, "Reset to Default Colors", isClassic)
             resetColBtn:SetPoint("TOPLEFT", g, PAD, yOff)
+            if resetColBtn.SetBackdropColor then
+                resetColBtn:SetBackdropColor(0.22, 0.14, 0.06)
+                resetColBtn:SetBackdropBorderColor(0.50, 0.28, 0)
+            end
             resetColBtn:SetScript("OnClick", function()
-                CrossGambling:ResetThemeColors({}, {}, nil)
-                ApplyLive()
+                CrossGambling:ColorsReset()
+                for _, sw in ipairs(allSwatches) do
+                    if sw.Refresh then sw:Refresh() end
+                end
                 DEFAULT_CHAT_FRAME:AddMessage("|cffffff00CrossGambling:|r Colours reset to defaults.")
             end)
         end
     end
 
+    -- ════════════════════════════════════════════════════
+    --  Tab 4 – History
+    -- ════════════════════════════════════════════════════
     do
         local g    = tabContents[4]
         local FULL = ROW_W
@@ -573,7 +601,7 @@ function CrossGambling:BuildOptionsMenu()
             "GameFontNormalSmall")
         desc:SetPoint("TOP", g, "TOP", 0, yOff)
         desc:SetJustifyH("CENTER")
-        desc:SetTextColor(0.50, 0.50, 0.50)
+        desc:SetTextColor(0.45, 0.45, 0.45)
         desc:SetWidth(FULL)
         yOff = yOff - 40
 
@@ -598,25 +626,22 @@ function CrossGambling:BuildOptionsMenu()
         MakeSep(g, FULL):SetPoint("TOPLEFT", g, PAD, yOff)
         yOff = yOff - 10
 
-        local retHeader = MakeSectionHeader(g, "LOG RETENTION")
-        retHeader:SetPoint("TOPLEFT", g, PAD + 2, yOff)
+        MakeSectionHeader(g, "LOG RETENTION"):SetPoint("TOPLEFT", g, PAD + 2, yOff)
         yOff = yOff - 16
 
         local retDesc = MakeLabel(g, "Auto-purge entries older than:", "GameFontNormalSmall")
         retDesc:SetPoint("TOPLEFT", g, PAD + 2, yOff)
-        retDesc:SetTextColor(0.55, 0.55, 0.55)
+        retDesc:SetTextColor(0.50, 0.50, 0.50)
         yOff = yOff - 28
 
-        local retentionDays = {5, 10, 30, "Never"}
-        local retCBs = {}
-        local CB_SLOT_W = math.floor(FULL / #retentionDays)
+        local retentionDays = { 5, 10, 30, "Never" }
+        local retCBs        = {}
+        local CB_SLOT_W     = math.floor(FULL / #retentionDays)
 
         local function OnRetChanged(self2)
             for _, cb in pairs(retCBs) do cb:SetChecked(false) end
             self2:SetChecked(true)
-            if CrossGambling.db then
-                CrossGambling.db.global.auditRetention = self2.days
-            end
+            if CrossGambling.db then CrossGambling.db.global.auditRetention = self2.days end
         end
 
         for i, val in ipairs(retentionDays) do
@@ -625,12 +650,10 @@ function CrossGambling:BuildOptionsMenu()
             local xPos = PAD + (i - 1) * CB_SLOT_W + math.floor((CB_SLOT_W - 20) / 2)
             cb:SetPoint("TOPLEFT", g, xPos, yOff)
             if cb.Text then cb.Text:Hide() end
-
             local lbl = cb:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
             lbl:SetPoint("BOTTOM", cb, "TOP", 0, 2)
             lbl:SetText(type(val) == "number" and (val .. "d") or "Never")
             lbl:SetTextColor(0.80, 0.80, 0.80)
-
             cb.days = val
             cb:SetScript("OnClick", OnRetChanged)
             retCBs[i] = cb
@@ -639,9 +662,7 @@ function CrossGambling:BuildOptionsMenu()
         C_Timer.After(0.15, function()
             if not CrossGambling.db then return end
             for _, cb in pairs(retCBs) do
-                if CrossGambling.db.global.auditRetention == cb.days then
-                    cb:SetChecked(true)
-                end
+                if CrossGambling.db.global.auditRetention == cb.days then cb:SetChecked(true) end
             end
         end)
         yOff = yOff - 38
@@ -649,8 +670,8 @@ function CrossGambling:BuildOptionsMenu()
         local purgeBtn = MakeButton(g, FULL, 26, "Purge Log Now", isClassic)
         purgeBtn:SetPoint("TOPLEFT", g, PAD, yOff)
         if not isClassic and purgeBtn.SetBackdropColor then
-            purgeBtn:SetBackdropColor(0.28, 0.12, 0.12)
-            purgeBtn:SetBackdropBorderColor(0.5, 0.1, 0.1)
+            purgeBtn:SetBackdropColor(0.28, 0.10, 0.10)
+            purgeBtn:SetBackdropBorderColor(0.55, 0.08, 0.08)
         end
         purgeBtn:SetScript("OnClick", function()
             if CrossGambling.db and CrossGambling.db.global then
@@ -667,8 +688,7 @@ function CrossGambling:BuildOptionsMenu()
         MakeSep(g, FULL):SetPoint("TOPLEFT", g, PAD, yOff)
         yOff = yOff - 10
 
-        local exportHeader = MakeSectionHeader(g, "EXPORT / IMPORT STATS")
-        exportHeader:SetPoint("TOPLEFT", g, PAD + 2, yOff)
+        MakeSectionHeader(g, "EXPORT / IMPORT STATS"):SetPoint("TOPLEFT", g, PAD + 2, yOff)
         yOff = yOff - 18
 
         local exportRowFrame = CreateFrame("Frame", nil, g, isClassic and nil or "BackdropTemplate")
@@ -676,8 +696,8 @@ function CrossGambling:BuildOptionsMenu()
         exportRowFrame:SetPoint("TOPLEFT", g, PAD, yOff)
         if not isClassic and exportRowFrame.SetBackdrop then
             exportRowFrame:SetBackdrop(MakeBackdrop())
-            exportRowFrame:SetBackdropColor(0.12, 0.12, 0.12)
-            exportRowFrame:SetBackdropBorderColor(0.35, 0.35, 0.35)
+            exportRowFrame:SetBackdropColor(0.10, 0.10, 0.10)
+            exportRowFrame:SetBackdropBorderColor(0.32, 0.32, 0.32)
         end
 
         local exportBox = CreateFrame("EditBox", nil, exportRowFrame, "InputBoxTemplate")
@@ -686,7 +706,7 @@ function CrossGambling:BuildOptionsMenu()
         exportBox:SetAutoFocus(false)
         exportBox:SetMaxLetters(0)
         exportBox:SetText("Click Export to generate a share string...")
-        exportBox:SetTextColor(0.45, 0.45, 0.45)
+        exportBox:SetTextColor(0.40, 0.40, 0.40)
         exportBox:SetScript("OnEditFocusGained", function(self)
             if self:GetText() == "Click Export to generate a share string..." then
                 self:SetText("")
@@ -711,20 +731,16 @@ function CrossGambling:BuildOptionsMenu()
             local str = exportBox:GetText()
             CrossGambling:importStats(str)
             exportBox:SetText("Click Export to generate a share string...")
-            exportBox:SetTextColor(0.45, 0.45, 0.45)
+            exportBox:SetTextColor(0.40, 0.40, 0.40)
             exportBox:ClearFocus()
         end)
     end
 
+    -- ── Activate first tab ──────────────────────────────
     ShowTab(1)
-
     CrossGambling.OptionsMenuFrame = panel
 
     function CrossGambling:ToggleOptionsMenu()
-        if panel:IsShown() then
-            panel:Hide()
-        else
-            panel:Show()
-        end
+        if panel:IsShown() then panel:Hide() else panel:Show() end
     end
 end

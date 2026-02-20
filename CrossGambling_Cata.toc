@@ -31,6 +31,7 @@
 Libs.xml
 CrossGambling.lua
 core/Theme.lua
+core/Colors.lua
 core/OptionsMenu.lua
 core/chat/Chat.lua
 core/chat/ChatHandlers.lua
