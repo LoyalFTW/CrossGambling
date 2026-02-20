@@ -8,19 +8,9 @@ CGCall["New_Game"] = function()
         self:GameStart()
 
         if (self.game.house == false) then
-            local RollNotification = "Wager - " .. add_commas(self.db.global.wager) .. "g"
-            if(self.game.chatframeOption == false and self.game.host == true) then
-                self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
-            else
-                SendChatMessage("Game Mode - " .. self.game.mode .. " - Wager - " .. add_commas(self.db.global.wager) .. "g", self.game.chatMethod)
-            end
+            self:Announce("Game Mode - " .. self.game.mode .. " - Wager - " .. add_commas(self.db.global.wager) .. "g")
         else
-            local RollNotification = "Wager - " .. add_commas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%"
-            if(self.game.chatframeOption == false and self.game.host == true) then
-                self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
-            else
-                SendChatMessage("Game Mode - " .. self.game.mode .. " - Wager - " .. add_commas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%", self.game.chatMethod)
-            end
+            self:Announce("Game Mode - " .. self.game.mode .. " - Wager - " .. add_commas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%")
         end
 
         self:SendMsg("DisableClient")
@@ -65,11 +55,7 @@ CGCall["START_ROLLS"] = function(maxAmount)
     if self.game.host then
         local initialPrompt = "Entries have closed. Roll now!"
         
-        if self.game.chatframeOption then
-            SendChatMessage(initialPrompt, self.game.chatMethod)
-        else
-            self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, initialPrompt))
-        end
+        self:Announce(initialPrompt)
 
 
         if self.game.mode == "1v1DeathRoll" then
@@ -82,11 +68,8 @@ end
 
 
 CGCall["LastCall"] = function()
-	if(self.game.chatframeOption == false and self.game.host == true) then
-		local RollNotification = "Last Call!"
-		self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
-    elseif(self.game.host == true) then 
-		SendChatMessage("Last Call to Enter", self.game.chatMethod)
+	if(self.game.host == true) then
+		self:Announce("Last Call to Enter")
 	end
 end
 
@@ -94,4 +77,3 @@ end
 
 end
 
-C_ChatInfo.RegisterAddonMessagePrefix("CrossGambling")

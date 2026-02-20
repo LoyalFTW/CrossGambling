@@ -11,7 +11,7 @@ end
 function CrossGambling:ShowClassic(info)
 	if (CrossGamblingUI:IsVisible() ~= true) then
         CrossGamblingUI:Show()
-	else 
+	else
 		CrossGamblingUI:Hide()
 	end
 end
@@ -20,11 +20,11 @@ function CrossGambling:HideClassic(info)
     if (CrossGamblingUI:IsVisible()) then
         CrossGamblingUI:Hide()
     end
-end 
+end
 
 function CrossGambling:DrawMainEvents2()
 CrossGamblingUI = CreateFrame("Frame", "CrossGamblingClassic", UIParent, "InsetFrameTemplate")
-CrossGamblingUI:SetSize(320, 195) 
+CrossGamblingUI:SetSize(320, 195)
 CrossGamblingUI:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 CrossGamblingUI:SetMovable(true)
 CrossGamblingUI:EnableMouse(true)
@@ -62,7 +62,7 @@ CGMainMenu:SetScript("OnMouseUp", function(self)
 		OptionsButton:Hide()
 		MainMenu:Show()
 	end
-	
+
 end)
 
 local MainFooter = CreateFrame("Button", nil, CrossGamblingUI, "InsetFrameTemplate")
@@ -78,10 +78,7 @@ CGOptions:SetFrameStrata("MEDIUM")
 CGOptions:SetText("Options")
 CGOptions:SetNormalFontObject("GameFontNormal")
 CGOptions:SetScript("OnMouseUp", function(self)
-	if MainMenu:IsShown() then
-		MainMenu:Hide()
-		OptionsButton:Show()
-	end
+	CrossGambling:ToggleOptionsMenu()
 end)
 
 local GCchatMethod = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
@@ -147,7 +144,7 @@ CGAcceptOnes:SetText("New Game")
 CGAcceptOnes:SetNormalFontObject("GameFontNormal")
 
 CGAcceptOnes:SetScript("OnClick", function()
-    CGAcceptOnes:Disable()  
+    CGAcceptOnes:Disable()
 
     if CGAcceptOnes:GetText() == "Host Game" then
         CGAcceptOnes:SetText("New Game")
@@ -163,7 +160,7 @@ CGAcceptOnes:SetScript("OnClick", function()
         self:SendMsg("SET_HOUSE", CGGuildPercent:GetText())
     end
 
-    CGAcceptOnes:Enable()  
+    CGAcceptOnes:Enable()
 end)
 
 
@@ -193,10 +190,10 @@ CGEnter:SetText("Join Game")
 CGEnter:SetNormalFontObject("GameFontNormal")
 CGEnter:SetScript("OnClick", function()
 	if (CGEnter:GetText() == "Join Game") then
-         SendChatMessage("1" , self.game.chatMethod)
+        SendChatMessage(CrossGambling.db.global.joinWord or "1", self.game.chatMethod)
         CGEnter:SetText("Leave Game")
     elseif (CGEnter:GetText() == "Leave Game") then
-		SendChatMessage("-1" , self.game.chatMethod)
+        SendChatMessage(CrossGambling.db.global.leaveWord or "-1", self.game.chatMethod)
         CGEnter:SetText("Join Game")
     end
 end)
@@ -264,7 +261,7 @@ self.game.host = false
 for i = 1, #CGPlayers do
 		CGPlayers[1].HasRolled = false
 		CrossGambling:RemovePlayer(CGPlayers[1].Name)
-	    
+
 end
 	CGEnter:SetText("Join Game")
     self.game.state = "START"
@@ -421,17 +418,17 @@ function CrossGambling:PurgeOldAuditEntries()
     if not retention or retention == "Never" then return end
     local cutoff = time() - (retention * 86400)
     local newLog = {}
-    for _, entry in ipairs(self.global.auditLog or {}) do
+    for _, entry in ipairs(self.db.global.auditLog or {}) do
         if tonumber(entry.timestamp) > cutoff then
             table.insert(newLog, entry)
         end
     end
-    self.global.auditLog = newLog
+    self.db.global.auditLog = newLog
 end
 
 C_Timer.After(0.1, function()
     if not CrossGambling.db or not CrossGambling.db.global then
-        return 
+        return
     end
 
     for _, cb in pairs(retentionCheckboxes) do
@@ -461,18 +458,18 @@ function CrossGambling:UpdateAuditLogText(filter)
     content:SetPoint("RIGHT")
     scrollFrame:SetScrollChild(content)
 
-    self.auditFrame.content = content 
+    self.auditFrame.content = content
 
     content:SetSize(1, 1)
 
 
-    local log = self.global.auditLog or {}
+    local log = self.db.global.auditLog or {}
     if #log == 0 then
         local noEntry = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         noEntry:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
         noEntry:SetText("No audit entries found.")
         content:SetHeight(30)
-        self.auditFrame.scrollFrame:SetVerticalScroll(0) 
+        self.auditFrame.scrollFrame:SetVerticalScroll(0)
         return
     end
 
@@ -526,16 +523,6 @@ function CrossGambling:UpdateAuditLogText(filter)
 end
 
 
-local CGTheme = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-CGTheme:SetSize(150, 28)
-CGTheme:SetPoint("TOPRIGHT", CGSession, "BOTTOMRIGHT", -2, -65)
-CGTheme:SetText("Slick Theme")
-CGTheme:SetNormalFontObject("GameFontNormal")
-CGTheme:SetScript("OnClick", function()
-  self.db.global.theme = "Slick"
-	  ReloadUI()
-end)
-
 local CGRightMenu = CreateFrame("Frame", "CGRightMenu", CrossGamblingUI, "InsetFrameTemplate")
 CGRightMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 0, 0)
 CGRightMenu:SetSize(220, 150)
@@ -571,12 +558,15 @@ CGRightMenu:SetScript("OnMouseUp", function(self, button)
 end)
 
 CGRightMenu.TextField = CreateFrame("ScrollingMessageFrame", nil, CGRightMenu)
-CGRightMenu.TextField:SetPoint("CENTER", CGRightMenu, 2, -0)
-CGRightMenu.TextField:SetSize(CGRightMenu:GetWidth()-8, -140)
+CrossGambling.ChatTextField = CGRightMenu.TextField
+CGRightMenu.TextField:SetPoint("TOPLEFT", CGRightMenu, 4, -4)
+CGRightMenu.TextField:SetSize(CGRightMenu:GetWidth()-8, 120)
 CGRightMenu.TextField:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
 CGRightMenu.TextField:SetFading(false)
+CGRightMenu.TextField:SetInsertMode("BOTTOM")
 CGRightMenu.TextField:SetJustifyH("LEFT")
 CGRightMenu.TextField:SetMaxLines(50)
+CGRightMenu.TextField:ScrollToBottom()
 CGRightMenu.TextField:SetScript("OnMouseWheel", function(self, delta)
     if (delta == 1) then
         self:ScrollUp()
@@ -587,41 +577,82 @@ end)
 
 local function OnChatSubmit(CGChatBox)
     local message = CGChatBox:GetText()
-    if message ~= "" and message ~= " " then
-        local playerName = UnitName("player")
-	local playerClass = select(2, UnitClass("player"))
-	local messageWithPlayerInfo = string.format("%s:%s:%s", playerName, playerClass, message)
-		self:SendMsg("CHAT_MSG", messageWithPlayerInfo)
+    if message == "" or message == "Type Here..." then
+        CGChatBox:SetText("")
+        CGChatBox:ClearFocus()
+        return
     end
+
+    local playerName = UnitName("player")
+    local playerClass = select(2, UnitClass("player"))
+    local tf = CrossGambling and CrossGambling.ChatTextField
+
+    if tf then
+                CrossGambling.recentChatMsgs = CrossGambling.recentChatMsgs or {}
+        CrossGambling.recentChatMsgs[playerName .. ":" .. message] = GetTime()
+
+        local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[playerClass]
+        local nameStr = color and ("|c" .. color.colorStr .. playerName .. "|r") or playerName
+        tf:AddMessage(nameStr .. ": " .. message)
+        if tf.ScrollToBottom then tf:ScrollToBottom() end
+    end
+
+        local ok, err = pcall(function()
+        CrossGambling:SendMsg("CHAT_MSG", playerName .. ":" .. playerClass .. ":" .. message)
+    end)
+    if not ok then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000CG Chat Error:|r " .. tostring(err))
+    end
+
     CGChatBox:SetText("")
     CGChatBox:ClearFocus()
 end
 
-local CallFrame = CreateFrame("Frame")
-CallFrame:RegisterEvent("CHAT_MSG_ADDON")
-CallFrame:SetScript("OnEvent", function(self, event, prefix, msg)
-	if prefix ~= "CrossGambling" then return end
-		local event_type, arg1, arg2 = strsplit(":", msg)
-	if CGCall[event_type] then
-		CGCall[event_type](arg1, arg2)
-	elseif event_type == "CHAT_MSG" then
-	local name, class, message = strmatch(msg, "CHAT_MSG:(%S+):(%S+):(.+)")
-	local formatted = string.format("[%s|r]: %s", name, message)
-	CGRightMenu.TextField:AddMessage(formatted)
-	end
-end)
-
-local CGChatBox = CreateFrame("EditBox", nil, CGRightMenu, "InputBoxTemplate")
-CGChatBox:SetPoint("TOPLEFT", CGRightMenu, "BOTTOMLEFT", 5, -20)
-CGChatBox:SetSize(CGRightMenu:GetWidth() - 10, -15)
+local CGChatBox = CreateFrame("EditBox", "CGChatBoxClassic", CGRightMenu)
+CGChatBox:SetPoint("TOPLEFT", CGRightMenu, "BOTTOMLEFT", 5, -2)
+CGChatBox:SetSize(CGRightMenu:GetWidth() - 10, 22)
+CGChatBox:SetFrameStrata("DIALOG")
+CGChatBox:SetFrameLevel(CGRightMenu:GetFrameLevel() + 10)
+CGChatBox:EnableMouse(true)
+CGChatBox:EnableKeyboard(true)
 CGChatBox:SetAutoFocus(false)
-CGChatBox:SetTextInsets(10, 10, 5, 5)
+CGChatBox:SetMultiLine(false)
 CGChatBox:SetMaxLetters(55)
+CGChatBox:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
+CGChatBox:SetTextColor(1, 1, 1, 1)
+CGChatBox:SetTextInsets(6, 6, 0, 0)
+local cgChatBGClassic = CGChatBox:CreateTexture(nil, "BACKGROUND")
+cgChatBGClassic:SetAllPoints(CGChatBox)
+cgChatBGClassic:SetColorTexture(0.1, 0.1, 0.1, 0.8)
 CGChatBox:SetText("Type Here...")
 CGChatBox:SetScript("OnEnterPressed", OnChatSubmit)
+CGChatBox:SetScript("OnMouseDown", function(self)
+    if self:GetText() == "Type Here..." then
+        self:SetText("")
+    end
+    self:SetFocus()
+end)
+CGChatBox:SetScript("OnEditFocusGained", function(self)
+    if self:GetText() == "Type Here..." then
+        self:SetText("")
+    end
+end)
+CGChatBox:SetScript("OnEditFocusLost", function(self)
+    if self:GetText() == "" then
+        self:SetText("Type Here...")
+    end
+end)
+CGChatBox:Hide()
+CGRightMenu:HookScript("OnShow", function()
+    CGChatBox:Show()
+    CrossGambling.game.chatframeOption = false
+        local tf = CrossGambling and CrossGambling.ChatTextField
+    if tf and tf.ScrollToBottom then tf:ScrollToBottom() end
+end)
+CGRightMenu:HookScript("OnHide", function() CGChatBox:Hide(); CrossGambling.game.chatframeOption = true end)
 
 local CGChatToggle = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTemplate")
-CGChatToggle:SetSize(20, 21) 
+CGChatToggle:SetSize(20, 21)
 CGChatToggle:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", 0, 0)
 CGChatToggle:SetText(">")
 CGChatToggle:SetNormalFontObject("GameFontNormal")
@@ -664,15 +695,15 @@ local valuescale = function(val,valStep)
     editbox:SetPoint("LEFT", slider, "RIGHT", 10, 0)
     editbox:SetText(slider:GetValue())
     editbox:SetAutoFocus(false)
-	
+
     slider:SetScript("OnValueChanged", function(self,value)
       self.editbox:SetText(valuescale (value,valStep))
     end)
     slider.editbox = editbox
     return slider
   end
-  
- 
+
+
     local slider = CreateBasicSlider(parent, "CGSlider", "", 0, 1, 0.001)
     slider:HookScript("OnMouseUp", function(self,value)
 	  CrossScale(self)
@@ -682,7 +713,7 @@ local valuescale = function(val,valStep)
 		self.db.global.scale = slider:GetValue()/100
 		CrossGamblingUI:SetScale(self.db.global.scale)
 	end
-	
+
 local CGLeftMenu = CreateFrame("Frame", "CGLeftMenu", CrossGamblingUI, "InsetFrameTemplate")
 CGLeftMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPLEFT", -300, -20)
 CGLeftMenu:SetSize(300, 180)
@@ -718,14 +749,14 @@ CGLeftMenu:SetScript("OnMouseUp", function(self, button)
 end)
 
 local CGLeftMenuHeader = CreateFrame("Button", nil, CGLeftMenu, "UIPanelButtonTemplate")
-CGLeftMenuHeader:SetSize(CGLeftMenu:GetSize(), 21) 
+CGLeftMenuHeader:SetSize(CGLeftMenu:GetSize(), 21)
 CGLeftMenuHeader:SetPoint("TOPLEFT", CGLeftMenu, "TOPLEFT", 0, 20)
 CGLeftMenuHeader:SetFrameLevel(15)
 CGLeftMenuHeader:SetText("Roll Tracker")
 CGLeftMenuHeader:SetNormalFontObject("GameFontNormal")
 
 local CGMenuToggle = CreateFrame("Button", nil, MainHeader,  "UIPanelButtonTemplate")
-CGMenuToggle:SetSize(20, 21) 
+CGMenuToggle:SetSize(20, 21)
 CGMenuToggle:SetPoint("TOPLEFT", MainHeader, "TOPLEFT", 0, 0)
 CGMenuToggle:SetFrameLevel(15)
 CGMenuToggle:SetText("<")
@@ -787,7 +818,7 @@ scrollFrame:SetScript("OnMouseWheel", function(self, delta)
 end)
 
 local playerButtonsFrame = CreateFrame("Frame", "PlayerButtonsFrame", scrollFrame)
-playerButtonsFrame:SetSize(280, 1) 
+playerButtonsFrame:SetSize(280, 1)
 scrollFrame:SetScrollChild(playerButtonsFrame)
 
 playerButtons = {}
@@ -821,11 +852,10 @@ function UpdatePlayerList()
 end
 
 
-
 CGCall["PLAYER_ROLL"] = function(playerName, value)
     for i, player in pairs(CGPlayers) do
         if player.name == playerName then
-            player.roll = value 
+            player.roll = value
             break
         end
     end
@@ -840,7 +870,6 @@ CGEnter:SetText("Join Game")
 CGStartRoll:SetText("Start Rolling")
 CGEnter:Enable()
 end
-
 
 
 CGCall["DisableClient"] = function()
@@ -860,6 +889,5 @@ CGCall["Disable_Join"] = function()
 CGEnter:Disable()
 end
 
-end
 
-C_ChatInfo.RegisterAddonMessagePrefix("CrossGambling")
+end

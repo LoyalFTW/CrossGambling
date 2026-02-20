@@ -1,7 +1,7 @@
 ## Interface: 11508
 ## Title:Cross|cffff7d0aGambling
 ## Author: Jay
-## Version: @project-version@
+## Version: v12.0.08
 ## X-Website: https://www.curseforge.com/wow/addons/crossgambling
 ## X-Category: Minigames, Auction/Economy, Chat/Communication, Guild
 ## X-Localizations: enUS, frFR, ruRU
@@ -10,7 +10,7 @@
 ## Notes: Win big or go broke—test your luck!
 ## Notes-ruRU: Выигрывайте крупно или проигрывайте всё — испытайте удачу!
 ## Notes-frFR: Gagnez gros ou perdez tout — testez votre chance !
-## SavedVariables: CrossGambling
+## SavedVariables: CrossGamblingDB
 ## IconTexture: Interface\AddOns\CrossGambling\Media\Texture\CGIcon
 ## X-Curse-Project-ID: 86458
 ## X-Wago-ID: WL6JgxKv
@@ -30,6 +30,8 @@
 
 Libs.xml
 CrossGambling.lua
+core/Theme.lua
+core/OptionsMenu.lua
 core/chat/Chat.lua
 core/chat/ChatHandlers.lua
 core/GUI.lua
@@ -37,7 +39,6 @@ core/ClassicGUI.lua
 core/Game.lua
 core/Stats.lua
 core/Events.lua
-
 
 
 
