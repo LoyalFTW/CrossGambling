@@ -35,6 +35,7 @@ core/Colors.lua
 core/OptionsMenu.lua
 core/chat/Chat.lua
 core/chat/ChatHandlers.lua
+core/player/PlayerFrame.lua
 core/GUI.lua
 core/ClassicGUI.lua
 core/Game.lua
