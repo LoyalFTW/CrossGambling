@@ -1,4 +1,3 @@
-local CG = CrossGambling
 
 local _btnFrames  = {}  
 local _sideFrames = {}  
@@ -12,25 +11,25 @@ local DEFAULTS = {
     fontColor   = { r = 1.00, g = 1.00, b = 1.00 },
 }
 
-function CG:ColorsSetMainFrame(frame)
+function CrossGambling:ColorsSetMainFrame(frame)
     _mainFrame = frame
 end
 
-function CG:ColorsSetTextField(frame)
+function CrossGambling:ColorsSetTextField(frame)
     _textField = frame
 end
 
-function CG:ColorsRegisterButton(frame)
+function CrossGambling:ColorsRegisterButton(frame)
     table.insert(_btnFrames, frame)
 end
 
-function CG:ColorsRegisterSide(frame)
+function CrossGambling:ColorsRegisterSide(frame)
     table.insert(_sideFrames, frame)
 end
 
 local function GetColors()
-    if CG.db and CG.db.global and CG.db.global.colors then
-        return CG.db.global.colors
+    if CrossGambling.db and CrossGambling.db.global and CrossGambling.db.global.colors then
+        return CrossGambling.db.global.colors
     end
     return DEFAULTS
 end
@@ -41,7 +40,7 @@ local function SetBackdropSafe(frame, r, g, b)
     end
 end
 
-function CG:ColorsApplyAll()
+function CrossGambling:ColorsApplyAll()
     local c = GetColors()
 
     SetBackdropSafe(_mainFrame, c.frameColor.r, c.frameColor.g, c.frameColor.b)
@@ -60,35 +59,35 @@ function CG:ColorsApplyAll()
     end
 end
 
-function CG:ColorsSave(key, r, g, b)
-    if not (CG.db and CG.db.global and CG.db.global.colors) then return end
-    local entry = CG.db.global.colors[key]
+function CrossGambling:ColorsSave(key, r, g, b)
+    if not (CrossGambling.db and CrossGambling.db.global and CrossGambling.db.global.colors) then return end
+    local entry = CrossGambling.db.global.colors[key]
     if not entry then
-        CG.db.global.colors[key] = { r = r, g = g, b = b }
+        CrossGambling.db.global.colors[key] = { r = r, g = g, b = b }
     else
         entry.r, entry.g, entry.b = r, g, b
     end
-    CG:ColorsApplyAll()
+    CrossGambling:ColorsApplyAll()
 end
 
-function CG:ColorsReset()
-    if not (CG.db and CG.db.global and CG.db.global.colors) then return end
-    local c = CG.db.global.colors
+function CrossGambling:ColorsReset()
+    if not (CrossGambling.db and CrossGambling.db.global and CrossGambling.db.global.colors) then return end
+    local c = CrossGambling.db.global.colors
     for key, def in pairs(DEFAULTS) do
         c[key] = { r = def.r, g = def.g, b = def.b }
     end
-    CG:ColorsApplyAll()
+    CrossGambling:ColorsApplyAll()
 end
 
-function CG:ColorsOpenPicker(key, onRefresh)
-    if not (CG.db and CG.db.global and CG.db.global.colors) then return end
-    local c = CG.db.global.colors[key]
+function CrossGambling:ColorsOpenPicker(key, onRefresh)
+    if not (CrossGambling.db and CrossGambling.db.global and CrossGambling.db.global.colors) then return end
+    local c = CrossGambling.db.global.colors[key]
     if not c then return end
 
     local prevR, prevG, prevB = c.r, c.g, c.b
 
     local function apply(r, g, b)
-        CG:ColorsSave(key, r, g, b)
+        CrossGambling:ColorsSave(key, r, g, b)
         if onRefresh then onRefresh(r, g, b) end
     end
 
@@ -119,6 +118,6 @@ function CG:ColorsOpenPicker(key, onRefresh)
     end
 end
 
-function CG:ColorsLoad()
-    CG:ColorsApplyAll()
+function CrossGambling:ColorsLoad()
+    CrossGambling:ColorsApplyAll()
 end
