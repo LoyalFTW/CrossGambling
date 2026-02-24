@@ -37,18 +37,22 @@ CrossGamblingUI:SetClampedToScreen(true)
 self.db.global.scale = self.db.global.scale
 CrossGamblingUI:SetScale(self.db.global.scale)
 CrossGamblingUI:Hide()
+CGTheme:Init()
 
 local MainHeader = CreateFrame("Frame", nil, CrossGamblingUI, "InsetFrameTemplate")
 MainHeader:SetSize(CrossGamblingUI:GetSize(), 21)
 MainHeader:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
+MainHeader:EnableMouse(false)
 
 local MainMenu = CreateFrame("Frame", nil, CrossGamblingUI, "InsetFrameTemplate")
 MainMenu:SetSize(CrossGamblingUI:GetSize(), 21)
 MainMenu:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
+MainMenu:EnableMouse(false)
 
 local OptionsButton = CreateFrame("Frame", nil, CrossGamblingUI, "InsetFrameTemplate")
 OptionsButton:SetSize(CrossGamblingUI:GetSize(), 21)
 OptionsButton:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
+OptionsButton:EnableMouse(false)
 OptionsButton:Hide()
 
 local CGMainMenu = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTemplate")
@@ -71,17 +75,14 @@ MainFooter:SetPoint("BOTTOMLEFT", CrossGamblingUI, 0, 0)
 MainFooter:SetText("CrossGambling - Jay@Tichondrius")
 MainFooter:SetNormalFontObject("GameFontNormal")
 
-local CGOptions = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTemplate")
-CGOptions:SetSize(100, 21)
-CGOptions:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", -25, 0)
-CGOptions:SetFrameStrata("MEDIUM")
-CGOptions:SetText("Options")
-CGOptions:SetNormalFontObject("GameFontNormal")
-CGOptions:SetScript("OnMouseUp", function(self)
-	if MainMenu:IsShown() then
-		MainMenu:Hide()
-		OptionsButton:Show()
-	end
+local CGOptionsBtn = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTemplate")
+CGOptionsBtn:SetSize(100, 21)
+CGOptionsBtn:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", -25, 0)
+CGOptionsBtn:SetFrameStrata("MEDIUM")
+CGOptionsBtn:SetText("Options")
+CGOptionsBtn:SetNormalFontObject("GameFontNormal")
+CGOptionsBtn:SetScript("OnMouseUp", function(self)
+    CGOptions:Toggle()
 end)
 
 local GCchatMethod = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
@@ -98,47 +99,45 @@ CGGameMode:SetText(self.game.mode)
 CGGameMode:SetNormalFontObject("GameFontNormal")
 CGGameMode:SetScript("OnClick", function() self:changeGameMode() CGGameMode:SetText(self.game.mode) end)
 
-local CGEditBox = CreateFrame("EditBox", nil, MainMenu, "InputBoxTemplate")
-CGEditBox:SetSize(MainHeader:GetSize()-25, 25)
-CGEditBox:SetPoint("TOPLEFT", GCchatMethod, 10, -30)
+local CGEditBox
+
+local CGGuildPercent = CreateFrame("EditBox", nil, OptionsButton, "InputBoxTemplate")
+CGGuildPercent:SetSize(140, 30)
+CGGuildPercent:SetPoint("TOPLEFT", CGOptionsBtn, -22, -85)
+CGGuildPercent:SetAutoFocus(false)
+CGGuildPercent:SetMaxLetters(2)
+CGGuildPercent:SetJustifyH("CENTER")
+CGGuildPercent:SetText(self.db.global.houseCut)
+CGGuildPercent:SetScript("OnEnterPressed", function(self)
+        local value = tonumber(self:GetText())
+        if value then CrossGambling.db.global.houseCut = value end
+        self:ClearFocus()
+    end)
+
+CGEditBox = CreateFrame("EditBox", nil, MainMenu, "InputBoxTemplate")
+CGEditBox:SetPoint("TOPLEFT",  GCchatMethod, "BOTTOMLEFT",  0, -2)
+CGEditBox:SetPoint("TOPRIGHT", CGGameMode,   "BOTTOMRIGHT", 0, -2)
+CGEditBox:SetHeight(22)
 CGEditBox:SetAutoFocus(false)
 CGEditBox:SetTextInsets(10, 10, 5, 5)
 CGEditBox:SetMaxLetters(6)
 CGEditBox:SetJustifyH("CENTER")
 CGEditBox:SetText(self.db.global.wager or "")
-
 CGEditBox:SetScript("OnEnterPressed", function(box)
     local value = tonumber(box:GetText())
-    if value then
-        CrossGambling.db.global.wager = value
-    end
+    if value then CrossGambling.db.global.wager = value end
     box:ClearFocus()
 end)
-
 CGEditBox:SetScript("OnTextChanged", function(box, userInput)
     if userInput then
         local value = tonumber(box:GetText())
-        if value then
-            CrossGambling.db.global.wager = value
-        end
+        if value then CrossGambling.db.global.wager = value end
     end
 end)
-
 CGEditBox:SetScript("OnEditFocusLost", function(box)
     local value = tonumber(box:GetText())
-    if value then
-        CrossGambling.db.global.wager = value
-    end
+    if value then CrossGambling.db.global.wager = value end
 end)
-
-local CGGuildPercent = CreateFrame("EditBox", nil, OptionsButton, "InputBoxTemplate")
-CGGuildPercent:SetSize(140, 30)
-CGGuildPercent:SetPoint("TOPLEFT", CGOptions, -22, -85)
-CGGuildPercent:SetAutoFocus(false)
-CGGuildPercent:SetMaxLetters(2)
-CGGuildPercent:SetJustifyH("CENTER")
-CGGuildPercent:SetText(self.db.global.houseCut)
-CGGuildPercent:SetScript("OnEnterPressed", EditBoxOnEnterPressed)
 
 local CGAcceptOnes = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGAcceptOnes:SetSize(150, 28)
@@ -193,10 +192,12 @@ CGEnter:SetText("Join Game")
 CGEnter:SetNormalFontObject("GameFontNormal")
 CGEnter:SetScript("OnClick", function()
 	if (CGEnter:GetText() == "Join Game") then
-         SendChatMessage("1" , self.game.chatMethod)
+        local word = CrossGambling.db.global.joinWord or "1"
+        SendChatMessage(word, self.game.chatMethod)
         CGEnter:SetText("Leave Game")
     elseif (CGEnter:GetText() == "Leave Game") then
-		SendChatMessage("-1" , self.game.chatMethod)
+        local word = CrossGambling.db.global.leaveWord or "-1"
+        SendChatMessage(word, self.game.chatMethod)
         CGEnter:SetText("Join Game")
     end
 end)
@@ -571,8 +572,8 @@ CGRightMenu:SetScript("OnMouseUp", function(self, button)
 end)
 
 CGRightMenu.TextField = CreateFrame("ScrollingMessageFrame", nil, CGRightMenu)
-CGRightMenu.TextField:SetPoint("CENTER", CGRightMenu, 2, -0)
-CGRightMenu.TextField:SetSize(CGRightMenu:GetWidth()-8, -140)
+CGRightMenu.TextField:SetPoint("TOPLEFT",     CGRightMenu, "TOPLEFT",  4, -4)
+CGRightMenu.TextField:SetPoint("BOTTOMRIGHT", CGRightMenu, "BOTTOMRIGHT", -4, 30)
 CGRightMenu.TextField:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
 CGRightMenu.TextField:SetFading(false)
 CGRightMenu.TextField:SetJustifyH("LEFT")
@@ -611,13 +612,24 @@ CallFrame:SetScript("OnEvent", function(self, event, prefix, msg)
 	end
 end)
 
+local PLACEHOLDER = "Type Here..."
 local CGChatBox = CreateFrame("EditBox", nil, CGRightMenu, "InputBoxTemplate")
-CGChatBox:SetPoint("TOPLEFT", CGRightMenu, "BOTTOMLEFT", 5, -20)
-CGChatBox:SetSize(CGRightMenu:GetWidth() - 10, -15)
+CGChatBox:SetPoint("BOTTOMLEFT",  CGRightMenu, "BOTTOMLEFT",  5, 6)
+CGChatBox:SetPoint("BOTTOMRIGHT", CGRightMenu, "BOTTOMRIGHT", -5, 6)
+CGChatBox:SetHeight(22)
 CGChatBox:SetAutoFocus(false)
-CGChatBox:SetTextInsets(10, 10, 5, 5)
+CGChatBox:SetTextInsets(4, 4, 0, 0)
 CGChatBox:SetMaxLetters(55)
-CGChatBox:SetText("Type Here...")
+CGChatBox:SetText(PLACEHOLDER)
+CGChatBox:SetScript("OnEditFocusGained", function(self)
+    if self:GetText() == PLACEHOLDER then self:SetText("") end
+end)
+CGChatBox:SetScript("OnEditFocusLost", function(self)
+    if self:GetText() == "" then self:SetText(PLACEHOLDER) end
+end)
+CGChatBox:SetScript("OnEscapePressed", function(self)
+    self:SetText(PLACEHOLDER) self:ClearFocus()
+end)
 CGChatBox:SetScript("OnEnterPressed", OnChatSubmit)
 
 local CGChatToggle = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTemplate")

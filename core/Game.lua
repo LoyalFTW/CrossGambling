@@ -8,12 +8,16 @@ function CrossGambling:GameStart()
         local RollNotification = "has started a roll!"
         self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
     else
-        SendChatMessage("CrossGambling: A new game has been started! Type 1 to join! (-1 to withdraw)", self.game.chatMethod)
+        local joinWord  = self.db.global.joinWord  or "1"
+    local leaveWord = self.db.global.leaveWord or "-1"
+    SendChatMessage("CrossGambling: A new game has been started! Type " .. joinWord .. " to join! (" .. leaveWord .. " to withdraw)", self.game.chatMethod)
     end
 end
 
 function CrossGambling:RegisterGame(text, playerName)
-    if text == "1" then
+    local joinWord  = self.db.global.joinWord  or "1"
+    local leaveWord = self.db.global.leaveWord or "-1"
+    if text:lower() == joinWord:lower() then
         if self.game.mode == "1v1DeathRoll" then
             if #self.game.players == 2 then
                 SendChatMessage("CrossGambling: This is a 1v1 DeathRoll. Only 2 players can join.", self.game.chatMethod)
@@ -25,7 +29,7 @@ function CrossGambling:RegisterGame(text, playerName)
 		else
 			self:SendMsg("ADD_PLAYER", playerName)		
 		end
-    elseif (text == "-1") then
+    elseif text:lower() == leaveWord:lower() then
 		self:SendMsg("Remove_Player", playerName)   
     end
 end

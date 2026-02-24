@@ -7,28 +7,26 @@ local Backdrop = {
 	insets = {left = 1, right = 1, top = 1, bottom = 1},
 
 }
-local frameColor = {r = 0.27, g = 0.27, b = 0.27}
-local buttonColor = {r = 0.30, g = 0.30, b = 0.30}
-local sideColor = {r = 0.20, g = 0.20, b = 0.20}
 local playerNameColor = "|c" .. RAID_CLASS_COLORS[select(2, UnitClass("player"))].colorStr
-local fontColor = ""
-local BtnClr, SideClr = {}, {}
+local frameColor  = CGTheme._frameColor
+local buttonColor = CGTheme._buttonColor
+local sideColor   = CGTheme._sideColor
+local fontColor   = CGTheme._fontColor
+local BtnClr  = CGTheme._btnFrames
+local SideClr = CGTheme._sideFrames
+
 local ButtonColors = function(self)
-if not self.SetBackdrop then
-Mixin(self, BackdropTemplateMixin)
-end
-self:SetBackdrop(Backdrop)
-self:SetBackdropBorderColor(0, 0, 0)
-table.insert(BtnClr, self)
+    if not self.SetBackdrop then Mixin(self, BackdropTemplateMixin) end
+    self:SetBackdrop(Backdrop)
+    self:SetBackdropBorderColor(0, 0, 0)
+    CGTheme:RegisterBtn(self)
 end
 
 local SideColor = function(self)
-if not self.SetBackdrop then
-Mixin(self, BackdropTemplateMixin)
-end
-self:SetBackdrop(Backdrop)
-self:SetBackdropBorderColor(0, 0, 0)
-table.insert(SideClr, self)
+    if not self.SetBackdrop then Mixin(self, BackdropTemplateMixin) end
+    self:SetBackdrop(Backdrop)
+    self:SetBackdropBorderColor(0, 0, 0)
+    CGTheme:RegisterSide(self)
 end
 local CrossGamblingUI
 
@@ -58,32 +56,32 @@ end
 
 function CrossGambling:DrawMainEvents()
 
-CGTheme = CreateFrame("Frame", "CrossGamblingTheme", UIParent, "BasicFrameTemplateWithInset")
-CGTheme:SetSize(1000, 320) 
-CGTheme:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-CGTheme:SetMovable(true)
-CGTheme:EnableMouse(true)
-CGTheme:SetUserPlaced(true)
-CGTheme:Show()
-CrossGamblingTheme:SetScript("OnLeave", function()
+local CGThemePicker = CreateFrame("Frame", "CrossGamblingTheme", UIParent, "BasicFrameTemplateWithInset")
+CGThemePicker:SetSize(1000, 320) 
+CGThemePicker:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+CGThemePicker:SetMovable(true)
+CGThemePicker:EnableMouse(true)
+CGThemePicker:SetUserPlaced(true)
+CGThemePicker:Show()
+CGThemePicker:SetScript("OnLeave", function()
 	self.db.global.themechoice = 0
 end)
 if self.db.global.themechoice == 1 then
-CrossGamblingTheme:Show()
+CGThemePicker:Show()
 else
-CrossGamblingTheme:Hide()
+CGThemePicker:Hide()
 end
-local CGThemeHeader = CGTheme:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-CGThemeHeader:SetPoint("TOP", CGTheme, "TOP", 0, -2)
+local CGThemeHeader = CGThemePicker:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+CGThemeHeader:SetPoint("TOP", CGThemePicker, "TOP", 0, -2)
 CGThemeHeader:SetText("CrossGambling")
 
-local CGThemeText = CGTheme:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-CGThemeText:SetPoint("TOP", CGTheme, "TOP", 0, -50)
+local CGThemeText = CGThemePicker:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+CGThemeText:SetPoint("TOP", CGThemePicker, "TOP", 0, -50)
 CGThemeText:SetText("New theme picker, choose between Classic or New Style! After picking, and confirming, your game will reload. \nBoth frames are Resizable! All frames and panels are movable and in the new style you can change its colors.")
 
-local OldTheme = CreateFrame("CheckButton", nil, CGTheme, "ChatConfigCheckButtonTemplate")
+local OldTheme = CreateFrame("CheckButton", nil, CGThemePicker, "ChatConfigCheckButtonTemplate")
 OldTheme:SetSize(40, 40)
-OldTheme:SetPoint("BOTTOMLEFT", CGTheme, "BOTTOMLEFT", 220, 5)
+OldTheme:SetPoint("BOTTOMLEFT", CGThemePicker, "BOTTOMLEFT", 220, 5)
 OldTheme:SetScript("OnEnter", ButtonOnEnter)
 OldTheme:SetScript("OnLeave", ButtonOnLeave)
 OldTheme:SetText("Old Theme")
@@ -91,9 +89,9 @@ OldTheme:SetScript("OnMouseUp", function()
 self.db.global.theme = "Classic"
 end)
 
-local NewTheme = CreateFrame("CheckButton", nil, CGTheme,"ChatConfigCheckButtonTemplate")
+local NewTheme = CreateFrame("CheckButton", nil, CGThemePicker,"ChatConfigCheckButtonTemplate")
 NewTheme:SetSize(40, 40)
-NewTheme:SetPoint("BOTTOMLEFT", CGTheme, "BOTTOMLEFT", 620, 5)
+NewTheme:SetPoint("BOTTOMLEFT", CGThemePicker, "BOTTOMLEFT", 620, 5)
 NewTheme:SetScript("OnEnter", ButtonOnEnter)
 NewTheme:SetScript("OnLeave", ButtonOnLeave)
 NewTheme:SetScript("OnMouseUp", function()
@@ -101,13 +99,13 @@ NewTheme:SetText("New Theme")
 self.db.global.theme = "Slick"
 end)
 
-local CGThemeClassic = CGTheme:CreateTexture(nil, "ARTWORK")
-CGThemeClassic:SetPoint("BOTTOMLEFT", CGTheme, "BOTTOMLEFT", 0, 10)
+local CGThemeClassic = CGThemePicker:CreateTexture(nil, "ARTWORK")
+CGThemeClassic:SetPoint("BOTTOMLEFT", CGThemePicker, "BOTTOMLEFT", 0, 10)
 CGThemeClassic:SetTexture("Interface\\AddOns\\CrossGambling\\media\\ClassicTheme.tga") 
 
-local CGThemeConfirm = CreateFrame("Button", nil, CGTheme, "BackdropTemplate")
+local CGThemeConfirm = CreateFrame("Button", nil, CGThemePicker, "BackdropTemplate")
 CGThemeConfirm:SetSize(100, 21)
-CGThemeConfirm:SetPoint("BOTTOMLEFT", CGTheme, "BOTTOMRIGHT", -550, 10)
+CGThemeConfirm:SetPoint("BOTTOMLEFT", CGThemePicker, "BOTTOMRIGHT", -550, 10)
 CGThemeConfirm:SetText("Confirm")
 CGThemeConfirm:SetNormalFontObject("GameFontNormal")
 ButtonColors(CGThemeConfirm)
@@ -115,8 +113,8 @@ CGThemeConfirm:SetScript("OnMouseUp", function(self)
 ReloadUI()
 end)
 
-local CGThemeSlick = CGTheme:CreateTexture(nil, "ARTWORK")
-CGThemeSlick:SetPoint("BOTTOMRIGHT", CGTheme, "BOTTOMRIGHT", 0, 10)
+local CGThemeSlick = CGThemePicker:CreateTexture(nil, "ARTWORK")
+CGThemeSlick:SetPoint("BOTTOMRIGHT", CGThemePicker, "BOTTOMRIGHT", 0, 10)
 CGThemeSlick:SetTexture("Interface\\AddOns\\CrossGambling\\media\\NewTheme.tga") 
 CGThemeSlick:SetSize(608, 280)
 
@@ -136,19 +134,24 @@ CrossGamblingUI:SetClampedToScreen(true)
 self.db.global.scale = self.db.global.scale
 CrossGamblingUI:SetScale(self.db.global.scale)
 CrossGamblingUI:Hide()
+CGTheme:RegisterMain(CrossGamblingUI)
+CGTheme:Init()
 
 local MainHeader = CreateFrame("Frame", nil, CrossGamblingUI, "BackdropTemplate")
 MainHeader:SetSize(CrossGamblingUI:GetSize(), 21)
 MainHeader:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
+MainHeader:EnableMouse(false)
 ButtonColors(MainHeader)
 
 local MainMenu = CreateFrame("Frame", nil, CrossGamblingUI, "BackdropTemplate")
 MainMenu:SetSize(CrossGamblingUI:GetSize(), 21)
 MainMenu:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
+MainMenu:EnableMouse(false)
 
 local OptionsButton = CreateFrame("Frame", nil, CrossGamblingUI, "BackdropTemplate")
 OptionsButton:SetSize(CrossGamblingUI:GetSize(), 21)
 OptionsButton:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
+OptionsButton:EnableMouse(false)
 OptionsButton:Hide()
 
 local CGMainMenu = CreateFrame("Button", nil, MainHeader,  "BackdropTemplate")
@@ -159,11 +162,6 @@ CGMainMenu:SetText("Main")
 CGMainMenu:SetNormalFontObject("GameFontNormal")
 ButtonColors(CGMainMenu)
 CGMainMenu:SetScript("OnMouseUp", function(self)
-	if OptionsButton:IsShown() then
-		OptionsButton:Hide()
-		MainMenu:Show()
-	end
-	
 end)
 
 local MainFooter = CreateFrame("Button", nil, CrossGamblingUI, "BackdropTemplate")
@@ -173,125 +171,18 @@ MainFooter:SetText("CrossGambling - Jay@Tichondrius")
 MainFooter:SetNormalFontObject("GameFontNormal")
 ButtonColors(MainFooter)
 
-local CGOptions = CreateFrame("Button", nil, MainHeader,  "BackdropTemplate")
-CGOptions:SetSize(63, 21)
-CGOptions:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", -30, 0)
-CGOptions:SetFrameStrata("MEDIUM")
-CGOptions:SetText("Options")
-CGOptions:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGOptions)
-CGOptions:SetScript("OnMouseUp", function(self)
-	if MainMenu:IsShown() then
-		MainMenu:Hide()
-		OptionsButton:Show()
-	end
+local CGOptionsBtn = CreateFrame("Button", nil, MainHeader,  "BackdropTemplate")
+CGOptionsBtn:SetSize(63, 21)
+CGOptionsBtn:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", -30, 0)
+CGOptionsBtn:SetFrameStrata("MEDIUM")
+CGOptionsBtn:SetText("Options")
+CGOptionsBtn:SetNormalFontObject("GameFontNormal")
+ButtonColors(CGOptionsBtn)
+CGOptionsBtn:SetScript("OnMouseUp", function(self)
+    CGOptions:Toggle()
 end)
 
-
-
-
-local fontColor = {r = 1.0, g = 1.0, b = 1.0} 
-function setFontColor(r, g, b)
-    fontColor.r, fontColor.g, fontColor.b = r, g, b
-end
-function LoadColor()
-    frameColor.r, frameColor.g, frameColor.b = self.db.global.colors.frameColor.r, self.db.global.colors.frameColor.g, self.db.global.colors.frameColor.b
-    CrossGamblingUI:SetBackdropColor(frameColor.r, frameColor.g, frameColor.b)
-
-    buttonColor.r, buttonColor.g, buttonColor.b = self.db.global.colors.buttonColor.r, self.db.global.colors.buttonColor.g, self.db.global.colors.buttonColor.b
-    sideColor.r, sideColor.g, sideColor.b = self.db.global.colors.sideColor.r, self.db.global.colors.sideColor.g, self.db.global.colors.sideColor.b
-	
-    local fontColorRGB = self.db.global.colors.fontColor
-    fontColor.r, fontColor.g, fontColor.b = fontColorRGB.r, fontColorRGB.g, fontColorRGB.b
-    setFontColor(fontColor.r, fontColor.g, fontColor.b)
-
-    for i = 1, #SideClr do
-        SideClr[i]:SetBackdropColor(sideColor.r, sideColor.g, sideColor.b)
-    end
-    for i = 1, #BtnClr do
-        BtnClr[i]:SetBackdropColor(buttonColor.r, buttonColor.g, buttonColor.b)
-    end
-end
-
-
-function SaveColor()
-	self.db.global.colors.frameColor.r, self.db.global.colors.frameColor.g, self.db.global.colors.frameColor.b = frameColor.r, frameColor.g, frameColor.b
-    self.db.global.colors.buttonColor.r, self.db.global.colors.buttonColor.g, self.db.global.colors.buttonColor.b = buttonColor.r, buttonColor.g, buttonColor.b
-    self.db.global.colors.sideColor.r, self.db.global.colors.sideColor.g, self.db.global.colors.sideColor.b = sideColor.r, sideColor.g, sideColor.b
-	self.db.global.colors.fontColor = fontColor
-end
-
-
-
-function changeColor(element)
-    local color
-    if element == "frame" then
-        color = frameColor
-    elseif element == "buttons" then
-        color = buttonColor
-    elseif element == "sidecolor" then
-        color = sideColor
-    elseif element == "fontcolor" then
-        color = fontColor
-    elseif element == "resetColors" then
-        frameColor = { r = 0.27, g = 0.27, b = 0.27 }
-        CrossGamblingUI:SetBackdropColor(frameColor.r, frameColor.g, frameColor.b)
-        buttonColor = { r = 0.30, g = 0.30, b = 0.30 }
-        for i, button in ipairs(BtnClr) do
-            button:SetBackdropColor(buttonColor.r, buttonColor.g, buttonColor.b)
-        end
-        sideColor = { r = 0.20, g = 0.20, b = 0.20 }
-        for i, button in ipairs(SideClr) do
-            button:SetBackdropColor(sideColor.r, sideColor.g, sideColor.b)
-        end
-        SaveColor()
-        return
-    end
-
-    local function ShowColorPicker(r, g, b, a, changedCallback)
-        ColorPickerFrame.hasOpacity = false
-        ColorPickerFrame.func, ColorPickerFrame.opacityFunc, ColorPickerFrame.cancelFunc = changedCallback, changedCallback, changedCallback
-        ColorPickerFrame:Hide()
-        ColorPickerFrame:Show()
-    end
-	
-	ColorPickerFrame.swatchFunc = function()
-        local r, g, b = ColorPickerFrame:GetColorRGB()
-    end
-	
-	
-	
-
-
-local function ColorCallback(restore)
-    local newR, newG, newB = ColorPickerFrame:GetColorRGB()
-    
-		if element == "fontcolor" then
-		
-		setFontColor(newR, newG, newB)
-		else
-        color.r, color.g, color.b = newR, newG, newB
-
-        if element == "frame" then
-            CrossGamblingUI:SetBackdropColor(color.r, color.g, color.b)
-        elseif element == "buttons" then
-            for i, button in ipairs(BtnClr) do
-                button:SetBackdropColor(color.r, color.g, color.b)
-            end
-        elseif element == "sidecolor" then
-            for i, button in ipairs(SideClr) do
-                button:SetBackdropColor(color.r, color.g, color.b)
-            end
-        end
-    end
-
-    if not restore then
-        SaveColor()
-    end
-end
-
-    ShowColorPicker(color.r, color.g, color.b, nil, ColorCallback)
-end
+local GCchatMethod
 
 local GCchatMethod = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
 GCchatMethod:SetSize(105, 30)
@@ -333,37 +224,31 @@ CGGameMode:SetScript("OnLeave", function(self)
 end)
 CGGameMode:SetScript("OnClick", function() self:changeGameMode() CGGameMode:SetText(self.game.mode) end)
 
-local CGEditBox = CreateFrame("EditBox", nil, MainMenu, "InputBoxTemplate")
-CGEditBox:SetSize(MainHeader:GetSize()-25, 25)
-CGEditBox:SetPoint("TOPLEFT", GCchatMethod, 10, -30)
+local CGEditBox
+
+CGEditBox = CreateFrame("EditBox", nil, MainMenu, "InputBoxTemplate")
+CGEditBox:SetPoint("TOPLEFT",  GCchatMethod, "BOTTOMLEFT",  0, -2)
+CGEditBox:SetPoint("TOPRIGHT", CGGameMode,   "BOTTOMRIGHT", 0, -2)
+CGEditBox:SetHeight(22)
 CGEditBox:SetAutoFocus(false)
 CGEditBox:SetTextInsets(10, 10, 5, 5)
 CGEditBox:SetMaxLetters(6)
 CGEditBox:SetJustifyH("CENTER")
 CGEditBox:SetText(self.db.global.wager or "")
-
 CGEditBox:SetScript("OnEnterPressed", function(box)
     local value = tonumber(box:GetText())
-    if value then
-        CrossGambling.db.global.wager = value
-    end
+    if value then CrossGambling.db.global.wager = value end
     box:ClearFocus()
 end)
-
 CGEditBox:SetScript("OnTextChanged", function(box, userInput)
     if userInput then
         local value = tonumber(box:GetText())
-        if value then
-            CrossGambling.db.global.wager = value
-        end
+        if value then CrossGambling.db.global.wager = value end
     end
 end)
-
 CGEditBox:SetScript("OnEditFocusLost", function(box)
     local value = tonumber(box:GetText())
-    if value then
-        CrossGambling.db.global.wager = value
-    end
+    if value then CrossGambling.db.global.wager = value end
 end)
 
 local CGAcceptOnes = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
@@ -388,13 +273,25 @@ end)
 
 local CGGuildPercent = CreateFrame("EditBox", nil, OptionsButton, "InputBoxTemplate")
 CGGuildPercent:SetSize(100, 30)
-CGGuildPercent:SetPoint("TOPRIGHT", CGOptions, "BOTTOMRIGHT", 25, -47)
+CGGuildPercent:SetPoint("TOPRIGHT", CGOptionsBtn, "BOTTOMRIGHT", 25, -47)
 CGGuildPercent:SetAutoFocus(false)
 CGGuildPercent:SetTextInsets(10, 10, 5, 5)
 CGGuildPercent:SetMaxLetters(2)
 CGGuildPercent:SetJustifyH("CENTER")
 CGGuildPercent:SetText(self.db.global.houseCut)
-CGGuildPercent:SetScript("OnEnterPressed", EditBoxOnEnterPressed)
+CGGuildPercent:SetScript("OnEnterPressed", function(self)
+    local value = tonumber(self:GetText())
+    if value then
+        CrossGambling.db.global.houseCut = value
+    end
+    self:ClearFocus()
+end)
+CGGuildPercent:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
+CGGuildPercent:SetScript("OnEditFocusLost", function(self)
+    self:HighlightText(0, 0)
+    local value = tonumber(self:GetText())
+    if value then CrossGambling.db.global.houseCut = value end
+end)
 
 CGAcceptOnes:SetScript("OnClick", function()
     CGAcceptOnes:Disable()  
@@ -485,10 +382,12 @@ CGEnter:SetScript("OnLeave", function(self)
 end)
 CGEnter:SetScript("OnClick", function()
 	if (CGEnter:GetText() == "Join Game") then
-         SendChatMessage("1" , self.game.chatMethod)
+        local word = CrossGambling.db.global.joinWord or "1"
+        SendChatMessage(word, self.game.chatMethod)
         CGEnter:SetText("Leave Game")
     elseif (CGEnter:GetText() == "Leave Game") then
-		SendChatMessage("-1" , self.game.chatMethod)
+        local word = CrossGambling.db.global.leaveWord or "-1"
+        SendChatMessage(word, self.game.chatMethod)
         CGEnter:SetText("Join Game")
     end
 end)
@@ -725,7 +624,7 @@ CGSessionStats:SetScript("OnClick", function()
 end)
 
 local width, height = CrossGamblingUI:GetSize()
-local auditFrame = CreateFrame("Frame", "CrossGamblingAuditLogFrame", CrossGamblingUI, "BackdropTemplate")
+local auditFrame = CreateFrame("Frame", "CrossGamblingAuditLogFrame", UIParent, "BackdropTemplate")
 auditFrame:SetPoint("TOP", CrossGamblingUI, "BOTTOM", 0, -20)
 auditFrame:SetSize(width, height)
 auditFrame:SetResizeBounds(width, height, 400, 400)
@@ -1087,166 +986,21 @@ ChangeColorReset:SetScript("OnLeave", function(self)
 end)
 ChangeColorReset:SetScript("OnMouseUp", function() changeColor("resetColors") end)
 
-local CGRightMenu = CreateFrame("Frame", "CGRightMenu", CrossGamblingUI, "BackdropTemplate")
-CGRightMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 0, 0)
-CGRightMenu:SetSize(220, 150)
-SideColor(CGRightMenu)
-CGRightMenu:Hide()
-
-local function onUpdate(self,elapsed)
-    local mainX, mainY = CrossGamblingUI:GetCenter()
-    local leftX, leftY = CGRightMenu:GetCenter()
-    local distance = math.sqrt((mainX - leftX)^2 + (mainY - leftY)^2)
-    if distance < 220 then
-        CGRightMenu:ClearAllPoints()
-        CGRightMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 0, 0)
-end
-end
-
-CGRightMenu:SetScript("OnUpdate", onUpdate)
-CGRightMenu:SetMovable(true)
-CGRightMenu:EnableMouse(true)
-CGRightMenu:SetUserPlaced(true)
-CGRightMenu:SetClampedToScreen(true)
-
-CGRightMenu:SetScript("OnMouseDown", function(self, button)
-    if button == "LeftButton" and not self.isMoving then
-        self:StartMoving();
-        self.isMoving = true;
-    end
-end)
-CGRightMenu:SetScript("OnMouseUp", function(self, button)
-    if button == "LeftButton" and self.isMoving then
-        self:StopMovingOrSizing();
-        self.isMoving = false;
-    end
-end)
-
-CGRightMenu.TextField = CreateFrame("ScrollingMessageFrame", nil, CGRightMenu)
-CGRightMenu.TextField:SetPoint("CENTER", CGRightMenu, 2, -0)
-CGRightMenu.TextField:SetSize(CGRightMenu:GetWidth()-8, -140)
-CGRightMenu.TextField:SetFont("Fonts\\FRIZQT__.TTF", self.db.global.fontvalue, "")
-CGRightMenu.TextField:SetFading(false)
-CGRightMenu.TextField:SetJustifyH("LEFT")
-CGRightMenu.TextField:SetMaxLines(50)
-CGRightMenu.TextField:SetScript("OnMouseWheel", function(self, delta)
-    if (delta == 1) then
-        self:ScrollUp()
-    else
-        self:ScrollDown()
-    end
-end)
-
-local function OnChatSubmit(CGChatBox)
-    local message = CGChatBox:GetText()
-    if message ~= "" and message ~= " " then
-        local playerName = UnitName("player")
-
-        local formattedMessage = string.format("[%s]|r: |cFF%02x%02x%02x%s", playerName, fontColor.r * 255, fontColor.g * 255, fontColor.b * 255, message)
-        local messageWithPlayerInfo = string.format("%s:%s", playerNameColor .. playerName, formattedMessage)
-        self:SendMsg("CHAT_MSG", messageWithPlayerInfo)
-
-        CGChatBox:SetText("")
-        CGChatBox:ClearFocus()
-    end
-end
+local cgRightMenu = CGChat:BuildChatPanel(
+    CrossGamblingUI,
+    self.game,
+    ButtonColors,
+    SideColor
+)
 
 
-local fontColorButton = CreateFrame("Button", nil, CGRightMenu, "BackdropTemplate")
-fontColorButton:SetSize(220, 20) 
-fontColorButton:SetPoint("BOTTOMLEFT", CGRightMenu, "BOTTOMLEFT", 0, -40) 
-fontColorButton:SetText("Font Color")
-fontColorButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-local highlight = fontColorButton:GetHighlightTexture()
-highlight:SetBlendMode("ADD")
-highlight:SetAllPoints()
+local cgChatToggle = CGChat:BuildToggleButton(
+    MainHeader,
+    ButtonColors,
+    self.game
+)
 
-fontColorButton:SetScript("OnEnter", function(self)
-    highlight:Show()
-end)
-
-fontColorButton:SetScript("OnLeave", function(self)
-    highlight:Hide()
-end)
-fontColorButton:SetNormalFontObject("GameFontNormal")
-ButtonColors(fontColorButton)
-fontColorButton:SetScript("OnMouseUp", function() changeColor("fontcolor") end)
-
-local fontSizeSlider = CreateFrame("Slider", nil, fontColorButton, "OptionsSliderTemplate")
-fontSizeSlider:SetPoint("BOTTOMLEFT", 0, -20)
-fontSizeSlider:SetSize(220, 20)
-fontSizeSlider:SetMinMaxValues(1, 100)  
-fontSizeSlider:SetValueStep(1)
-fontSizeSlider:SetObeyStepOnDrag(true)
-fontSizeSlider:SetValue(self.db.global.fontvalue)
-fontSizeSlider:SetOrientation("HORIZONTAL")
-fontSizeSlider.Low:SetText("1")  
-fontSizeSlider.High:SetText("100")  
-
-
-local sliderText = fontSizeSlider:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-sliderText:SetPoint("TOP", 0, -20)  
-sliderText:SetText(self.db.global.fontvalue) 
-
-local function UpdateFontSize(_, value)
-    self.db.global.fontvalue = value
-    sliderText:SetText(value)
-    CGRightMenu.TextField:SetFont("Fonts\\FRIZQT__.TTF", self.db.global.fontvalue, "")  
-end
-
-fontSizeSlider:SetScript("OnValueChanged", function(_, value)
-    UpdateFontSize(_, value)
-end)
-
-
-local CallFrame = CreateFrame("Frame")
-CallFrame:RegisterEvent("CHAT_MSG_ADDON")
-CallFrame:SetScript("OnEvent", function(self, event, prefix, msg)
-	if prefix ~= "CrossGambling" then return end
-		local event_type, arg1, arg2 = strsplit(":", msg)
-	if CGCall[event_type] then
-		CGCall[event_type](arg1, arg2)
-	elseif event_type == "CHAT_MSG" then
-	local name, class, message = strmatch(msg, "CHAT_MSG:(%S+):(%S+):(.+)")
-	local formatted = string.format("[%s|r]: %s", name, message)
-	CGRightMenu.TextField:AddMessage(formatted)
-	end
-end)
-
-local CGChatBox = CreateFrame("EditBox", nil, CGRightMenu, "BackdropTemplate")
-CGChatBox:SetPoint("TOPLEFT", CGRightMenu, "BOTTOMLEFT", 0, -20)
-CGChatBox:SetSize(CGRightMenu:GetWidth() - 0, -20)
-ButtonColors(CGChatBox)
-CGChatBox:SetFont("Fonts\\FRIZQT__.TTF", 11, "")
-CGChatBox:SetAutoFocus(false)
-CGChatBox:SetTextInsets(10, 10, 5, 5)
-CGChatBox:SetMaxLetters(55)
-CGChatBox:SetText("Type Here...")
-CGChatBox:SetScript("OnEnterPressed", OnChatSubmit)
-CGChatBox:SetScript("OnMouseDown", function(self)
-    self:SetText("")
-end)
-
-local CGChatToggle = CreateFrame("Button", nil, MainHeader,  "BackdropTemplate")
-CGChatToggle:SetSize(20, 21) 
-CGChatToggle:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", 0, 0)
-CGChatToggle:SetFrameLevel(15)
-CGChatToggle:SetText(">")
-CGChatToggle:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGChatToggle)
-CGChatToggle:SetScript("OnMouseDown", function()
-   if CGRightMenu:IsShown() then
-		CGRightMenu:Hide()
-		CGChatToggle:SetText(">")
-		self.game.chatframeOption = true
-		
-	else
-		CGRightMenu:Show()
-		CGChatToggle:SetText("<")
-		self.game.chatframeOption = false
-	end
-end)
-
+local CGRightMenu = cgRightMenu
 
 local valuescale = function(val,valStep)
 		 	self.db.global.scalevalue = val
@@ -1502,5 +1256,6 @@ end
 
 
 end
+
 
 C_ChatInfo.RegisterAddonMessagePrefix("CrossGambling")
