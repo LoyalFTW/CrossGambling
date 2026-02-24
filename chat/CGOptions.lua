@@ -618,7 +618,6 @@ function CGOptions:Build(isSlick)
     return win
 end
 
-
 function CGOptions:Rebuild(isSlick)
     if self.frame then
         self.frame:Hide()

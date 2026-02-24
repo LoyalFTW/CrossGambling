@@ -1,3 +1,5 @@
+CGChat = {} 
+
 local function GetFontSize()
     if CrossGambling and CrossGambling.db and CrossGambling.db.global then
         return CrossGambling.db.global.fontvalue or 14
