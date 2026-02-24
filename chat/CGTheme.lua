@@ -38,6 +38,7 @@ end
 function CGTheme:Init()
     local theme = self:GetTheme()
     self.isSlick = (theme == "Slick")
+    CGOptions:Build(self.isSlick) 
 end
 
 function CGTheme:Switch(name)
