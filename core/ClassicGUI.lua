@@ -1,26 +1,34 @@
 local CGPlayers = {}
+local playerButtons = {}
+local playerButtonsFrame
 local CrossGamblingUI
 function CrossGambling:toggleUi2()
-if (CrossGamblingUI:IsVisible()) then
-CrossGamblingUI:Hide()
-else
-CrossGamblingUI:Show()
-end
+	self:BuildUI()
+	if not CrossGamblingUI then return end
+	if (CrossGamblingUI:IsVisible()) then
+		CrossGamblingUI:Hide()
+	else
+		CrossGamblingUI:Show()
+	end
 end
 
 function CrossGambling:ShowClassic(info)
+	self:BuildUI()
+	if not CrossGamblingUI then return end
 	if (CrossGamblingUI:IsVisible() ~= true) then
-        CrossGamblingUI:Show()
-	else 
+		CrossGamblingUI:Show()
+	else
 		CrossGamblingUI:Hide()
 	end
 end
 
 function CrossGambling:HideClassic(info)
-    if (CrossGamblingUI:IsVisible()) then
-        CrossGamblingUI:Hide()
-    end
-end 
+	self:BuildUI()
+	if not CrossGamblingUI then return end
+	if (CrossGamblingUI:IsVisible()) then
+		CrossGamblingUI:Hide()
+	end
+end
 
 function CrossGambling:DrawMainEvents2()
 CrossGamblingUI = CreateFrame("Frame", "CrossGamblingClassic", UIParent, "InsetFrameTemplate")
@@ -188,17 +196,20 @@ end)
 local CGEnter = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGEnter:SetSize(150, 28)
 CGEnter:SetPoint("TOPLEFT", CGGameMode, "BOTTOMLEFT", -0, -25)
-CGEnter:SetText("Join Game")
+CGEnter:SetText("Join")
 CGEnter:SetNormalFontObject("GameFontNormal")
+local function CGEnter_UpdateJoinText()
+    CGEnter:SetText("Join")
+end
 CGEnter:SetScript("OnClick", function()
-	if (CGEnter:GetText() == "Join Game") then
-        local word = CrossGambling.db.global.joinWord or "1"
-        SendChatMessage(word, self.game.chatMethod)
-        CGEnter:SetText("Leave Game")
-    elseif (CGEnter:GetText() == "Leave Game") then
-        local word = CrossGambling.db.global.leaveWord or "-1"
-        SendChatMessage(word, self.game.chatMethod)
-        CGEnter:SetText("Join Game")
+    local joinWord  = self.db.global.joinWord  or "1"
+    local leaveWord = self.db.global.leaveWord or "-1"
+    if CGEnter:GetText() == "Leave" then
+        SendChatMessage(leaveWord, self.game.chatMethod)
+        CGEnter:SetText("Join")
+    else
+        SendChatMessage(joinWord, self.game.chatMethod)
+        CGEnter:SetText("Leave")
     end
 end)
 
@@ -209,7 +220,7 @@ CGRollMe:SetPoint("TOPLEFT", CGEnter, "BOTTOMLEFT", -0, -3)
 CGRollMe:SetText("Roll Me")
 CGRollMe:SetNormalFontObject("GameFontNormal")
 CGRollMe:SetScript("OnClick", function()
-  rollMe()
+  self:rollMe()
 end)
 
 local CGCloseGame = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
@@ -267,7 +278,7 @@ for i = 1, #CGPlayers do
 		CrossGambling:RemovePlayer(CGPlayers[1].Name)
 	    
 end
-	CGEnter:SetText("Join Game")
+	CGEnter_UpdateJoinText()
     self.game.state = "START"
     self.game.players = {}
     self.game.result = nil
@@ -350,7 +361,7 @@ purgeButton:SetSize(70, 24)
 purgeButton:SetPoint("TOPRIGHT", -10, -33)
 purgeButton:SetText("Purge Now")
 purgeButton:SetScript("OnClick", function()
-    CrossGambling.global.auditLog = {}
+    CrossGambling.db.global.auditLog = {}
     CrossGambling:UpdateAuditLogText(searchBox:GetText())
 end)
 
@@ -390,7 +401,9 @@ function auditFrame:UpdateLayout()
     local width, height = self:GetSize()
     scrollFrame:SetWidth(width - 50)
     content:SetWidth(scrollFrame:GetWidth())
-    CrossGambling:UpdateAuditLogText(searchBox:GetText())
+    if self:IsShown() then
+        CrossGambling:UpdateAuditLogText(searchBox:GetText())
+    end
 end
 auditFrame:SetScript("OnSizeChanged", auditFrame.UpdateLayout)
 
@@ -422,12 +435,12 @@ function CrossGambling:PurgeOldAuditEntries()
     if not retention or retention == "Never" then return end
     local cutoff = time() - (retention * 86400)
     local newLog = {}
-    for _, entry in ipairs(self.global.auditLog or {}) do
+    for _, entry in ipairs(self.db.global.auditLog or {}) do
         if tonumber(entry.timestamp) > cutoff then
             table.insert(newLog, entry)
         end
     end
-    self.global.auditLog = newLog
+    self.db.global.auditLog = newLog
 end
 
 C_Timer.After(0.1, function()
@@ -449,36 +462,47 @@ local function FormatTimestamp(ts)
 end
 
 function CrossGambling:UpdateAuditLogText(filter)
+    local scrollFrame = self.auditFrame.scrollFrame
+    local content = self.auditFrame.content
 
-    if self.auditFrame.content then
-        self.auditFrame.content:Hide()
-        self.auditFrame.content:SetParent(nil)
+    if not content then
+        content = CreateFrame("Frame", nil, scrollFrame)
+        content:SetPoint("TOPLEFT")
+        content:SetPoint("RIGHT")
+        scrollFrame:SetScrollChild(content)
+        self.auditFrame.content = content
+        content._fontPool = {}
+        content._fontUsed = 0
     end
 
-    local scrollFrame = self.auditFrame.scrollFrame
-
-    local content = CreateFrame("Frame", nil, scrollFrame)
-    content:SetPoint("TOPLEFT")
-    content:SetPoint("RIGHT")
-    scrollFrame:SetScrollChild(content)
-
-    self.auditFrame.content = content 
+    local pool = content._fontPool
+    for i = 1, #pool do
+        pool[i]:SetText("")
+        pool[i]:Hide()
+    end
+    content._fontUsed = 0
 
     content:SetSize(1, 1)
 
-
-    local log = self.global.auditLog or {}
+    local log = self.db.global.auditLog or {}
     if #log == 0 then
-        local noEntry = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        noEntry:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
-        noEntry:SetText("No audit entries found.")
+        local fs = pool[1]
+        if not fs then
+            fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            pool[1] = fs
+        end
+        fs:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
+        fs:SetText("No audit entries found.")
+        fs:Show()
+        content._fontUsed = 1
         content:SetHeight(30)
-        self.auditFrame.scrollFrame:SetVerticalScroll(0) 
+        scrollFrame:SetVerticalScroll(0)
         return
     end
 
     local yOffset, spacing = -10, 10
     local maxWidth = 560
+    local poolIdx = 0
 
     for _, entry in ipairs(log) do
         if type(entry) == "table" then
@@ -487,19 +511,19 @@ function CrossGambling:UpdateAuditLogText(filter)
 
             if entry.action == "updateStat" then
                 textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100•|r Stats updated for |cffffff00%s|r\n    Before: |cffffff00%d|r\n    Change: |cffff8800%+d|r    After: |cff00ff00%d|r",
+                    "|cff999999[%s]|r\n|cffffd100\226\128\162|r Stats updated for |cffffff00%s|r\n    Before: |cffffff00%d|r\n    Change: |cffff8800%+d|r    After: |cff00ff00%d|r",
                     ts, entry.player or "?", entry.oldAmount or 0, entry.addedAmount or 0, entry.newAmount or 0)
             elseif entry.action == "joinStats" then
                 textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100•|r Joined alt |cffffff00%s|r to main |cffffff00%s|r\n    +%d stats, +%d deathroll",
+                    "|cff999999[%s]|r\n|cffffd100\226\128\162|r Joined alt |cffffff00%s|r to main |cffffff00%s|r\n    +%d stats, +%d deathroll",
                     ts, entry.altname or "?", entry.mainname or "?", entry.statsAdded or 0, entry.deathrollStatsAdded or 0)
             elseif entry.action == "unjoinStats" then
                 textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100•|r Unjoined alt |cffffff00%s|r from main |cffffff00%s|r\n    -%d stats, -%d deathroll",
+                    "|cff999999[%s]|r\n|cffffd100\226\128\162|r Unjoined alt |cffffff00%s|r from main |cffffff00%s|r\n    -%d stats, -%d deathroll",
                     ts, entry.altname or "?", entry.mainname or "?", entry.pointsRemoved or 0, entry.deathrollStatsRemoved or 0)
             elseif entry.action == "debt" then
                 textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100•|r |cffffff00%s|r owes |cffffff00%s|r %dg",
+                    "|cff999999[%s]|r\n|cffffd100\226\128\162|r |cffffff00%s|r owes |cffffff00%s|r %dg",
                     ts, entry.loser or "?", entry.winner or "?", entry.amount or 0)
             else
                 local extra = {}
@@ -510,31 +534,44 @@ function CrossGambling:UpdateAuditLogText(filter)
             end
 
             if not filter or filter == "" or textLine:lower():find(filter:lower(), 1, true) then
-                local fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                poolIdx = poolIdx + 1
+                local fs = pool[poolIdx]
+                if not fs then
+                    fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                    pool[poolIdx] = fs
+                end
+                fs:ClearAllPoints()
                 fs:SetPoint("TOPLEFT", 10, yOffset)
                 fs:SetWidth(maxWidth)
                 fs:SetJustifyH("LEFT")
                 fs:SetWordWrap(true)
                 fs:SetText(textLine)
+                fs:Show()
                 yOffset = yOffset - fs:GetStringHeight() - spacing
             end
         end
     end
 
+    content._fontUsed = poolIdx
     local totalHeight = math.max(30, -yOffset + spacing)
     content:SetHeight(totalHeight)
-    self.auditFrame.scrollFrame:SetVerticalScroll(0)
+    scrollFrame:SetVerticalScroll(0)
 end
 
 
-local CGTheme = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-CGTheme:SetSize(150, 28)
-CGTheme:SetPoint("TOPRIGHT", CGSession, "BOTTOMRIGHT", -2, -65)
-CGTheme:SetText("Slick Theme")
-CGTheme:SetNormalFontObject("GameFontNormal")
-CGTheme:SetScript("OnClick", function()
-  self.db.global.theme = "Slick"
-	  ReloadUI()
+local CGThemeBtn = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
+CGThemeBtn:SetSize(150, 28)
+CGThemeBtn:SetPoint("TOPRIGHT", CGSession, "BOTTOMRIGHT", -2, -65)
+CGThemeBtn:SetText("Slick Theme")
+CGThemeBtn:SetNormalFontObject("GameFontNormal")
+CGThemeBtn:SetScript("OnClick", function()
+	local current = self.db.global.theme or "Classic"
+	if current == "Slick" then
+		DEFAULT_CHAT_FRAME:AddMessage("|cffFFD100CrossGambling|r: Already using Slick theme.")
+		return
+	end
+	self.uiBuilt = false
+	CGTheme:Switch("Slick")
 end)
 
 local CGRightMenu = CreateFrame("Frame", "CGRightMenu", CrossGamblingUI, "InsetFrameTemplate")
@@ -686,14 +723,15 @@ local valuescale = function(val,valStep)
   
  
     local slider = CreateBasicSlider(parent, "CGSlider", "", 0, 1, 0.001)
-    slider:HookScript("OnMouseUp", function(self,value)
-	  CrossScale(self)
-    end)
 
-	function CrossScale()
+	local function CrossScale()
 		self.db.global.scale = slider:GetValue()/100
 		CrossGamblingUI:SetScale(self.db.global.scale)
 	end
+
+    slider:HookScript("OnMouseUp", function(self,value)
+	  CrossScale(self)
+    end)
 	
 local CGLeftMenu = CreateFrame("Frame", "CGLeftMenu", CrossGamblingUI, "InsetFrameTemplate")
 CGLeftMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPLEFT", -300, -20)
@@ -757,7 +795,7 @@ function CrossGambling:RemovePlayer(name)
     for i, player in pairs(CGPlayers) do
         if player.name == name then
             table.remove(CGPlayers, i)
-            UpdatePlayerList()
+            self:UpdatePlayerList()
             return
         end
     end
@@ -778,7 +816,7 @@ function CrossGambling:AddPlayer(playerName)
     table.sort(CGPlayers, function(a, b)
         return a.name < b.name
     end)
-    UpdatePlayerList()
+    self:UpdatePlayerList()
 end
 
 local playerListFrame = CreateFrame("Frame", "PlayerListFrame", CGLeftMenu)
@@ -798,13 +836,13 @@ scrollFrame:SetScript("OnMouseWheel", function(self, delta)
     scrollFrame:SetVerticalScroll(newValue)
 end)
 
-local playerButtonsFrame = CreateFrame("Frame", "PlayerButtonsFrame", scrollFrame)
+playerButtonsFrame = CreateFrame("Frame", "PlayerButtonsFrame", scrollFrame)
 playerButtonsFrame:SetSize(280, 1) 
 scrollFrame:SetScrollChild(playerButtonsFrame)
 
 playerButtons = {}
 
-function UpdatePlayerList()
+function CrossGambling:UpdatePlayerList()
     table.sort(CGPlayers, function(a, b)
         return a.name < b.name
     end)
@@ -841,14 +879,14 @@ CGCall["PLAYER_ROLL"] = function(playerName, value)
             break
         end
     end
-    UpdatePlayerList()
+    CrossGambling:UpdatePlayerList()
 end
 
 CGCall["R_NewGame"] = function()
     for i = #CGPlayers, 1, -1 do
         CrossGambling:RemovePlayer(CGPlayers[i].name)
     end
-CGEnter:SetText("Join Game")
+CGEnter_UpdateJoinText()
 CGStartRoll:SetText("Start Rolling")
 CGEnter:Enable()
 end
@@ -859,9 +897,9 @@ CGCall["DisableClient"] = function()
 		CGAcceptOnes:Disable()
 		CGLastCall:Disable()
 		CGStartRoll:Disable()
-		self.game.players = {}
-		self.game.result = nil
-	if(self.game.host) then
+		CrossGambling.game.players = {}
+		CrossGambling.game.result = nil
+	if(CrossGambling.game.host) then
 		CGAcceptOnes:Enable()
 		CGLastCall:Enable()
 		CGStartRoll:Enable()

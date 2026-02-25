@@ -53,8 +53,8 @@ function CGTheme:Switch(name)
         "CrossGamblingClassic",
         "CrossGamblingTheme",
         "CrossGamblingAuditLogFrame",
-        "CGRightMenuChat",   
-        "CGRightMenu",      
+        "CGRightMenuChat",
+        "CGRightMenu",
     }
     for _, fname in ipairs(framesToHide) do
         local f = _G[fname]
@@ -67,12 +67,15 @@ function CGTheme:Switch(name)
     end
 
     self:ClearRegistry()
+    a.uiBuilt = false
 
     if name == "Slick" then
         a:DrawMainEvents()
     else
         a:DrawMainEvents2()
     end
+
+    a.uiBuilt = true
 
     CGOptions:Rebuild(name == "Slick")
 
@@ -185,7 +188,5 @@ function CGTheme:ChangeColor(element)
     )
 end
 
-function LoadColor()    CGTheme:LoadColors()        end
-function SaveColor()    CGTheme:SaveColors()        end
-function changeColor(e) CGTheme:ChangeColor(e)      end
-function setFontColor(r,g,b) CGTheme:SetFontColor(r,g,b) end
+function LoadColor()    CGTheme:LoadColors()  end
+function SaveColor()    CGTheme:SaveColors()  end

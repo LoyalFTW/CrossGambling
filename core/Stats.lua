@@ -265,8 +265,8 @@ function CrossGambling:listAlts(info)
 end
 
 function CrossGambling:updateStat(info, args)
-    local player, amount = strsplit(" ", args)
-    amount = tonumber(amount)
+    local player, amountStr = strsplit(" ", args)
+    local amount = tonumber(amountStr)
 
     if player and amount then
         local oldAmount = self.db.global.stats[player] or 0

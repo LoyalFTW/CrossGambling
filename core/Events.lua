@@ -8,18 +8,18 @@ CGCall["New_Game"] = function()
         self:GameStart()
 
         if (self.game.house == false) then
-            local RollNotification = "Wager - " .. add_commas(self.db.global.wager) .. "g"
+            local RollNotification = "Wager - " .. self:addCommas(self.db.global.wager) .. "g"
             if(self.game.chatframeOption == false and self.game.host == true) then
                 self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
             else
-                SendChatMessage("Game Mode - " .. self.game.mode .. " - Wager - " .. add_commas(self.db.global.wager) .. "g", self.game.chatMethod)
+                SendChatMessage("Game Mode - " .. self.game.mode .. " - Wager - " .. self:addCommas(self.db.global.wager) .. "g", self.game.chatMethod)
             end
         else
-            local RollNotification = "Wager - " .. add_commas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%"
+            local RollNotification = "Wager - " .. self:addCommas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%"
             if(self.game.chatframeOption == false and self.game.host == true) then
                 self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
             else
-                SendChatMessage("Game Mode - " .. self.game.mode .. " - Wager - " .. add_commas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%", self.game.chatMethod)
+                SendChatMessage("Game Mode - " .. self.game.mode .. " - Wager - " .. self:addCommas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%", self.game.chatMethod)
             end
         end
 
@@ -57,11 +57,6 @@ CGCall["START_ROLLS"] = function(maxAmount)
     
     self.db.global.wager = (self.game.mode == "BigTwo") and 2 or self.db.global.wager
     
-	function rollMe(minAmount)
-        minAmount = minAmount or 1
-        RandomRoll(minAmount, self.db.global.wager)
-    end
- 
     if self.game.host then
         local initialPrompt = "Entries have closed. Roll now!"
         

@@ -291,7 +291,7 @@ function CGOptions:Build(isSlick)
 
     local themeSub = themePanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     themeSub:SetPoint("TOP", themeHdr, "BOTTOM", 0, -4)
-    themeSub:SetText("UI will reload after confirming.")
+    themeSub:SetText("Theme switches instantly — no reload needed.")
 
     local selectedTheme = "Slick"
     local prevW, prevH  = 118, 90

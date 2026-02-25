@@ -156,4 +156,29 @@ end
 
 
 
+function CrossGambling:rollMe(minAmount)
+    local wager = self.db.global.wager or 100
+    minAmount = minAmount or 1
+    if self.game and self.game.mode == "1v1DeathRoll" then
+        RandomRoll(minAmount, self.currentRoll or wager)
+    else
+        RandomRoll(minAmount, wager)
+    end
+end
+
+function CrossGambling:PromptNextRoll()
+    if not self.game or not self.game.players then return end
+    local player = self.game.players[self.currentPlayerIndex]
+    if not player then return end
+
+    local rollMax = self.currentRoll or self.db.global.wager
+    local prompt = player.name .. " /roll " .. rollMax .. " now!"
+
+    if self.game.chatframeOption == false then
+        self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, prompt))
+    else
+        SendChatMessage("CrossGambling: " .. prompt, self.game.chatMethod)
+    end
+end
+
 C_ChatInfo.RegisterAddonMessagePrefix("CrossGambling")
