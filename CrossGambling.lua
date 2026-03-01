@@ -335,9 +335,9 @@ function CrossGambling:ToggleGUI(info, isShowing)
 	local theme = self.db.global.theme
 
 	if theme == uiThemes[1] then
-		CrossGambling[method .. "Classic"](info)
+		CrossGambling[method .. "Classic"](CrossGambling)
 	elseif theme == uiThemes[2] then
-		CrossGambling[method .. "Slick"](info)
+		CrossGambling[method .. "Slick"](CrossGambling)
 	end
 end
 
@@ -713,5 +713,3 @@ function CrossGambling:UnRegisterChatEvents()
 		self:UnregisterEvent("CHAT_MSG_INSTANCE_CHAT")
         self:UnregisterEvent("CHAT_MSG_GUILD")
 end
-
-
