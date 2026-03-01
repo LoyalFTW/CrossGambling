@@ -35,6 +35,10 @@ chat/CGOptions.lua
 chat/CGChat.lua
 core/GUI.lua
 core/ClassicGUI.lua
+core/ModeRegistry.lua
+modes/ClassicMode.lua
+modes/DeathRollMode.lua
+modes/BigTwoMode.lua
 core/Game.lua
 core/Stats.lua
 core/Events.lua

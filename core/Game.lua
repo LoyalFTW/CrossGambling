@@ -1,102 +1,75 @@
 function CrossGambling:GameStart()
-  if self.game.mode == "1v1DeathRoll" then
-        self.currentRoll = self.db.global.wager
-        self.currentPlayerIndex = 1
-    end
-
-    if self.game.chatframeOption == false then
-        local RollNotification = "has started a roll!"
-        self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
-    else
-        local joinWord  = self.db.global.joinWord  or "1"
-    local leaveWord = self.db.global.leaveWord or "-1"
-    SendChatMessage("CrossGambling: A new game has been started! Type " .. joinWord .. " to join! (" .. leaveWord .. " to withdraw)", self.game.chatMethod)
-    end
+    self:DispatchModeHook("OnStart")
 end
 
 function CrossGambling:RegisterGame(text, playerName)
     local joinWord  = self.db.global.joinWord  or "1"
     local leaveWord = self.db.global.leaveWord or "-1"
+
     if text:lower() == joinWord:lower() then
-        if self.game.mode == "1v1DeathRoll" then
-            if #self.game.players == 2 then
-                SendChatMessage("CrossGambling: This is a 1v1 DeathRoll. Only 2 players can join.", self.game.chatMethod)
-                return
-            end
+        local mode    = self:GetCurrentMode()
+        local allowed = true
+        if mode and type(mode.OnPlayerJoin) == "function" then
+            allowed = mode:OnPlayerJoin(self, self.game, playerName)
         end
-		if (self.game.realmFilter == true and self:CheckRealm(playerName) == 0) then
-			SendChatMessage("CrossGambling: You are not on (" .. GetRealmName() .. "). You are not eligible to join this game. The host can turn off the Realm Filter in the options." , self.game.chatMethod)
-		else
-			self:SendMsg("ADD_PLAYER", playerName)		
-		end
+
+        if allowed == false then return end
+
+        if self.game.realmFilter == true and self:CheckRealm(playerName) == 0 then
+            SendChatMessage("CrossGambling: You are not on (" .. GetRealmName() .. "). You are not eligible to join this game. The host can turn off the Realm Filter in the options.", self.game.chatMethod)
+        else
+            self:SendMsg("ADD_PLAYER", playerName)
+        end
+
     elseif text:lower() == leaveWord:lower() then
-		self:SendMsg("Remove_Player", playerName)   
+        self:SendMsg("Remove_Player", playerName)
     end
 end
 
 function CrossGambling:CheckRealm(playerName)
-	local realmRelationship = UnitRealmRelationship(playerName)
- 
-	if (realmRelationship == 2) then
-		return 0
-	else
-		return 1
-	end
+    local realmRelationship = UnitRealmRelationship(playerName)
+    return (realmRelationship == 2) and 0 or 1
 end
-
 
 function CrossGambling:String(players)
     local nameString = players[1].name
-
-    if (#players > 1) then
+    if #players > 1 then
         for i = 2, #players do
-            if (i == #players) then
+            if i == #players then
                 nameString = nameString .. " and " .. players[i].name
             else
                 nameString = nameString .. ", " .. players[i].name
             end
         end
     end
-
     return nameString
 end
 
 function CrossGambling:CResult()
-    local winners = {self.game.players[1]}
-    local losers = {self.game.players[1]}
+    local winners    = { self.game.players[1] }
+    local losers     = { self.game.players[1] }
     local amountOwed = 0
-	
-    for i = 2, #self.game.players do
-        if (self.game.players[i].roll < losers[1].roll) then
-            losers = {self.game.players[i]}
-        elseif (self.game.players[i].roll > winners[1].roll) then
-            winners = {self.game.players[i]}
-        else
-            if (self.game.players[i].roll == losers[1].roll) then
-                tinsert(losers, self.game.players[i])
-            end
 
-            if (self.game.players[i].roll == winners[1].roll) then
-                tinsert(winners, self.game.players[i])
-            end
+    for i = 2, #self.game.players do
+        local p = self.game.players[i]
+        if p.roll < losers[1].roll then
+            losers = { p }
+        elseif p.roll > winners[1].roll then
+            winners = { p }
+        else
+            if p.roll == losers[1].roll  then tinsert(losers,  p) end
+            if p.roll == winners[1].roll then tinsert(winners, p) end
         end
     end
 
-    if (winners[1].name == losers[1].name) then
+    if winners[1].name == losers[1].name then
         losers = {}
     else
         amountOwed = winners[1].roll - losers[1].roll
     end
 
-    return {
-        winners = winners,
-        losers = losers,
-        amountOwed = amountOwed
-    }
-	
-
+    return { winners = winners, losers = losers, amountOwed = amountOwed }
 end
-
 
 function CrossGambling:detectTie()
     local tieType = ""
@@ -109,19 +82,18 @@ function CrossGambling:detectTie()
     if tieType ~= "" then
         local tiedPlayers = {}
         for i = 1, #self.game.players do
-            if (tieType == "High" and self.game.players[i].roll == self.game.result.winners[1].roll) or
-               (tieType == "Low" and self.game.players[i].roll == self.game.result.losers[1].roll) then
-                tinsert(tiedPlayers, self.game.players[i])
+            local p = self.game.players[i]
+            if (tieType == "High" and p.roll == self.game.result.winners[1].roll) or
+               (tieType == "Low"  and p.roll == self.game.result.losers[1].roll)  then
+                tinsert(tiedPlayers, p)
             end
         end
 
         if #tiedPlayers > 1 then
             self.game.players = tiedPlayers
-
             for i = 1, #self.game.players do
                 self.game.players[i].roll = nil
             end
-
             self:TieBreaker(tieType)
         else
             self:CloseGame()
@@ -132,53 +104,14 @@ function CrossGambling:detectTie()
 end
 
 function CrossGambling:TieBreaker(tieType)
-    if self.game.chatframeOption == false and self.game.host == true then
-        local RollNotification = tieType .. " tie breaker! " .. self:String(self.game.players) .. " /roll " .. self.db.global.wager .. " now!"
-        self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
-    else
-        SendChatMessage(tieType .. " tie breaker! " .. self:String(self.game.players) .. " /roll " .. self.db.global.wager .. " now!", self.game.chatMethod)
-    end
+    self:sendGameMsg(tieType .. " tie breaker! " .. self:String(self.game.players) .. " /roll " .. self.db.global.wager .. " now!")
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 function CrossGambling:rollMe(minAmount)
-    local wager = self.db.global.wager or 100
-    minAmount = minAmount or 1
-    if self.game and self.game.mode == "1v1DeathRoll" then
-        RandomRoll(minAmount, self.currentRoll or wager)
-    else
-        RandomRoll(minAmount, wager)
-    end
-end
-
-function CrossGambling:PromptNextRoll()
-    if not self.game or not self.game.players then return end
-    local player = self.game.players[self.currentPlayerIndex]
-    if not player then return end
-
-    local rollMax = self.currentRoll or self.db.global.wager
-    local prompt = player.name .. " /roll " .. rollMax .. " now!"
-
-    if self.game.chatframeOption == false then
-        self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, prompt))
-    else
-        SendChatMessage("CrossGambling: " .. prompt, self.game.chatMethod)
-    end
+    local wager     = self.db.global.wager or 100
+    minAmount       = minAmount or 1
+    local maxAmount = (self.currentRoll and self.game.mode == "1v1DeathRoll") and self.currentRoll or wager
+    RandomRoll(minAmount, maxAmount)
 end
 
 C_ChatInfo.RegisterAddonMessagePrefix("CrossGambling")
