@@ -1,28 +1,12 @@
 function CrossGambling:DrawSecondEvents()
 
 CGCall["New_Game"] = function()
-    if self.game.state == "START" and self.game.host == true then
+    if self.game.state == "START" and self.game.host == false then
         self:RegisterChatEvents()
         self.game.state = "REGISTER"
-        self:GameStart()
-
-        if self.game.house == false then
-            local wagerMsg = "Wager - " .. self:addCommas(self.db.global.wager) .. "g"
-            if self.game.chatframeOption == false and self.game.host == true then
-                self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, wagerMsg))
-            else
-                SendChatMessage("Game Mode - " .. self.game.mode .. " - Wager - " .. self:addCommas(self.db.global.wager) .. "g", self.game.chatMethod)
-            end
-        else
-            local wagerMsg = "Wager - " .. self:addCommas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%"
-            if self.game.chatframeOption == false and self.game.host == true then
-                self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, wagerMsg))
-            else
-                SendChatMessage("Game Mode - " .. self.game.mode .. " - Wager - " .. self:addCommas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%", self.game.chatMethod)
-            end
+        if CGCall["DisableClient"] then
+            CGCall["DisableClient"]()
         end
-
-        self:SendMsg("DisableClient")
     end
 end
 
@@ -58,7 +42,7 @@ CGCall["START_ROLLS"] = function()
     if self.game.host then
         local prompt = "Entries have closed. Roll now!"
         if self.game.chatframeOption then
-            SendChatMessage(prompt, self.game.chatMethod)
+            self:SendChat(prompt)
         else
             self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, prompt))
         end
@@ -71,7 +55,7 @@ CGCall["LastCall"] = function()
     if self.game.chatframeOption == false and self.game.host == true then
         self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, "Last Call!"))
     elseif self.game.host == true then
-        SendChatMessage("Last Call to Enter", self.game.chatMethod)
+        self:SendChat("Last Call to Enter")
     end
 end
 

@@ -193,6 +193,10 @@ CGEditBox:SetScript("OnEditFocusLost", function(box)
     if value then CrossGambling.db.global.wager = value end
 end)
 
+local CGLastCall
+local CGStartRoll
+local CGEnter
+
 local CGAcceptOnes = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
 CGAcceptOnes:SetSize(105, 30)
 CGAcceptOnes:SetPoint("TOPLEFT", GCchatMethod, "BOTTOMLEFT", -0, -25)
@@ -236,30 +240,50 @@ CGGuildPercent:SetScript("OnEditFocusLost", function(self)
 end)
 
 CGAcceptOnes:SetScript("OnClick", function()
-    CGAcceptOnes:Disable()  
+    CGAcceptOnes:Disable()
 
     if CGAcceptOnes:GetText() == "Host Game" then
         CGAcceptOnes:SetText("New Game")
     else
         self.game.state = "START"
-        self:SendMsg("R_NewGame")
         self.game.host = true
-        self:SendMsg("New_Game")
         self.db.global.wager = tonumber(CGEditBox:GetText()) or self.db.global.wager
-		self:SendMsg("SET_WAGER", self.db.global.wager)
-        self:SendMsg("GAME_MODE", CGGameMode:GetText())
-        self:SendMsg("Chat_Method", GCchatMethod:GetText())
-        self:SendMsg("SET_HOUSE", CGGuildPercent:GetText())
+        self.game.mode = CGGameMode:GetText()
+        self.game.chatMethod = GCchatMethod:GetText()
+        self.db.global.houseCut = CGGuildPercent:GetText()
+
+        for i = #CGPlayers, 1, -1 do
+            CrossGambling:RemovePlayer(CGPlayers[i].name)
+        end
+        CGStartRoll:SetText("Start Rolling")
+        CGEnter:Enable()
+
+        self:RegisterChatEvents()
+        self.game.state = "REGISTER"
+        self:GameStart()
+
+        if self.game.house == false then
+            self:SendChat("Game Mode - " .. self.game.mode .. " - Wager - " .. self:addCommas(self.db.global.wager) .. "g")
+        else
+            self:SendChat("Game Mode - " .. self.game.mode .. " - Wager - " .. self:addCommas(self.db.global.wager) .. "g - House Cut - " .. self.db.global.houseCut .. "%")
+        end
+
+        self:SendMsg("R_NewGame")
+        self:SendMsg("New_Game")
+        self:SendMsg("SET_WAGER", self.db.global.wager)
+        self:SendMsg("GAME_MODE", self.game.mode)
+        self:SendMsg("Chat_Method", self.game.chatMethod)
+        self:SendMsg("SET_HOUSE", self.db.global.houseCut)
     end
 
-
-
-    CGAcceptOnes:Enable()  
+    CGAcceptOnes:Enable()
+    CGLastCall:Enable()
+    CGStartRoll:Enable()
 end)
 
 
 
-local CGLastCall = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
+CGLastCall = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
 CGLastCall:SetSize(105, 30)
 CGLastCall:SetPoint("TOPLEFT", CGAcceptOnes, "BOTTOMLEFT", -0, -3)
 CGLastCall:SetText("Last Call!")
@@ -281,7 +305,7 @@ CGLastCall:SetScript("OnClick", function()
 self:SendMsg("LastCall")
 end)
 
-local CGStartRoll = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
+CGStartRoll = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
 CGStartRoll:SetSize(105, 30)
 CGStartRoll:SetPoint("TOPLEFT", CGLastCall, "BOTTOMLEFT", -0, -3)
 CGStartRoll:SetText("Start Rolling")
@@ -304,7 +328,7 @@ self:CGRolls()
 CGStartRoll:SetText("Whos Left?")
 end)
 
-local CGEnter = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
+CGEnter = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
 CGEnter:SetSize(105, 30)
 CGEnter:SetPoint("TOPLEFT", CGGameMode, "BOTTOMLEFT", -0, -25)
 CGEnter:SetText("Join")
@@ -330,10 +354,10 @@ CGEnter:SetScript("OnClick", function()
     local joinWord  = self.db.global.joinWord  or "1"
     local leaveWord = self.db.global.leaveWord or "-1"
     if CGEnter:GetText() == "Leave" then
-        SendChatMessage(leaveWord, self.game.chatMethod)
+        self:SendChat(leaveWord)
         CGEnter:SetText("Join")
     else
-        SendChatMessage(joinWord, self.game.chatMethod)
+        self:SendChat(joinWord)
         CGEnter:SetText("Leave")
     end
 end)

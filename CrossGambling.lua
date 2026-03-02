@@ -345,8 +345,12 @@ function CrossGambling:SendMsg(event, arg1)
   local msg = event
   if arg1 then msg = msg .. ":" .. tostring(arg1) end
   if self.game.chatMethod then
-    ChatThrottleLib:SendAddonMessage("BULK", "CrossGambling", msg, self.game.chatMethod)
+    pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, "BULK", "CrossGambling", msg, self.game.chatMethod)
   end
+end
+
+function CrossGambling:SendChat(msg, method)
+  pcall(SendChatMessage, msg, method or self.game.chatMethod)
 end
 
 function CrossGambling:RegisterChatEvents()
@@ -406,18 +410,18 @@ function CrossGambling:handleSystemMessage(_, text)
 
     if self.game.mode == "1v1DeathRoll" then
         if minRoll ~= 1 or maxRoll ~= self.currentRoll then
-            SendChatMessage("Error: Roll does not match expected range.", self.game.chatMethod)
+            self:SendChat("Error: Roll does not match expected range.")
             return
         end
 
         local currentPlayer = self.game.players[self.currentPlayerIndex]
         if not currentPlayer then
-            SendChatMessage("Error: Current player is nil.", self.game.chatMethod)
+            self:SendChat("Error: Current player is nil.")
             return
         end
 
         if playerName ~= currentPlayer.name then
-            SendChatMessage(format("%s, it's not your turn! It's %s's turn.", playerName, currentPlayer.name), self.game.chatMethod)
+            self:SendChat(format("%s, it's not your turn! It's %s's turn.", playerName, currentPlayer.name))
             return
         end
 
@@ -426,7 +430,7 @@ function CrossGambling:handleSystemMessage(_, text)
         if actualRoll == 1 then
             local loser = currentPlayer
             local winner = self.game.players[3 - self.currentPlayerIndex]  
-            SendChatMessage(format("%s rolls a 1 and loses! %s owes %s %s", loser.name, loser.name, winner.name, self.db.global.wager), self.game.chatMethod)
+            self:SendChat(format("%s rolls a 1 and loses! %s owes %s %s", loser.name, loser.name, winner.name, self.db.global.wager))
 
             self:updatePlayerStat(loser.name, -self.db.global.wager, true) 
             self:updatePlayerStat(winner.name, self.db.global.wager, true) 
@@ -528,9 +532,9 @@ end
 function CrossGambling:PromptNextRoll()
     local currentPlayer = self.game.players[self.currentPlayerIndex]
     if currentPlayer then
-        SendChatMessage(format("%s, it's your turn! Type /roll %d", currentPlayer.name, self.currentRoll), self.game.chatMethod)
+        self:SendChat(format("%s, it's your turn! Type /roll %d", currentPlayer.name, self.currentRoll))
       else
-        SendChatMessage("Error: Current player is nil during prompt.", self.game.chatMethod)
+        self:SendChat("Error: Current player is nil during prompt.")
     end
 end
 
@@ -561,13 +565,13 @@ function CrossGambling:CGRolls()
             self.game.state = gameStates[3]
             CGCall["START_ROLLS"]()
         else
-			SendChatMessage("Not enough Players!", self.game.chatMethod)
+			self:SendChat("Not enough Players!")
         end
     elseif (self.game.state == gameStates[3]) then
         local playersRoll = self:CheckRolls()
         if #playersRoll > 0 then
             local message = table.concat(playersRoll, ", ") .. " still needs to roll!"
-			SendChatMessage(message, self.game.chatMethod)
+			self:SendChat(message)
         end
     end
 end
@@ -629,7 +633,7 @@ function CrossGambling:CloseGame()
                 if (self.game.chatframeOption == false and self.game.host == true) then
                     self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
                 else
-                    SendChatMessage(RollNotification, self.game.chatMethod)
+                    self:SendChat(RollNotification)
                 end
 
                 self:updatePlayerStat(self.game.result.losers[i].name, self.game.result.amountOwed * -1)
@@ -654,7 +658,7 @@ function CrossGambling:CloseGame()
                 local RollNotification = "No winners this round!"
                 self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
             else
-                SendChatMessage("No winners this round!", self.game.chatMethod)
+                self:SendChat("No winners this round!")
             end
         end
     end
@@ -680,7 +684,7 @@ function CrossGambling:registerPlayer(playerName, playerRoll)
 				local RollNotification = "Sorry " .. playerName .. ", you're banned."
 				self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
 			else
-				SendChatMessage("Sorry " .. playerName .. ", you're banned." , self.game.chatMethod)
+				self:SendChat("Sorry " .. playerName .. ", you're banned." )
 			end
             return
         end

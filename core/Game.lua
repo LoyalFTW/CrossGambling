@@ -1,5 +1,14 @@
 function CrossGambling:GameStart()
-    self:DispatchModeHook("OnStart")
+    local handled = self:DispatchModeHook("OnStart")
+    if not handled then
+        local joinWord  = self.db.global.joinWord  or "1"
+        local leaveWord = self.db.global.leaveWord or "-1"
+        if self.game.chatframeOption == false then
+            self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, "has started a roll!"))
+        else
+            self:SendChat("CrossGambling: A new game has been started! Type " .. joinWord .. " to join! (" .. leaveWord .. " to withdraw)")
+        end
+    end
 end
 
 function CrossGambling:RegisterGame(text, playerName)
@@ -16,7 +25,7 @@ function CrossGambling:RegisterGame(text, playerName)
         if allowed == false then return end
 
         if self.game.realmFilter == true and self:CheckRealm(playerName) == 0 then
-            SendChatMessage("CrossGambling: You are not on (" .. GetRealmName() .. "). You are not eligible to join this game. The host can turn off the Realm Filter in the options.", self.game.chatMethod)
+            self:SendChat("CrossGambling: You are not on (" .. GetRealmName() .. "). You are not eligible to join this game. The host can turn off the Realm Filter in the options.")
         else
             self:SendMsg("ADD_PLAYER", playerName)
         end
@@ -104,7 +113,11 @@ function CrossGambling:detectTie()
 end
 
 function CrossGambling:TieBreaker(tieType)
-    self:sendGameMsg(tieType .. " tie breaker! " .. self:String(self.game.players) .. " /roll " .. self.db.global.wager .. " now!")
+    if self.game.chatframeOption == false and self.game.host == true then
+        self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, tieType .. " tie breaker! " .. self:String(self.game.players) .. " /roll " .. self.db.global.wager .. " now!"))
+    else
+        self:SendChat(tieType .. " tie breaker! " .. self:String(self.game.players) .. " /roll " .. self.db.global.wager .. " now!")
+    end
 end
 
 function CrossGambling:rollMe(minAmount)
