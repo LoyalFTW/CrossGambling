@@ -122,8 +122,52 @@ end
 
 function CrossGambling:CloseGame()
     self:DispatchModeHook("OnEnd")
-    self.currentRoll = nil
-    self.game.state  = "START"
+
+    if self.game.result ~= nil then
+        if #self.game.result.losers > 0 and #self.game.result.winners > 0 then
+            local houseAmount = 0
+            if self.game.house == true then
+                houseAmount = math.floor(self.game.result.amountOwed * (self.db.global.houseCut / 100))
+                self.game.result.amountOwed = self.game.result.amountOwed - houseAmount
+            end
+
+            for i = 1, #self.game.result.losers do
+                local RollNotification
+                if self.game.house == true then
+                    RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. self:addCommas(self.game.result.amountOwed) .. " gold! plus " .. self:addCommas(houseAmount) .. " to the guild"
+                    self:updatePlayerStat("guild", houseAmount)
+                else
+                    RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. self:addCommas(self.game.result.amountOwed) .. " gold!"
+                end
+
+                if self.game.chatframeOption == false and self.game.host == true then
+                    self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
+                else
+                    self:SendChat(RollNotification)
+                end
+
+                self:updatePlayerStat(self.game.result.losers[i].name, self.game.result.amountOwed * -1)
+                self:updatePlayerStat(self.game.result.winners[i].name, self.game.result.amountOwed * #self.game.result.losers)
+
+                table.insert(self.db.global.auditLog, {
+                    timestamp = time(),
+                    action    = "debt",
+                    loser     = self.game.result.losers[i].name,
+                    winner    = self.game.result.winners[i].name,
+                    amount    = self.game.result.amountOwed,
+                })
+            end
+        else
+            if self.game.chatframeOption == false and self.game.host == true then
+                self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, "No winners this round!"))
+            else
+                self:SendChat("No winners this round!")
+            end
+        end
+    end
+
+    self.currentRoll  = nil
+    self.game.state   = "START"
     self.game.players = {}
     self.game.result  = nil
     self.game.host    = false

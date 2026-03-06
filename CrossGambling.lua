@@ -408,52 +408,7 @@ function CrossGambling:handleSystemMessage(_, text)
     minRoll, maxRoll = tonumber(minRoll), tonumber(maxRoll)
     actualRoll = tonumber(actualRoll)
 
-    if self.game.mode == "1v1DeathRoll" then
-        if minRoll ~= 1 or maxRoll ~= self.currentRoll then
-            self:SendChat("Error: Roll does not match expected range.")
-            return
-        end
-
-        local currentPlayer = self.game.players[self.currentPlayerIndex]
-        if not currentPlayer then
-            self:SendChat("Error: Current player is nil.")
-            return
-        end
-
-        if playerName ~= currentPlayer.name then
-            self:SendChat(format("%s, it's not your turn! It's %s's turn.", playerName, currentPlayer.name))
-            return
-        end
-
-        CGCall["PLAYER_ROLL"](playerName, actualRoll)
-
-        if actualRoll == 1 then
-            local loser = currentPlayer
-            local winner = self.game.players[3 - self.currentPlayerIndex]  
-            self:SendChat(format("%s rolls a 1 and loses! %s owes %s %s", loser.name, loser.name, winner.name, self.db.global.wager))
-
-            self:updatePlayerStat(loser.name, -self.db.global.wager, true) 
-            self:updatePlayerStat(winner.name, self.db.global.wager, true) 
-            return
-        else
-            self.currentRoll = actualRoll
-            self.currentPlayerIndex = 3 - self.currentPlayerIndex
-            self:PromptNextRoll()
-        end
-    else
-        if minRoll == 1 and maxRoll == self.db.global.wager then
-            for i = 1, #self.game.players do
-                if self.game.players[i].name == playerName and self.game.players[i].roll == nil then
-                    self.game.players[i].roll = actualRoll
-                    self:SendMsg("PLAYER_ROLL", playerName .. ":" .. tostring(actualRoll))
-                end
-            end
-        end
-
-        if #self:CheckRolls() == 0 then
-            self:CGResults()
-        end
-    end
+    self:DispatchModeHook("OnRollReceived", playerName, actualRoll, minRoll, maxRoll)
 end
 
 function CrossGambling:banPlayer(info, playerName)
@@ -611,64 +566,7 @@ function CrossGambling:CGResults()
     self:detectTie()
 end
 
-function CrossGambling:CloseGame()
-    if (self.game.result ~= nil) then
-        if (#self.game.result.losers > 0 and #self.game.result.winners > 0) then
-            local houseAmount = 0
 
-            if (self.game.house == true) then
-                houseAmount = math.floor(self.game.result.amountOwed * (self.db.global.houseCut / 100))
-                self.game.result.amountOwed = self.game.result.amountOwed - houseAmount
-            end
-
-            for i = 1, #self.game.result.losers do
-                local RollNotification = ""
-                if (self.game.house == false) then
-                    RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. self:addCommas(self.game.result.amountOwed) .. " gold!"
-                elseif (self.game.house == true) then
-                    RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. self:addCommas(self.game.result.amountOwed) .. " gold!" .. " plus " .. self:addCommas(houseAmount) .. " to the guild"
-                    self:updatePlayerStat("guild", houseAmount) 
-                end
-
-                if (self.game.chatframeOption == false and self.game.host == true) then
-                    self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
-                else
-                    self:SendChat(RollNotification)
-                end
-
-                self:updatePlayerStat(self.game.result.losers[i].name, self.game.result.amountOwed * -1)
-                self:updatePlayerStat(self.game.result.winners[i].name, self.game.result.amountOwed * #self.game.result.losers)
-
-
-                local loserName = self.game.result.losers[i].name
-                local winnerName = self.game.result.winners[i].name
-                local amountOwed = self.game.result.amountOwed
-
-                table.insert(self.db.global.auditLog, {
-                    timestamp = time(),
-                    action = "debt",
-                    loser = loserName,
-                    winner = winnerName,
-                    amount = amountOwed,
-                })
-            end
-
-        else
-            if (self.game.chatframeOption == false and self.game.host == true) then
-                local RollNotification = "No winners this round!"
-                self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
-            else
-                self:SendChat("No winners this round!")
-            end
-        end
-    end
-
-    self:UnRegisterChatEvents()
-    self:UnregisterEvent("CHAT_MSG_SYSTEM")
-    self.game.state = gameStates[1]
-    self.game.players = {}
-    self.game.result = nil
-end
 
 
 function CrossGambling:registerPlayer(playerName, playerRoll)
