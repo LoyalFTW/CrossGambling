@@ -308,6 +308,7 @@ end
     self.game.state = "START"
     self.game.players = {}
     self.game.result = nil
+	self.currentRoll = nil
 	self:resetStats(info)
 end)
 

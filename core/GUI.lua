@@ -63,16 +63,23 @@ function CrossGambling:HideSlick(info)
 end
 
 function CrossGambling:DrawMainEvents()
+    local theme = self.db and self.db.global and self.db.global.theme or "Slick"
+    local isSlick = (theme == "Slick")
+    local frameName = isSlick and "CrossGamblingSlick" or "CrossGamblingClassic"
+    local frameTemplate = isSlick and "BackdropTemplate" or "InsetFrameTemplate"
+    local mainWidth, mainHeight = isSlick and 230 or 320, isSlick and 200 or 195
 
-CrossGamblingUI = CreateFrame("Frame", "CrossGamblingSlick", UIParent, "BackdropTemplate")
-CrossGamblingUI:SetSize(230, 200)
+    CrossGamblingUI = CreateFrame("Frame", frameName, UIParent, frameTemplate)
+CrossGamblingUI:SetSize(mainWidth, mainHeight)
 CrossGamblingUI:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-CrossGamblingUI:SetBackdrop(Backdrop)
+if isSlick then
+    CrossGamblingUI:SetBackdrop(Backdrop)
+    CrossGamblingUI:SetBackdropBorderColor(0, 0, 0)
+end
 CrossGamblingUI:SetMovable(true)
 CrossGamblingUI:EnableMouse(true)
 CrossGamblingUI:SetUserPlaced(true)
 CrossGamblingUI:SetResizable(true)
-CrossGamblingUI:SetBackdropBorderColor(0, 0, 0)
 CrossGamblingUI:RegisterForDrag("LeftButton")
 CrossGamblingUI:SetScript("OnDragStart", CrossGamblingUI.StartMoving)
 CrossGamblingUI:SetScript("OnDragStop", CrossGamblingUI.StopMovingOrSizing)
@@ -80,92 +87,98 @@ CrossGamblingUI:SetClampedToScreen(true)
 self.db.global.scale = self.db.global.scale
 CrossGamblingUI:SetScale(self.db.global.scale)
 CrossGamblingUI:Hide()
-CGTheme:RegisterMain(CrossGamblingUI)
+if isSlick then
+    CGTheme:RegisterMain(CrossGamblingUI)
+end
 CGTheme:Init()
 
-local MainHeader = CreateFrame("Frame", nil, CrossGamblingUI, "BackdropTemplate")
+local MainHeader = CreateFrame("Frame", nil, CrossGamblingUI, frameTemplate)
 MainHeader:SetSize(CrossGamblingUI:GetSize(), 21)
 MainHeader:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
 MainHeader:EnableMouse(false)
-ButtonColors(MainHeader)
+if isSlick then ButtonColors(MainHeader) end
 
-local MainMenu = CreateFrame("Frame", nil, CrossGamblingUI, "BackdropTemplate")
+local MainMenu = CreateFrame("Frame", nil, CrossGamblingUI, frameTemplate)
 MainMenu:SetSize(CrossGamblingUI:GetSize(), 21)
 MainMenu:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
 MainMenu:EnableMouse(false)
 
-local OptionsButton = CreateFrame("Frame", nil, CrossGamblingUI, "BackdropTemplate")
+local OptionsButton = CreateFrame("Frame", nil, CrossGamblingUI, frameTemplate)
 OptionsButton:SetSize(CrossGamblingUI:GetSize(), 21)
 OptionsButton:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
 OptionsButton:EnableMouse(false)
 OptionsButton:Hide()
 
-local CGMainMenu = CreateFrame("Button", nil, MainHeader,  "BackdropTemplate")
-CGMainMenu:SetSize(63, 21)
+local CGMainMenu = CreateFrame("Button", nil, MainHeader, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+CGMainMenu:SetSize(isSlick and 63 or 100, 21)
 CGMainMenu:SetPoint("TOPLEFT", MainHeader, "TOPLEFT", 30, 0)
 CGMainMenu:SetFrameStrata("MEDIUM")
 CGMainMenu:SetText("Main")
 CGMainMenu:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGMainMenu)
+if isSlick then ButtonColors(CGMainMenu) end
 CGMainMenu:SetScript("OnMouseUp", function(self)
 end)
 
-local MainFooter = CreateFrame("Button", nil, CrossGamblingUI, "BackdropTemplate")
+local MainFooter = CreateFrame("Button", nil, CrossGamblingUI, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
 MainFooter:SetSize(CrossGamblingUI:GetSize(), 15)
 MainFooter:SetPoint("BOTTOMLEFT", CrossGamblingUI, 0, 0)
 MainFooter:SetText("CrossGambling - Jay@Tichondrius")
 MainFooter:SetNormalFontObject("GameFontNormal")
-ButtonColors(MainFooter)
+if isSlick then ButtonColors(MainFooter) end
 
-local CGOptionsBtn = CreateFrame("Button", nil, MainHeader,  "BackdropTemplate")
-CGOptionsBtn:SetSize(63, 21)
-CGOptionsBtn:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", -30, 0)
+local CGOptionsBtn = CreateFrame("Button", nil, MainHeader, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+CGOptionsBtn:SetSize(isSlick and 63 or 100, 21)
+CGOptionsBtn:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", isSlick and -30 or -25, 0)
 CGOptionsBtn:SetFrameStrata("MEDIUM")
 CGOptionsBtn:SetText("Options")
 CGOptionsBtn:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGOptionsBtn)
+if isSlick then ButtonColors(CGOptionsBtn) end
 CGOptionsBtn:SetScript("OnMouseUp", function(self)
     CGOptions:Toggle()
 end)
 
-local GCchatMethod = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
-GCchatMethod:SetSize(105, 30)
+local GCchatMethod = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+GCchatMethod:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 GCchatMethod:SetPoint("TOPLEFT", MainHeader, "BOTTOMLEFT", 5, -2)
 GCchatMethod:SetText(self.game.chatMethod)
 GCchatMethod:SetNormalFontObject("GameFontNormal")
-ButtonColors(GCchatMethod)
-GCchatMethod:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-local highlight = GCchatMethod:GetHighlightTexture()
-highlight:SetBlendMode("ADD")
-highlight:SetAllPoints()
+if isSlick then
+    ButtonColors(GCchatMethod)
+    GCchatMethod:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+    local highlight = GCchatMethod:GetHighlightTexture()
+    highlight:SetBlendMode("ADD")
+    highlight:SetAllPoints()
 
-GCchatMethod:SetScript("OnEnter", function(self)
-    highlight:Show()
-end)
+    GCchatMethod:SetScript("OnEnter", function(self)
+        highlight:Show()
+    end)
 
-GCchatMethod:SetScript("OnLeave", function(self)
-    highlight:Hide()
-end)
+    GCchatMethod:SetScript("OnLeave", function(self)
+        highlight:Hide()
+    end)
+end
 GCchatMethod:SetScript("OnClick", function() self:chatMethod() GCchatMethod:SetText(self.game.chatMethod) end)
 
-local CGGameMode = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
-CGGameMode:SetSize(105, 30)
+local CGGameMode = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+CGGameMode:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGGameMode:SetPoint("TOPRIGHT", MainHeader, "BOTTOMRIGHT", -4, -2)
 CGGameMode:SetText(self.game.mode)
 CGGameMode:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGGameMode)
-CGGameMode:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-local highlight = CGGameMode:GetHighlightTexture()
-highlight:SetBlendMode("ADD")
-highlight:SetAllPoints()
+if isSlick then
+    ButtonColors(CGGameMode)
+    CGGameMode:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+    local highlight = CGGameMode:GetHighlightTexture()
+    highlight:SetBlendMode("ADD")
+    highlight:SetAllPoints()
 
-CGGameMode:SetScript("OnEnter", function(self)
-    highlight:Show()
-end)
+    CGGameMode:SetScript("OnEnter", function(self)
+        highlight:Show()
+    end)
 
-CGGameMode:SetScript("OnLeave", function(self)
-    highlight:Hide()
-end)
+    CGGameMode:SetScript("OnLeave", function(self)
+        highlight:Hide()
+    end)
+end
 CGGameMode:SetScript("OnClick", function() self:changeGameMode() CGGameMode:SetText(self.game.mode) end)
 
 local CGEditBox = CreateFrame("EditBox", nil, MainMenu, "InputBoxTemplate")
@@ -197,29 +210,34 @@ local CGLastCall
 local CGStartRoll
 local CGEnter
 
-local CGAcceptOnes = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
-CGAcceptOnes:SetSize(105, 30)
+local CGAcceptOnes = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+CGAcceptOnes:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGAcceptOnes:SetPoint("TOPLEFT", GCchatMethod, "BOTTOMLEFT", -0, -25)
 CGAcceptOnes:SetText("New Game")
 CGAcceptOnes:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGAcceptOnes)
+if isSlick then
+    ButtonColors(CGAcceptOnes)
+    CGAcceptOnes:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+    local highlight = CGAcceptOnes:GetHighlightTexture()
+    highlight:SetBlendMode("ADD")
+    highlight:SetAllPoints()
 
-CGAcceptOnes:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-local highlight = CGAcceptOnes:GetHighlightTexture()
-highlight:SetBlendMode("ADD")
-highlight:SetAllPoints()
+    CGAcceptOnes:SetScript("OnEnter", function(self)
+        highlight:Show()
+    end)
 
-CGAcceptOnes:SetScript("OnEnter", function(self)
-    highlight:Show()
-end)
-
-CGAcceptOnes:SetScript("OnLeave", function(self)
-    highlight:Hide()
-end)
+    CGAcceptOnes:SetScript("OnLeave", function(self)
+        highlight:Hide()
+    end)
+end
 
 local CGGuildPercent = CreateFrame("EditBox", nil, OptionsButton, "InputBoxTemplate")
-CGGuildPercent:SetSize(100, 30)
-CGGuildPercent:SetPoint("TOPRIGHT", CGOptionsBtn, "BOTTOMRIGHT", 25, -47)
+CGGuildPercent:SetSize(isSlick and 100 or 140, 30)
+if isSlick then
+    CGGuildPercent:SetPoint("TOPRIGHT", CGOptionsBtn, "BOTTOMRIGHT", 25, -47)
+else
+    CGGuildPercent:SetPoint("TOPLEFT", CGOptionsBtn, -22, -85)
+end
 CGGuildPercent:SetAutoFocus(false)
 CGGuildPercent:SetTextInsets(10, 10, 5, 5)
 CGGuildPercent:SetMaxLetters(2)
@@ -283,73 +301,80 @@ end)
 
 
 
-CGLastCall = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
-CGLastCall:SetSize(105, 30)
+CGLastCall = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+CGLastCall:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGLastCall:SetPoint("TOPLEFT", CGAcceptOnes, "BOTTOMLEFT", -0, -3)
 CGLastCall:SetText("Last Call!")
 CGLastCall:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGLastCall)
-CGLastCall:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-local highlight = CGLastCall:GetHighlightTexture()
-highlight:SetBlendMode("ADD")
-highlight:SetAllPoints()
+if isSlick then
+    ButtonColors(CGLastCall)
+    CGLastCall:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+    local highlight = CGLastCall:GetHighlightTexture()
+    highlight:SetBlendMode("ADD")
+    highlight:SetAllPoints()
 
-CGLastCall:SetScript("OnEnter", function(self)
-    highlight:Show()
-end)
+    CGLastCall:SetScript("OnEnter", function(self)
+        highlight:Show()
+    end)
 
-CGLastCall:SetScript("OnLeave", function(self)
-    highlight:Hide()
-end)
+    CGLastCall:SetScript("OnLeave", function(self)
+        highlight:Hide()
+    end)
+end
 CGLastCall:SetScript("OnClick", function()
-self:SendMsg("LastCall")
+    self:SendMsg("LastCall")
 end)
 
-CGStartRoll = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
-CGStartRoll:SetSize(105, 30)
+CGStartRoll = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+CGStartRoll:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGStartRoll:SetPoint("TOPLEFT", CGLastCall, "BOTTOMLEFT", -0, -3)
 CGStartRoll:SetText("Start Rolling")
 CGStartRoll:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGStartRoll)
-CGStartRoll:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-local highlight = CGStartRoll:GetHighlightTexture()
-highlight:SetBlendMode("ADD")
-highlight:SetAllPoints()
+if isSlick then
+    ButtonColors(CGStartRoll)
+    CGStartRoll:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+    local highlight = CGStartRoll:GetHighlightTexture()
+    highlight:SetBlendMode("ADD")
+    highlight:SetAllPoints()
 
-CGStartRoll:SetScript("OnEnter", function(self)
-    highlight:Show()
-end)
+    CGStartRoll:SetScript("OnEnter", function(self)
+        highlight:Show()
+    end)
 
-CGStartRoll:SetScript("OnLeave", function(self)
-    highlight:Hide()
-end)
+    CGStartRoll:SetScript("OnLeave", function(self)
+        highlight:Hide()
+    end)
+end
 CGStartRoll:SetScript("OnClick", function()
-self:CGRolls()
-CGStartRoll:SetText("Whos Left?")
+    self:CGRolls()
+    CGStartRoll:SetText("Whos Left?")
 end)
 
-CGEnter = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
-CGEnter:SetSize(105, 30)
+CGEnter = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+CGEnter:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGEnter:SetPoint("TOPLEFT", CGGameMode, "BOTTOMLEFT", -0, -25)
 CGEnter:SetText("Join")
 CGEnter:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGEnter)
-CGEnter:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-local highlight = CGEnter:GetHighlightTexture()
-highlight:SetBlendMode("ADD")
-highlight:SetAllPoints()
+if isSlick then
+    ButtonColors(CGEnter)
+    CGEnter:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+    local highlight = CGEnter:GetHighlightTexture()
+    highlight:SetBlendMode("ADD")
+    highlight:SetAllPoints()
+
+    CGEnter:SetScript("OnEnter", function(self)
+        highlight:Show()
+    end)
+
+    CGEnter:SetScript("OnLeave", function(self)
+        highlight:Hide()
+    end)
+end
 
 local function CGEnter_UpdateJoinText()
     CGEnter:SetText("Join")
 end
 
-CGEnter:SetScript("OnEnter", function(self)
-    highlight:Show()
-end)
-
-CGEnter:SetScript("OnLeave", function(self)
-    highlight:Hide()
-end)
 CGEnter:SetScript("OnClick", function()
     local joinWord  = self.db.global.joinWord  or "1"
     local leaveWord = self.db.global.leaveWord or "-1"
@@ -362,46 +387,50 @@ CGEnter:SetScript("OnClick", function()
     end
 end)
 
-local CGRollMe = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
-CGRollMe:SetSize(105, 30)
+local CGRollMe = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+CGRollMe:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGRollMe:SetPoint("TOPLEFT", CGEnter, "BOTTOMLEFT", -0, -3)
 CGRollMe:SetText("Roll Me")
 CGRollMe:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGRollMe)
-CGRollMe:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-local highlight = CGRollMe:GetHighlightTexture()
-highlight:SetBlendMode("ADD")
-highlight:SetAllPoints()
+if isSlick then
+    ButtonColors(CGRollMe)
+    CGRollMe:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+    local highlight = CGRollMe:GetHighlightTexture()
+    highlight:SetBlendMode("ADD")
+    highlight:SetAllPoints()
 
-CGRollMe:SetScript("OnEnter", function(self)
-    highlight:Show()
-end)
+    CGRollMe:SetScript("OnEnter", function(self)
+        highlight:Show()
+    end)
 
-CGRollMe:SetScript("OnLeave", function(self)
-    highlight:Hide()
-end)
+    CGRollMe:SetScript("OnLeave", function(self)
+        highlight:Hide()
+    end)
+end
 CGRollMe:SetScript("OnClick", function()
   self:rollMe()
 end)
 
-local CGCloseGame = CreateFrame("Button", nil, MainMenu, "BackdropTemplate")
-CGCloseGame:SetSize(105, 30)
+local CGCloseGame = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
+CGCloseGame:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGCloseGame:SetPoint("TOPLEFT", CGRollMe, "BOTTOMLEFT", -0, -3)
 CGCloseGame:SetText("Close")
 CGCloseGame:SetNormalFontObject("GameFontNormal")
-ButtonColors(CGCloseGame)
-CGCloseGame:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
-local highlight = CGCloseGame:GetHighlightTexture()
-highlight:SetBlendMode("ADD")
-highlight:SetAllPoints()
+if isSlick then
+    ButtonColors(CGCloseGame)
+    CGCloseGame:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+    local highlight = CGCloseGame:GetHighlightTexture()
+    highlight:SetBlendMode("ADD")
+    highlight:SetAllPoints()
 
-CGCloseGame:SetScript("OnEnter", function(self)
-    highlight:Show()
-end)
+    CGCloseGame:SetScript("OnEnter", function(self)
+        highlight:Show()
+    end)
 
-CGCloseGame:SetScript("OnLeave", function(self)
-    highlight:Hide()
-end)
+    CGCloseGame:SetScript("OnLeave", function(self)
+        highlight:Hide()
+    end)
+end
 CGCloseGame:SetScript("OnClick", function()
   CrossGamblingUI:Hide()
 end)
@@ -513,6 +542,7 @@ CGReset:SetScript("OnMouseDown", function()
     self.game.state = "START"
     self.game.players = {}
     self.game.result = nil
+    self.currentRoll = nil
     self:resetStats(info)
 end)
 

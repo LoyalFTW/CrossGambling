@@ -120,6 +120,15 @@ function CrossGambling:TieBreaker(tieType)
     end
 end
 
+function CrossGambling:CloseGame()
+    self:DispatchModeHook("OnEnd")
+    self.currentRoll = nil
+    self.game.state  = "START"
+    self.game.players = {}
+    self.game.result  = nil
+    self.game.host    = false
+end
+
 function CrossGambling:rollMe(minAmount)
     local wager     = self.db.global.wager or 100
     minAmount       = minAmount or 1
