@@ -245,7 +245,7 @@ function CGOptions:Build(isSlick)
 
     local fullStatsBtn = MakeButton(gamePanel, "Full Stats", BW, BH)
     fullStatsBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", 0, statY)
-    fullStatsBtn:SetScript("OnClick", function() GetAddon():reportStats(nil, true) end)
+    fullStatsBtn:SetScript("OnClick", function() GetAddon():reportStats(true) end)
 
     local deathStatsBtn = MakeButton(gamePanel, "DeathRoll Stats", BW, BH)
     deathStatsBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", BW + 4, statY)

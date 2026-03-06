@@ -258,95 +258,7 @@ CGCloseGame:SetScript("OnClick", function()
   CrossGamblingUI:Hide()
 end)
 
-local CGFullStats = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-CGFullStats:SetSize(150, 28)
-CGFullStats:SetPoint("TOPLEFT", MainHeader, "BOTTOMLEFT", 5, -2)
-CGFullStats:SetText("Full Stats")
-CGFullStats:SetNormalFontObject("GameFontNormal")
-CGFullStats:SetScript("OnClick", function(full)
-  self:reportStats(full)
-end)
 
-local CGDeathStats = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-CGDeathStats:SetSize(150, 28)
-CGDeathStats:SetPoint("TOPLEFT", CGFullStats, "BOTTOMLEFT", -0, -3)
-CGDeathStats:SetText("DeathRoll Stats")
-CGDeathStats:SetNormalFontObject("GameFontNormal")
-CGDeathStats:SetScript("OnClick", function()
-  self:reportDeathrollStats()
-end)
-
-local CGGuildCut = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-CGGuildCut:SetSize(150, 28)
-CGGuildCut:SetPoint("TOPLEFT", CGDeathStats, "BOTTOMLEFT", -0, -3)
-CGGuildCut:SetText("Guild Cut(OFF)")
-CGGuildCut:SetNormalFontObject("GameFontNormal")
-CGGuildCut:SetScript("OnClick", function()
-  if (self.game.house == true) then
-		self.game.house = false
-		CGGuildCut:SetText("Guild Cut (OFF)");
-		DEFAULT_CHAT_FRAME:AddMessage("|cffffff00Guild cut has been turned off.")
-	else
-		self.game.house = true
-		CGGuildCut:SetText("Guild Cut (ON)");
-		DEFAULT_CHAT_FRAME:AddMessage("|cffffff00Guild cut has been turned on.")
-	end
-end)
-
-local CGReset = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-CGReset:SetSize(150, 28)
-CGReset:SetPoint("TOPLEFT", CGGuildCut, "BOTTOMLEFT", -0, -3)
-CGReset:SetText("Reset Stats!")
-CGReset:SetScript("OnMouseDown", function()
-self.game.host = false
-for i = 1, #CGPlayers do
-		CGPlayers[1].HasRolled = false
-		CrossGambling:RemovePlayer(CGPlayers[1].Name)
-	    
-end
-	CGEnter_UpdateJoinText()
-    self.game.state = "START"
-    self.game.players = {}
-    self.game.result = nil
-	self.currentRoll = nil
-	self:resetStats(info)
-end)
-
-local CGRealmFilter = CreateFrame("Button", "CGRealmFilter", OptionsButton, "UIPanelButtonTemplate")
-CGRealmFilter:SetPoint("TOPLEFT", CGReset, "BOTTOMLEFT", -0, -3)
-CGRealmFilter:SetSize(150, 28)
-CGRealmFilter:SetText("Realm Filter(OFF)")
-CGRealmFilter:Show()
-
-local function ToggleRealmFilter()
-  if(self.game.realmFilter == false) then
-    CGRealmFilter:SetText("Realm Filter(ON)")
-	self.game.realmFilter = true
-  else
-    CGRealmFilter:SetText("Realm Filter(OFF)")
-	self.game.realmFilter = false
-  end
-end
-
-CGRealmFilter:SetScript("OnClick", ToggleRealmFilter)
-
-local CGFameShame = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-CGFameShame:SetSize(150, 28)
-CGFameShame:SetPoint("TOPRIGHT", MainHeader, "BOTTOMRIGHT", -4, -3)
-CGFameShame:SetText("Fame/Shame")
-CGFameShame:SetNormalFontObject("GameFontNormal")
-CGFameShame:SetScript("OnClick", function()
-  self:reportStats()
-end)
-
-local CGSession = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-CGSession:SetSize(150, 28)
-CGSession:SetPoint("TOPRIGHT", MainHeader, "BOTTOMRIGHT", -4, -35)
-CGSession:SetText("Session Stats")
-CGSession:SetNormalFontObject("GameFontNormal")
-CGSession:SetScript("OnClick", function()
-  self:reportSessionStats()
-end)
 
 local auditFrame = CreateFrame("Frame", "CrossGamblingAuditLogFrame", UIParent, "BasicFrameTemplateWithInset")
 auditFrame:SetSize(CrossGamblingUI:GetSize())
@@ -440,20 +352,7 @@ searchBox:SetScript("OnTextChanged", function(self, userInput)
     end
 end)
 
-local purgeButton = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-purgeButton:SetSize(150, 28)
-purgeButton:SetPoint("TOPRIGHT", CGSession, "BOTTOMRIGHT", -2, -35)
-purgeButton:SetText("History Log")
-purgeButton:SetNormalFontObject("GameFontNormal")
-purgeButton:SetScript("OnClick", function()
-    if auditFrame:IsShown() then
-        auditFrame:Hide()
-    else
-        CrossGambling:PurgeOldAuditEntries()
-        auditFrame:Show()
-        auditFrame:UpdateLayout()
-    end
-end)
+
 
 CrossGambling.auditFrame = auditFrame
 
@@ -586,20 +485,7 @@ function CrossGambling:UpdateAuditLogText(filter)
 end
 
 
-local CGThemeBtn = CreateFrame("Button", nil, OptionsButton, "UIPanelButtonTemplate")
-CGThemeBtn:SetSize(150, 28)
-CGThemeBtn:SetPoint("TOPRIGHT", CGSession, "BOTTOMRIGHT", -2, -65)
-CGThemeBtn:SetText("Slick Theme")
-CGThemeBtn:SetNormalFontObject("GameFontNormal")
-CGThemeBtn:SetScript("OnClick", function()
-	local current = self.db.global.theme or "Classic"
-	if current == "Slick" then
-		DEFAULT_CHAT_FRAME:AddMessage("|cffFFD100CrossGambling|r: Already using Slick theme.")
-		return
-	end
-	self.uiBuilt = false
-	CGTheme:Switch("Slick")
-end)
+
 
 local CGRightMenu = CreateFrame("Frame", "CGRightMenu", CrossGamblingUI, "InsetFrameTemplate")
 CGRightMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 0, 0)
