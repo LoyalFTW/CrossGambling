@@ -122,6 +122,7 @@ end
 
 function CrossGambling:CloseGame()
     self:DispatchModeHook("OnEnd")
+    self:UnregisterEvent("CHAT_MSG_SYSTEM")
 
     if self.game.result ~= nil then
         if #self.game.result.losers > 0 and #self.game.result.winners > 0 then
@@ -149,7 +150,7 @@ function CrossGambling:CloseGame()
                 self:updatePlayerStat(self.game.result.losers[i].name, self.game.result.amountOwed * -1)
                 self:updatePlayerStat(self.game.result.winners[i].name, self.game.result.amountOwed * #self.game.result.losers)
 
-                table.insert(self.db.global.auditLog, {
+                self:AddAuditEntry({
                     timestamp = time(),
                     action    = "debt",
                     loser     = self.game.result.losers[i].name,

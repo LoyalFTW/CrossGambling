@@ -262,8 +262,9 @@ function CrossGambling:InitDB()
             scalevalue = 1,
 			fontvalue = 14, 
             bans = {},
-			auditLog = {},
-			auditRetention = -1,
+            auditLog = {},
+            auditRetention = 30,
+            auditMaxEntries = 500,
 },
 }
 
@@ -398,7 +399,53 @@ function CrossGambling:handleChatMsg(_, text, playerName)
     end
 end
 
+function CrossGambling:TrimAuditLog()
+    if not self.db or not self.db.global then return end
+
+    local log = self.db.global.auditLog or {}
+    local retention = self.db.global.auditRetention
+    local maxEntries = tonumber(self.db.global.auditMaxEntries) or 500
+
+    if retention ~= nil and retention ~= -1 and retention ~= "Never" then
+        local cutoff = time() - (tonumber(retention) * 86400)
+        local prunedLog = {}
+
+        for _, entry in ipairs(log) do
+            if tonumber(entry.timestamp) and tonumber(entry.timestamp) > cutoff then
+                table.insert(prunedLog, entry)
+            end
+        end
+
+        log = prunedLog
+    end
+
+    if maxEntries > 0 and #log > maxEntries then
+        local startIndex = #log - maxEntries + 1
+        local cappedLog = {}
+
+        for i = startIndex, #log do
+            cappedLog[#cappedLog + 1] = log[i]
+        end
+
+        log = cappedLog
+    end
+
+    self.db.global.auditLog = log
+end
+
+function CrossGambling:AddAuditEntry(entry)
+    if not self.db or not self.db.global or type(entry) ~= "table" then return end
+
+    self.db.global.auditLog = self.db.global.auditLog or {}
+    table.insert(self.db.global.auditLog, entry)
+    self:TrimAuditLog()
+end
+
 function CrossGambling:handleSystemMessage(_, text)
+    if self.game.state ~= gameStates[3] then
+        return
+    end
+
     local playerName, actualRoll, minRoll, maxRoll = strmatch(text, "^([^ ]+) .+ (%d+) %((%d+)-(%d+)%)%.?$")
 
     if not playerName or not actualRoll or not minRoll or not maxRoll then
