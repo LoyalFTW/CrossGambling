@@ -126,11 +126,76 @@ local options = {
     }
 }
 
+local function trimInput(text)
+	if not text then
+		return ""
+	end
+
+	return (text:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+
+function CrossGambling:PrintCommandHelp()
+	self:Print("Commands: show, hide, minimap, allstats, stats, joinstats, unjoinstats, listalts, updatestat, deletestat, resetstats, ban, unban, listbans, audit")
+	self:Print("Usage: /cg <command> [value]")
+end
+
+function CrossGambling:HandleSlashCommand(input)
+	local trimmed = trimInput(input)
+	if trimmed == "" then
+		self:PrintCommandHelp()
+		return
+	end
+
+	local command, remainder = trimmed:match("^(%S+)%s*(.-)$")
+	command = command and command:lower() or ""
+	remainder = trimInput(remainder)
+
+	local option = options.args[command]
+	if not option then
+		self:Print(("Unknown command: %s"):format(command))
+		self:PrintCommandHelp()
+		return
+	end
+
+	if option.type == "execute" then
+		if type(option.func) == "string" then
+			local method = self[option.func]
+			if type(method) == "function" then
+				method(self)
+				return
+			end
+		elseif type(option.func) == "function" then
+			option.func()
+			return
+		end
+	elseif option.type == "input" then
+		if remainder == "" then
+			self:Print(("Usage: /cg %s %s"):format(command, option.desc or "<value>"))
+			return
+		end
+
+		if type(option.set) == "string" then
+			local method = self[option.set]
+			if type(method) == "function" then
+				method(self, remainder)
+				return
+			end
+		elseif type(option.set) == "function" then
+			option.set(nil, remainder)
+			return
+		end
+	end
+
+	self:Print(("Command '%s' is not available right now."):format(command))
+end
+
 
 function CrossGambling:OnInitialize()
 	self:InitDB()
 	self:InitMinimap()
 	self:DrawSecondEvents()
+	self:RegisterChatCommand("CrossGambling", "HandleSlashCommand")
+	self:RegisterChatCommand("cg", "HandleSlashCommand")
 	self.uiBuilt = false
 end
 
@@ -285,7 +350,6 @@ function CrossGambling:InitDB()
 
     CGCall = {}
 	self.db = LibStub("AceDB-3.0"):New("CrossGambling", defaults, true)
-	LibStub("AceConfig-3.0"):RegisterOptionsTable("CrossGambling", options, {"CrossGambling", "cg"})
 	if(CrossGambling["stats"]) then CrossGambling["stats"] = self.db.global.stats end
 	
 end

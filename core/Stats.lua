@@ -88,8 +88,7 @@ function CrossGambling:joinStats(info, args)
         timestamp = time()
     }
 	
-	self.db.global.auditLog = self.db.global.auditLog or {}
-    table.insert(self.db.global.auditLog, {
+    self:AddAuditEntry({
         action = "joinStats",
         mainname = storedMainName,
         altname = storedAltName,
@@ -142,8 +141,7 @@ function CrossGambling:unjoinStats(info, altname)
         timestamp = time()
     }
 
-	self.db.global.auditLog = self.db.global.auditLog or {}
-    table.insert(self.db.global.auditLog, {
+    self:AddAuditEntry({
         action = "unjoinStats",
         mainname = mainname,
         altname = restoredAltName,
@@ -300,8 +298,7 @@ function CrossGambling:updateStat(info, args)
         self:updatePlayerStat(storedPlayerName, amount)
         local newAmount = self.db.global.stats[storedPlayerName] or 0
 		
-		self.db.global.auditLog = self.db.global.auditLog or {}
-        table.insert(self.db.global.auditLog, {
+        self:AddAuditEntry({
             action = "updateStat",
             player = storedPlayerName,
             oldAmount = oldAmount,

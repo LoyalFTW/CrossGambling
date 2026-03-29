@@ -587,19 +587,7 @@ end)
 CrossGambling.auditFrame = auditFrame
 
 function CrossGambling:PurgeOldAuditEntries()
-    if not self.db or not self.db.global then return end
-    local retention = self.db.global.auditRetention or -1
-    if retention == -1 or retention == "Never" then return end
-
-    local cutoff = time() - (retention * 86400)
-    local newLog = {}
-
-    for _, entry in ipairs(self.db.global.auditLog or {}) do
-        if tonumber(entry.timestamp) > cutoff then
-            table.insert(newLog, entry)
-        end
-    end
-    self.db.global.auditLog = newLog
+    self:TrimAuditLog()
 end
 
 C_Timer.After(0.1, function()
@@ -896,17 +884,17 @@ CGLeftMenu:SetSize(300, 180)
 SideColor(CGLeftMenu)
 CGLeftMenu:Show()
 
-local function onUpdate(self,elapsed)
+local function onUpdate(self, elapsed)
     local mainX, mainY = CrossGamblingUI:GetCenter()
     local leftX, leftY = CGLeftMenu:GetCenter()
     local distance = math.sqrt((mainX - leftX)^2 + (mainY - leftY)^2)
     if distance < 260 then
         CGLeftMenu:ClearAllPoints()
         CGLeftMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPLEFT", -300, -20)
-end
+        CGLeftMenu:SetScript("OnUpdate", nil)
+    end
 end
 
-CGLeftMenu:SetScript("OnUpdate", onUpdate)
 CGLeftMenu:SetMovable(true)
 CGLeftMenu:EnableMouse(true)
 CGLeftMenu:SetUserPlaced(true)
@@ -915,14 +903,16 @@ CGLeftMenu:Hide()
 
 CGLeftMenu:SetScript("OnMouseDown", function(self, button)
     if button == "LeftButton" and not self.isMoving then
-        self:StartMoving();
-        self.isMoving = true;
+        self:StartMoving()
+        self.isMoving = true
+        self:SetScript("OnUpdate", onUpdate)
     end
 end)
 CGLeftMenu:SetScript("OnMouseUp", function(self, button)
     if button == "LeftButton" and self.isMoving then
-        self:StopMovingOrSizing();
-        self.isMoving = false;
+        self:StopMovingOrSizing()
+        self.isMoving = false
+        self:SetScript("OnUpdate", onUpdate)
     end
 end)
 
@@ -1007,7 +997,6 @@ playerButtons = {}
 function CrossGambling:UpdatePlayerList()
     for i, button in ipairs(playerButtons) do
         button:Hide()
-        button:SetParent(nil)
     end
 
     table.sort(CGPlayers, function(a, b)
@@ -1015,42 +1004,46 @@ function CrossGambling:UpdatePlayerList()
     end)
 
     local row = 0
-    local column = 0
 
     for i, player in ipairs(CGPlayers) do
-    local playerButton = CreateFrame("Button", "PlayerButton"..i, playerButtonsFrame, "BackdropTemplate")
-    playerButton:SetSize(250, 30)
-    playerButton:SetPoint("TOPLEFT", 0, -row * 30)
-    ButtonColors(playerButton)
-    LoadColor()
+        local playerButton = playerButtons[i]
+        if not playerButton then
+            playerButton = CreateFrame("Button", "PlayerButton"..i, playerButtonsFrame, "BackdropTemplate")
+            playerButton:SetSize(250, 30)
+            ButtonColors(playerButton)
+            LoadColor()
 
-    local buttonText = playerButton:CreateFontString(nil, "OVERLAY")
-    buttonText:SetFont("Fonts\\FRIZQT__.TTF", 20)
-    buttonText:SetPoint("LEFT", 5, 0)
-    playerButton.text = buttonText
-
-    local _, class = UnitClass(player.name)
-    local classColor = class and RAID_CLASS_COLORS[class]
-
-    if classColor and classColor.colorStr then
-        local playerNameColor = "|c"..classColor.colorStr
-        if player.roll then
-            buttonText:SetText(playerNameColor..player.name.."|r : |cFF000000"..player.roll.."|r")
-        else
-            buttonText:SetText(playerNameColor..player.name.."|r")
+            local buttonText = playerButton:CreateFontString(nil, "OVERLAY")
+            buttonText:SetFont("Fonts\\FRIZQT__.TTF", 20)
+            buttonText:SetPoint("LEFT", 5, 0)
+            playerButton.text = buttonText
+            playerButtons[i] = playerButton
         end
-    else
 
-        if player.roll then
-            buttonText:SetText("|cffffffff"..player.name.."|r : |cFF000000"..player.roll.."|r")
+        playerButton:ClearAllPoints()
+        playerButton:SetPoint("TOPLEFT", 0, -row * 30)
+        playerButton:Show()
+
+        local _, class = UnitClass(player.name)
+        local classColor = class and RAID_CLASS_COLORS[class]
+
+        if classColor and classColor.colorStr then
+            local playerNameColor = "|c"..classColor.colorStr
+            if player.roll then
+                playerButton.text:SetText(playerNameColor..player.name.."|r : |cFF000000"..player.roll.."|r")
+            else
+                playerButton.text:SetText(playerNameColor..player.name.."|r")
+            end
         else
-            buttonText:SetText("|cffffffff"..player.name.."|r")
+            if player.roll then
+                playerButton.text:SetText("|cffffffff"..player.name.."|r : |cFF000000"..player.roll.."|r")
+            else
+                playerButton.text:SetText("|cffffffff"..player.name.."|r")
+            end
         end
+
+        row = row + 1
     end
-
-		table.insert(playerButtons, playerButton)
-		row = row + 1
-	end
 
 
     playerButtonsFrame:SetHeight(row * 30)

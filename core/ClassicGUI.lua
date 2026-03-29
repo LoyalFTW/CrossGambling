@@ -357,16 +357,7 @@ end)
 CrossGambling.auditFrame = auditFrame
 
 function CrossGambling:PurgeOldAuditEntries()
-    local retention = self.db.global.auditRetention
-    if not retention or retention == "Never" then return end
-    local cutoff = time() - (retention * 86400)
-    local newLog = {}
-    for _, entry in ipairs(self.db.global.auditLog or {}) do
-        if tonumber(entry.timestamp) > cutoff then
-            table.insert(newLog, entry)
-        end
-    end
-    self.db.global.auditLog = newLog
+    self:TrimAuditLog()
 end
 
 C_Timer.After(0.1, function()
@@ -499,10 +490,10 @@ local function onUpdate(self,elapsed)
     if distance < 260 then
         CGRightMenu:ClearAllPoints()
         CGRightMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 0, 0)
-end
+        CGRightMenu:SetScript("OnUpdate", nil)
+    end
 end
 
-CGRightMenu:SetScript("OnUpdate", onUpdate)
 CGRightMenu:SetMovable(true)
 CGRightMenu:EnableMouse(true)
 CGRightMenu:SetUserPlaced(true)
@@ -510,14 +501,16 @@ CGRightMenu:SetClampedToScreen(true)
 
 CGRightMenu:SetScript("OnMouseDown", function(self, button)
     if button == "LeftButton" and not self.isMoving then
-        self:StartMoving();
-        self.isMoving = true;
+        self:StartMoving()
+        self.isMoving = true
+        self:SetScript("OnUpdate", onUpdate)
     end
 end)
 CGRightMenu:SetScript("OnMouseUp", function(self, button)
     if button == "LeftButton" and self.isMoving then
-        self:StopMovingOrSizing();
-        self.isMoving = false;
+        self:StopMovingOrSizing()
+        self.isMoving = false
+        self:SetScript("OnUpdate", onUpdate)
     end
 end)
 
@@ -658,10 +651,10 @@ local function onUpdate(self,elapsed)
     if distance < 300 then
         CGLeftMenu:ClearAllPoints()
         CGLeftMenu:SetPoint("TOPLEFT", CrossGamblingUI, "TOPLEFT", -300, -20)
-end
+        CGLeftMenu:SetScript("OnUpdate", nil)
+    end
 end
 
-CGLeftMenu:SetScript("OnUpdate", onUpdate)
 CGLeftMenu:SetMovable(true)
 CGLeftMenu:EnableMouse(true)
 CGLeftMenu:SetUserPlaced(true)
@@ -669,14 +662,16 @@ CGLeftMenu:SetClampedToScreen(true)
 
 CGLeftMenu:SetScript("OnMouseDown", function(self, button)
     if button == "LeftButton" and not self.isMoving then
-        self:StartMoving();
-        self.isMoving = true;
+        self:StartMoving()
+        self.isMoving = true
+        self:SetScript("OnUpdate", onUpdate)
     end
 end)
 CGLeftMenu:SetScript("OnMouseUp", function(self, button)
     if button == "LeftButton" and self.isMoving then
-        self:StopMovingOrSizing();
-        self.isMoving = false;
+        self:StopMovingOrSizing()
+        self.isMoving = false
+        self:SetScript("OnUpdate", onUpdate)
     end
 end)
 
@@ -762,23 +757,27 @@ function CrossGambling:UpdatePlayerList()
 
     for i, button in ipairs(playerButtons) do
         button:Hide()
-        button:SetParent(nil)
     end
 
     for i, player in ipairs(CGPlayers) do
-        local playerButton = CreateFrame("Button", "PlayerButton"..i, playerButtonsFrame, "InsetFrameTemplate")
-        playerButton:SetSize(260, 20)
+        local playerButton = playerButtons[i]
+        if not playerButton then
+            playerButton = CreateFrame("Button", "PlayerButton"..i, playerButtonsFrame, "InsetFrameTemplate")
+            playerButton:SetSize(260, 20)
+            playerButton:SetNormalFontObject("GameFontNormal")
+            playerButton:SetHighlightFontObject("GameFontHighlight")
+            playerButtons[i] = playerButton
+        end
+
+        playerButton:ClearAllPoints()
         playerButton:SetPoint("TOPLEFT", playerButtonsFrame, 0, -i * 20)
-        playerButton:SetNormalFontObject("GameFontNormal")
-        playerButton:SetHighlightFontObject("GameFontHighlight")
+        playerButton:Show()
 
         if player.roll ~= nil then
             playerButton:SetText(player.name .. " : " .. player.roll)
         else
             playerButton:SetText(player.name)
         end
-
-        table.insert(playerButtons, playerButton)
     end
 
 end
