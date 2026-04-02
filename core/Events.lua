@@ -1,3 +1,32 @@
+local function normalizePlayerName(name)
+    if not name then
+        return nil
+    end
+
+    name = strtrim(tostring(name))
+    name = strsplit("-", name, 2)
+    if name == "" then
+        return nil
+    end
+
+    return strlower(name)
+end
+
+local function isPlayerBanned(addon, playerName)
+    local normalizedPlayerName = normalizePlayerName(playerName)
+    if not normalizedPlayerName then
+        return false
+    end
+
+    for _, bannedPlayer in ipairs((addon and addon.db and addon.db.global and addon.db.global.bans) or {}) do
+        if normalizePlayerName(bannedPlayer) == normalizedPlayerName then
+            return true
+        end
+    end
+
+    return false
+end
+
 function CrossGambling:DrawSecondEvents()
 
 CGCall["New_Game"] = function()
@@ -11,6 +40,12 @@ CGCall["New_Game"] = function()
 end
 
 CGCall["ADD_PLAYER"] = function(playerName)
+    if isPlayerBanned(self, playerName) then
+        CrossGambling:RemovePlayer(playerName)
+        self:unregisterPlayer(playerName)
+        return
+    end
+
     CrossGambling:AddPlayer(playerName)
     self:registerPlayer(playerName)
 end

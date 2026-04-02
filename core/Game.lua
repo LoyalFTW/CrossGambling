@@ -1,3 +1,32 @@
+local function normalizePlayerName(name)
+    if not name then
+        return nil
+    end
+
+    name = strtrim(tostring(name))
+    name = strsplit("-", name, 2)
+    if name == "" then
+        return nil
+    end
+
+    return strlower(name)
+end
+
+local function isPlayerBanned(addon, playerName)
+    local normalizedPlayerName = normalizePlayerName(playerName)
+    if not normalizedPlayerName then
+        return false
+    end
+
+    for _, bannedPlayer in ipairs((addon and addon.db and addon.db.global and addon.db.global.bans) or {}) do
+        if normalizePlayerName(bannedPlayer) == normalizedPlayerName then
+            return true
+        end
+    end
+
+    return false
+end
+
 function CrossGambling:GameStart()
     local handled = self:DispatchModeHook("OnStart")
     if not handled then
@@ -16,6 +45,11 @@ function CrossGambling:RegisterGame(text, playerName)
     local leaveWord = self.db.global.leaveWord or "-1"
 
     if text:lower() == joinWord:lower() then
+        if isPlayerBanned(self, playerName) then
+            self:SendChat("Sorry " .. playerName .. ", you're banned.")
+            return
+        end
+
         local mode    = self:GetCurrentMode()
         local allowed = true
         if mode and type(mode.OnPlayerJoin) == "function" then

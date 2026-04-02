@@ -134,6 +134,35 @@ local function trimInput(text)
 	return (text:gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
+local function normalizePlayerName(name)
+	if not name then
+		return nil
+	end
+
+	name = strtrim(tostring(name))
+	name = strsplit("-", name, 2)
+	if name == "" then
+		return nil
+	end
+
+	return strlower(name)
+end
+
+local function isPlayerBanned(addon, playerName)
+	local normalizedPlayerName = normalizePlayerName(playerName)
+	if not normalizedPlayerName then
+		return false
+	end
+
+	for _, bannedPlayer in ipairs((addon and addon.db and addon.db.global and addon.db.global.bans) or {}) do
+		if normalizePlayerName(bannedPlayer) == normalizedPlayerName then
+			return true
+		end
+	end
+
+	return false
+end
+
 function CrossGambling:PrintCommandHelp()
 	self:Print("Commands: show, hide, minimap, allstats, stats, joinstats, unjoinstats, listalts, updatestat, deletestat, resetstats, ban, unban, listbans, audit")
 	self:Print("Usage: /cg <command> [value]")
@@ -177,7 +206,7 @@ function CrossGambling:HandleSlashCommand(input)
 		if type(option.set) == "string" then
 			local method = self[option.set]
 			if type(method) == "function" then
-				method(self, remainder)
+				method(self, nil, remainder)
 				return
 			end
 		elseif type(option.set) == "function" then
@@ -529,13 +558,15 @@ function CrossGambling:banPlayer(info, playerName)
     end
 
     for i, bannedPlayer in ipairs(self.db.global.bans) do
-        if bannedPlayer == playerName then
+        if normalizePlayerName(bannedPlayer) == normalizePlayerName(playerName) then
             self:Print(playerName .. " Unable to add to ban list - user already banned.")
             return
         end
     end
 
     table.insert(self.db.global.bans, playerName)
+    self:RemovePlayer(playerName)
+    self:unregisterPlayer(playerName)
     self:Print(playerName .. " has been added to the ban list.")
 end
 
@@ -548,7 +579,7 @@ function CrossGambling:unbanPlayer(info, playerName)
 
     local playerIndex = nil
     for i = 1, #self.db.global.bans do
-        if (self.db.global.bans[i] == playerName) then
+        if normalizePlayerName(self.db.global.bans[i]) == normalizePlayerName(playerName) then
             playerIndex = i
             break
         end
@@ -687,16 +718,14 @@ function CrossGambling:registerPlayer(playerName, playerRoll)
         end
     end
 
-    for i = 1, #self.db.global.bans do
-        if (self.db.global.bans[i] == playerName) then
-		    if(self.game.chatframeOption == false and self.game.host == true) then
-				local RollNotification = "Sorry " .. playerName .. ", you're banned."
-				self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
-			else
-				self:SendChat("Sorry " .. playerName .. ", you're banned." )
-			end
-            return
-        end
+    if isPlayerBanned(self, playerName) then
+		if(self.game.chatframeOption == false and self.game.host == true) then
+			local RollNotification = "Sorry " .. playerName .. ", you're banned."
+			self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
+		else
+			self:SendChat("Sorry " .. playerName .. ", you're banned." )
+		end
+        return
     end
 
     local newRegister = {

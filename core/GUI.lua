@@ -1,3 +1,32 @@
+local function normalizePlayerName(name)
+    if not name then
+        return nil
+    end
+
+    name = strtrim(tostring(name))
+    name = strsplit("-", name, 2)
+    if name == "" then
+        return nil
+    end
+
+    return strlower(name)
+end
+
+local function isPlayerBanned(addon, playerName)
+    local normalizedPlayerName = normalizePlayerName(playerName)
+    if not normalizedPlayerName then
+        return false
+    end
+
+    for _, bannedPlayer in ipairs((addon and addon.db and addon.db.global and addon.db.global.bans) or {}) do
+        if normalizePlayerName(bannedPlayer) == normalizedPlayerName then
+            return true
+        end
+    end
+
+    return false
+end
+
 local CGPlayers = {}
 local playerButtons = {}
 local playerButtonsFrame
@@ -953,6 +982,10 @@ end
 
 
 function CrossGambling:AddPlayer(playerName)
+    if isPlayerBanned(self, playerName) then
+        return
+    end
+
     for i, player in pairs(CGPlayers) do
         if player.name == playerName then
             return
