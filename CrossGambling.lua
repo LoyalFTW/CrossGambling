@@ -23,6 +23,8 @@ local uiThemes = {
 	"Slick"
 }
 
+local auditRetentionOptions = {5, 10, 30, "Never"}
+
 local options = {
     name = "CrossGambling",
     handler = CrossGambling,
@@ -496,7 +498,7 @@ function CrossGambling:TrimAuditLog()
     if not self.db or not self.db.global then return end
 
     local log = self.db.global.auditLog or {}
-    local retention = self.db.global.auditRetention
+    local retention = self:GetAuditRetentionValue()
     local maxEntries = tonumber(self.db.global.auditMaxEntries) or 500
 
     if retention ~= nil and retention ~= -1 and retention ~= "Never" then
@@ -524,6 +526,55 @@ function CrossGambling:TrimAuditLog()
     end
 
     self.db.global.auditLog = log
+end
+
+function CrossGambling:GetAuditRetentionOptions()
+    return auditRetentionOptions
+end
+
+function CrossGambling:GetAuditRetentionValue()
+    if not self.db or not self.db.global then
+        return 30
+    end
+
+    local retention = self.db.global.auditRetention
+    if retention == nil then
+        return 30
+    end
+    if retention == -1 then
+        retention = "Never"
+    end
+
+    local normalized = tonumber(retention) or retention
+    for _, option in ipairs(auditRetentionOptions) do
+        if option == normalized then
+            return option
+        end
+    end
+
+    return 30
+end
+
+function CrossGambling:SetAuditRetention(retention)
+    if not self.db or not self.db.global then
+        return
+    end
+
+    if retention == -1 then
+        retention = "Never"
+    end
+
+    local normalized = tonumber(retention) or retention
+    for _, option in ipairs(auditRetentionOptions) do
+        if option == normalized then
+            self.db.global.auditRetention = option
+            self:TrimAuditLog()
+            return
+        end
+    end
+
+    self.db.global.auditRetention = 30
+    self:TrimAuditLog()
 end
 
 function CrossGambling:AddAuditEntry(entry)

@@ -30,6 +30,182 @@ end
 local CGPlayers = {}
 local playerButtons = {}
 local playerButtonsFrame
+local function GetAddonRef()
+    local ok, addon = pcall(function()
+        return LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    end)
+    if ok and addon then
+        return addon
+    end
+    return CrossGambling
+end
+
+local function GetAuditRetentionOptionsLocal()
+    local addon = GetAddonRef()
+    if type(addon.GetAuditRetentionOptions) == "function" then
+        return addon:GetAuditRetentionOptions()
+    end
+    return {5, 10, 30, "Never"}
+end
+
+local function GetAuditRetentionValueLocal()
+    local addon = GetAddonRef()
+    if type(addon.GetAuditRetentionValue) == "function" then
+        return addon:GetAuditRetentionValue()
+    end
+
+    local retention = addon.db and addon.db.global and addon.db.global.auditRetention or 30
+    if retention == -1 then
+        retention = "Never"
+    end
+    retention = tonumber(retention) or retention
+    for _, option in ipairs(GetAuditRetentionOptionsLocal()) do
+        if option == retention then
+            return option
+        end
+    end
+    return 30
+end
+
+local function SetAuditRetentionLocal(retention)
+    local addon = GetAddonRef()
+    if type(addon.SetAuditRetention) == "function" then
+        addon:SetAuditRetention(retention)
+        return
+    end
+
+    if retention == -1 then
+        retention = "Never"
+    end
+    if addon.db and addon.db.global then
+        addon.db.global.auditRetention = tonumber(retention) or retention
+        if type(addon.TrimAuditLog) == "function" then
+            addon:TrimAuditLog()
+        end
+    end
+end
+
+local function RefreshAuditLogLocal(filter)
+    local addon = GetAddonRef()
+    if not addon.auditFrame or not addon.auditFrame.scrollFrame then
+        return
+    end
+
+    local scrollFrame = addon.auditFrame.scrollFrame
+    local content = addon.auditFrame.content
+    if not content then
+        content = CreateFrame("Frame", nil, scrollFrame)
+        content:SetPoint("TOPLEFT")
+        content:SetPoint("RIGHT")
+        scrollFrame:SetScrollChild(content)
+        addon.auditFrame.content = content
+    end
+
+    content._fontPool = content._fontPool or {}
+    content._fontUsed = content._fontUsed or 0
+
+    local pool = content._fontPool
+    for i = 1, #pool do
+        pool[i]:SetText("")
+        pool[i]:Hide()
+    end
+    content._fontUsed = 0
+    content:SetSize(1, 1)
+
+    local log = (addon.db and addon.db.global and addon.db.global.auditLog) or {}
+    if #log == 0 then
+        local fs = pool[1]
+        if not fs then
+            fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            pool[1] = fs
+        end
+        fs:ClearAllPoints()
+        fs:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
+        fs:SetText("No audit entries found.")
+        fs:Show()
+        content._fontUsed = 1
+        content:SetHeight(30)
+        scrollFrame:SetVerticalScroll(0)
+        return
+    end
+
+    local loweredFilter = filter and filter ~= "" and filter:lower() or nil
+    local yOffset, spacing = -10, 10
+    local maxWidth = 560
+    local poolIdx = 0
+    local function formatTimestamp(ts)
+        local t = date("*t", ts)
+        return string.format("%04d-%02d-%02d %02d:%02d:%02d", t.year, t.month, t.day, t.hour, t.min, t.sec)
+    end
+
+    for _, entry in ipairs(log) do
+        if type(entry) == "table" then
+            local ts = formatTimestamp(tonumber(entry.timestamp) or 0)
+            local textLine
+
+            if entry.action == "updateStat" then
+                textLine = string.format(
+                    "|cff999999[%s]|r\n|cffffd100*|r Stats updated for |cffffff00%s|r\n    Before: |cffffff00%d|r\n    Change: |cffff8800%+d|r    After: |cff00ff00%d|r",
+                    ts, entry.player or "?", entry.oldAmount or 0, entry.addedAmount or 0, entry.newAmount or 0)
+            elseif entry.action == "joinStats" then
+                textLine = string.format(
+                    "|cff999999[%s]|r\n|cffffd100*|r Joined alt |cffffff00%s|r to main |cffffff00%s|r\n    +%d stats, +%d deathroll",
+                    ts, entry.altname or "?", entry.mainname or "?", entry.statsAdded or 0, entry.deathrollStatsAdded or 0)
+            elseif entry.action == "unjoinStats" then
+                textLine = string.format(
+                    "|cff999999[%s]|r\n|cffffd100*|r Unjoined alt |cffffff00%s|r from main |cffffff00%s|r\n    -%d stats, -%d deathroll",
+                    ts, entry.altname or "?", entry.mainname or "?", entry.pointsRemoved or 0, entry.deathrollStatsRemoved or 0)
+            elseif entry.action == "debt" then
+                textLine = string.format(
+                    "|cff999999[%s]|r\n|cffffd100*|r |cffffff00%s|r owes |cffffff00%s|r %dg",
+                    ts, entry.loser or "?", entry.winner or "?", entry.amount or 0)
+            else
+                local extra = {}
+                for k, v in pairs(entry) do
+                    table.insert(extra, k .. "=" .. tostring(v))
+                end
+                table.sort(extra)
+                textLine = string.format("|cff999999[%s]|r Unknown entry:\n%s", ts, table.concat(extra, ", "))
+            end
+
+            if not loweredFilter or textLine:lower():find(loweredFilter, 1, true) then
+                poolIdx = poolIdx + 1
+                local fs = pool[poolIdx]
+                if not fs then
+                    fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                    pool[poolIdx] = fs
+                end
+                fs:ClearAllPoints()
+                fs:SetPoint("TOPLEFT", 10, yOffset)
+                fs:SetWidth(maxWidth)
+                fs:SetJustifyH("LEFT")
+                fs:SetWordWrap(true)
+                fs:SetText(textLine)
+                fs:Show()
+                yOffset = yOffset - fs:GetStringHeight() - spacing
+            end
+        end
+    end
+
+    if poolIdx == 0 then
+        local fs = pool[1]
+        if not fs then
+            fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            pool[1] = fs
+        end
+        fs:ClearAllPoints()
+        fs:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
+        fs:SetText("No audit entries found.")
+        fs:Show()
+        content._fontUsed = 1
+        content:SetHeight(30)
+    else
+        content._fontUsed = poolIdx
+        content:SetHeight(math.max(30, -yOffset + spacing))
+    end
+
+    scrollFrame:SetVerticalScroll(0)
+end
 local CrossGamblingUI
 function CrossGambling:toggleUi2()
 	self:BuildUI()
@@ -330,16 +506,17 @@ purgeButton:SetPoint("TOPRIGHT", -10, -33)
 purgeButton:SetText("Purge Now")
 purgeButton:SetScript("OnClick", function()
     CrossGambling.db.global.auditLog = {}
-    CrossGambling:UpdateAuditLogText(searchBox:GetText())
+    RefreshAuditLogLocal(searchBox:GetText())
 end)
 
-local retentionDays = {5, 10, 30, "Never"}
+local retentionDays = GetAuditRetentionOptionsLocal()
 local retentionCheckboxes = {}
 
 local function OnRetentionChanged(self)
     for _, cb in pairs(retentionCheckboxes) do cb:SetChecked(false) end
     self:SetChecked(true)
-    CrossGambling.db.global.auditRetention = self.days
+    SetAuditRetentionLocal(self.days)
+    RefreshAuditLogLocal(searchBox:GetText() or "")
 end
 
 local lastCB
@@ -360,6 +537,8 @@ scrollFrame:SetPoint("BOTTOMRIGHT", -35, 15)
 
 local content = CreateFrame("Frame", nil, scrollFrame)
 scrollFrame:SetScrollChild(content)
+content._fontPool = {}
+content._fontUsed = 0
 
 auditFrame.searchBox = searchBox
 auditFrame.scrollFrame = scrollFrame
@@ -370,20 +549,20 @@ function auditFrame:UpdateLayout()
     scrollFrame:SetWidth(width - 50)
     content:SetWidth(scrollFrame:GetWidth())
     if self:IsShown() then
-        CrossGambling:UpdateAuditLogText(searchBox:GetText())
+        RefreshAuditLogLocal(searchBox:GetText())
     end
 end
 auditFrame:SetScript("OnSizeChanged", auditFrame.UpdateLayout)
 
 searchBox:SetScript("OnTextChanged", function(self, userInput)
     if userInput then
-        CrossGambling:UpdateAuditLogText(self:GetText())
+        RefreshAuditLogLocal(self:GetText())
     end
 end)
 
 
 
-CrossGambling.auditFrame = auditFrame
+GetAddonRef().auditFrame = auditFrame
 
 function CrossGambling:PurgeOldAuditEntries()
     self:TrimAuditLog()
@@ -395,7 +574,7 @@ C_Timer.After(0.1, function()
     end
 
     for _, cb in pairs(retentionCheckboxes) do
-        if CrossGambling.db.global.auditRetention == cb.days then
+        if GetAuditRetentionValueLocal() == cb.days then
             cb:SetChecked(true)
         end
     end
@@ -408,6 +587,10 @@ local function FormatTimestamp(ts)
 end
 
 function CrossGambling:UpdateAuditLogText(filter)
+    if not self.auditFrame or not self.auditFrame.scrollFrame then
+        return
+    end
+
     local scrollFrame = self.auditFrame.scrollFrame
     local content = self.auditFrame.content
 
@@ -418,6 +601,13 @@ function CrossGambling:UpdateAuditLogText(filter)
         scrollFrame:SetScrollChild(content)
         self.auditFrame.content = content
         content._fontPool = {}
+        content._fontUsed = 0
+    end
+
+    if not content._fontPool then
+        content._fontPool = {}
+    end
+    if not content._fontUsed then
         content._fontUsed = 0
     end
 
