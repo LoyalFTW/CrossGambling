@@ -154,27 +154,66 @@ function CrossGambling:unjoinStats(info, altname)
 end
 
 function CrossGambling:auditMerges()
+    local function emit(message)
+        local method = self and self.game and self.game.chatMethod
+        if method == "PARTY" then
+            if IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid() then
+                self:SendChat(message, method)
+                return
+            end
+        elseif method == "RAID" then
+            if IsInRaid(LE_PARTY_CATEGORY_HOME) or IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+                self:SendChat(message, method)
+                return
+            end
+        elseif method == "GUILD" then
+            if IsInGuild() then
+                self:SendChat(message, method)
+                return
+            end
+        end
+
+        self:Print(message)
+    end
+
     if not self.db.global.auditLog or #self.db.global.auditLog == 0 then
-        self:Print("No audit log entries found.")
+        emit("No audit log entries found.")
         return
     end
 
-    self:Print("-- Audit Log --")
+    emit("-- Audit Log --")
     for i, entry in ipairs(self.db.global.auditLog) do
         if entry.action == "updateStat" then
-            self:Print(string.format(
+            emit(string.format(
                 "%d. [%s] Updated stats for %s: old=%d, added=%d, new=%d",
                 i, entry.timestamp, entry.player, entry.oldAmount, entry.addedAmount, entry.newAmount
             ))
         elseif entry.action == "joinStats" then
-            self:Print(string.format(
+            emit(string.format(
                 "%d. [%s] Joined alt '%s' to main '%s' with %d stats and %d deathroll stats",
                 i, entry.timestamp, entry.altname, entry.mainname, entry.statsAdded or 0, entry.deathrollStatsAdded or 0
             ))
         elseif entry.action == "unjoinStats" then
-            self:Print(string.format(
+            emit(string.format(
                 "%d. [%s] Unjoined alt '%s' from main '%s', points subtracted: %d, deathroll: %d",
                 i, entry.timestamp, entry.altname, entry.mainname, entry.pointsRemoved or 0, entry.deathrollStatsRemoved or 0
+            ))
+        elseif entry.action == "debt" then
+            emit(string.format(
+                "%d. [%s] %s owes %s %dg",
+                i, entry.timestamp, entry.loser or "?", entry.winner or "?", entry.amount or 0
+            ))
+        else
+            local extra = {}
+            for key, value in pairs(entry) do
+                table.insert(extra, key .. "=" .. tostring(value))
+            end
+            table.sort(extra)
+            emit(string.format(
+                "%d. [%s] %s",
+                i,
+                entry.timestamp or "?",
+                next(extra) and table.concat(extra, ", ") or "Unknown audit entry"
             ))
         end
     end

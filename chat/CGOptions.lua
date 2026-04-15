@@ -93,6 +93,18 @@ local function ColorSwatch(parent, getColorFn, setColorFn)
 end
 
 function CGOptions:Build(isSlick)
+    local function AnchorToMainFrame(frame)
+        if not frame then return end
+
+        local mainFrame = _G.CrossGamblingSlick or _G.CrossGamblingClassic
+        frame:ClearAllPoints()
+
+        if mainFrame then
+            frame:SetPoint("TOPLEFT", mainFrame, "TOPRIGHT", 10, 0)
+        else
+            frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        end
+    end
 
     local TABS = isSlick
         and {"Game", "Theme", "Colors", "History"}
@@ -104,7 +116,7 @@ function CGOptions:Build(isSlick)
     local frameName = "CGOptionsFrame" .. _buildCount
     local win = CreateFrame("Frame", frameName, UIParent, "BasicFrameTemplateWithInset")
     win:SetSize(320, 370)
-    win:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    AnchorToMainFrame(win)
     win:SetMovable(true)
     win:EnableMouse(true)
     win:SetUserPlaced(true)
@@ -112,6 +124,9 @@ function CGOptions:Build(isSlick)
     win:RegisterForDrag("LeftButton")
     win:SetScript("OnDragStart", win.StartMoving)
     win:SetScript("OnDragStop",  win.StopMovingOrSizing)
+    win:SetScript("OnShow", function(self)
+        AnchorToMainFrame(self)
+    end)
     win:Hide()
 
     local titleText = win:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -357,9 +372,18 @@ function CGOptions:Build(isSlick)
         if not af then return end
         if af:IsShown() then af:Hide()
         else
-            a:PurgeOldAuditEntries()
+            if a and type(a.TrimAuditLog) == "function" then
+                a:TrimAuditLog()
+            end
+            local mainFrame = _G.CrossGamblingSlick or _G.CrossGamblingClassic
+            if mainFrame then
+                af:ClearAllPoints()
+                af:SetPoint("TOP", mainFrame, "BOTTOM", 0, -12)
+            end
             af:Show() af:UpdateLayout()
-            a:UpdateAuditLogText(af.searchBox and af.searchBox:GetText() or "")
+            if a and type(a.UpdateAuditLogText) == "function" then
+                a:UpdateAuditLogText(af.searchBox and af.searchBox:GetText() or "")
+            end
         end
     end)
 

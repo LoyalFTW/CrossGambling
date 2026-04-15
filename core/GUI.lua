@@ -311,7 +311,7 @@ MainMenu:EnableMouse(false)
 
 local OptionsButton = CreateFrame("Frame", nil, CrossGamblingUI, frameTemplate)
 OptionsButton:SetSize(CrossGamblingUI:GetSize(), 21)
-OptionsButton:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
+OptionsButton:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 10, 0)
 OptionsButton:EnableMouse(false)
 OptionsButton:Hide()
 
@@ -645,9 +645,9 @@ end)
 
 local width, height = CrossGamblingUI:GetSize()
 local auditFrame = CreateFrame("Frame", "CrossGamblingAuditLogFrame", UIParent, "BackdropTemplate")
-auditFrame:SetPoint("TOP", CrossGamblingUI, "BOTTOM", 0, -20)
 auditFrame:SetSize(width, height)
 auditFrame:SetResizeBounds(width, height, 400, 400)
+auditFrame:SetClampedToScreen(true)
 auditFrame:EnableMouse(true)
 auditFrame:SetMovable(true)
 auditFrame:SetResizable(true)
@@ -656,6 +656,13 @@ auditFrame:SetScript("OnDragStart", auditFrame.StartMoving)
 auditFrame:SetScript("OnDragStop", auditFrame.StopMovingOrSizing)
 SideColor(auditFrame)
 auditFrame:Hide()
+
+local function AnchorAuditFrame()
+    auditFrame:ClearAllPoints()
+    auditFrame:SetPoint("TOP", CrossGamblingUI, "BOTTOM", 0, -12)
+end
+
+AnchorAuditFrame()
 
 local closeButton = CreateFrame("Button", nil, auditFrame, "UIPanelCloseButton")
 closeButton:SetPoint("TOPRIGHT", -5, -5)
@@ -787,6 +794,7 @@ CGHistoryLog:SetScript("OnMouseDown", function()
         auditFrame:Hide()
     else
         CrossGambling:PurgeOldAuditEntries()
+        AnchorAuditFrame()
         auditFrame:Show()
         auditFrame:UpdateLayout()
         RefreshAuditLogLocal(auditFrame.searchBox:GetText())

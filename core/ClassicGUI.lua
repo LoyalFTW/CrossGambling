@@ -264,7 +264,7 @@ MainMenu:EnableMouse(false)
 
 local OptionsButton = CreateFrame("Frame", nil, CrossGamblingUI, "InsetFrameTemplate")
 OptionsButton:SetSize(CrossGamblingUI:GetSize(), 21)
-OptionsButton:SetPoint("TOPLEFT", CrossGamblingUI, 0, 0)
+OptionsButton:SetPoint("TOPLEFT", CrossGamblingUI, "TOPRIGHT", 10, 0)
 OptionsButton:EnableMouse(false)
 OptionsButton:Hide()
 
@@ -467,8 +467,8 @@ end)
 
 local auditFrame = CreateFrame("Frame", "CrossGamblingAuditLogFrame", UIParent, "BasicFrameTemplateWithInset")
 auditFrame:SetSize(CrossGamblingUI:GetSize())
-auditFrame:SetPoint("TOP", CrossGamblingUI, "BOTTOM", 0, 30)
 auditFrame:SetResizeBounds(300, 200, 800, 800)
+auditFrame:SetClampedToScreen(true)
 auditFrame:SetMovable(true)
 auditFrame:SetResizable(true)
 auditFrame:EnableMouse(true)
@@ -476,6 +476,13 @@ auditFrame:RegisterForDrag("LeftButton")
 auditFrame:SetScript("OnDragStart", auditFrame.StartMoving)
 auditFrame:SetScript("OnDragStop", auditFrame.StopMovingOrSizing)
 auditFrame:Hide()
+
+local function AnchorAuditFrame()
+    auditFrame:ClearAllPoints()
+    auditFrame:SetPoint("TOP", CrossGamblingUI, "BOTTOM", 0, -12)
+end
+
+AnchorAuditFrame()
 
 auditFrame.TitleText:SetText("History Log")
 
