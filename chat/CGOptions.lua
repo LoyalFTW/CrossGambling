@@ -210,7 +210,7 @@ function CGOptions:Build(isSlick)
     houseCutEB:SetScript("OnEditFocusLost", function(self)
         self:HighlightText(0,0)
         local v = tonumber(self:GetText())
-        if v then GetAddon().db.global.houseCut = v end
+        if v then GetAddon():SetHouseCut(v) end
     end)
 
     RowLabel(gamePanel, START_Y - ROW_H*2, "Realm Filter:")

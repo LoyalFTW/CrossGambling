@@ -24,27 +24,39 @@ function CGChat:BuildChatPanel(parentFrame, game, backdropApplyFn, sideColorAppl
     if sideColorApplyFn then sideColorApplyFn(CGRightMenu) end
     CGRightMenu:Hide()
 
-    CGRightMenu:SetScript("OnUpdate", function(self, elapsed)
+    local function onUpdate(self, elapsed)
         local mainX, mainY = parentFrame:GetCenter()
         local selfX, selfY = self:GetCenter()
         if math.sqrt((mainX-selfX)^2 + (mainY-selfY)^2) < 220 then
             self:ClearAllPoints()
             self:SetPoint("TOPLEFT", parentFrame, "TOPRIGHT", 0, 0)
+            self:SetScript("OnUpdate", nil)
         end
-    end)
+    end
     CGRightMenu:SetMovable(true)
     CGRightMenu:EnableMouse(true)
     CGRightMenu:SetUserPlaced(true)
     CGRightMenu:SetClampedToScreen(true)
     CGRightMenu:SetScript("OnMouseDown", function(self, button)
         if button == "LeftButton" and not self.isMoving then
-            self:StartMoving(); self.isMoving = true
+            self:StartMoving()
+            self.isMoving = true
+            self:SetScript("OnUpdate", onUpdate)
         end
     end)
     CGRightMenu:SetScript("OnMouseUp", function(self, button)
         if button == "LeftButton" and self.isMoving then
-            self:StopMovingOrSizing(); self.isMoving = false
+            self:StopMovingOrSizing()
+            self.isMoving = false
+            self:SetScript("OnUpdate", onUpdate)
         end
+    end)
+    CGRightMenu:SetScript("OnHide", function(self)
+        if self.isMoving then
+            self:StopMovingOrSizing()
+            self.isMoving = false
+        end
+        self:SetScript("OnUpdate", nil)
     end)
 
     local textField = CreateFrame("ScrollingMessageFrame", nil, CGRightMenu)

@@ -64,7 +64,7 @@ CGCall["GAME_MODE"] = function(value)
 end
 
 CGCall["SET_HOUSE"] = function(value)
-    self.db.global.houseCut = tostring(value)
+    self:SetHouseCut(value)
 end
 
 CGCall["Chat_Method"] = function(value)

@@ -321,9 +321,9 @@ CGGuildPercent:SetAutoFocus(false)
 CGGuildPercent:SetMaxLetters(2)
 CGGuildPercent:SetJustifyH("CENTER")
 CGGuildPercent:SetText(self.db.global.houseCut)
+self.guildPercentInput = CGGuildPercent
 CGGuildPercent:SetScript("OnEnterPressed", function(self)
-        local value = tonumber(self:GetText())
-        if value then CrossGambling.db.global.houseCut = value end
+        CrossGambling:SetHouseCut(self:GetText())
         self:ClearFocus()
     end)
 
@@ -373,7 +373,7 @@ CGAcceptOnes:SetScript("OnClick", function()
         self.db.global.wager = tonumber(CGEditBox:GetText()) or self.db.global.wager
         self.game.mode = CGGameMode:GetText()
         self.game.chatMethod = GCchatMethod:GetText()
-        self.db.global.houseCut = CGGuildPercent:GetText()
+        self:SetHouseCut(CGGuildPercent:GetText())
 
         for i = #CGPlayers, 1, -1 do
             CrossGambling:RemovePlayer(CGPlayers[i].name)
