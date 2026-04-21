@@ -136,6 +136,22 @@ local function trimInput(text)
 	return (text:gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
+local function normalizeHouseCutValue(value)
+	local numericValue = tonumber(value)
+	if not numericValue then
+		return nil
+	end
+
+	numericValue = math.floor(numericValue)
+	if numericValue < 0 then
+		numericValue = 0
+	elseif numericValue > 100 then
+		numericValue = 100
+	end
+
+	return numericValue
+end
+
 local function normalizePlayerName(name)
 	if not name then
 		return nil
@@ -420,6 +436,23 @@ function CrossGambling:ToggleMinimap()
 		self.db.global.minimap.hide = false
 	end
 end
+end
+
+function CrossGambling:SetHouseCut(value)
+	if not self.db or not self.db.global then
+		return
+	end
+
+	local normalizedValue = normalizeHouseCutValue(value)
+	if not normalizedValue then
+		normalizedValue = self.db.global.houseCut or 10
+	end
+
+	self.db.global.houseCut = normalizedValue
+
+	if self.guildPercentInput then
+		self.guildPercentInput:SetText(tostring(normalizedValue))
+	end
 end
 
 

@@ -446,7 +446,7 @@ else
 end
 CGGuildPercent:SetAutoFocus(false)
 CGGuildPercent:SetTextInsets(10, 10, 5, 5)
-CGGuildPercent:SetMaxLetters(2)
+CGGuildPercent:SetMaxLetters(3)
 CGGuildPercent:SetJustifyH("CENTER")
 CGGuildPercent:SetText(self.db.global.houseCut)
 self.guildPercentInput = CGGuildPercent

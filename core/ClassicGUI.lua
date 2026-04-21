@@ -318,7 +318,7 @@ local CGGuildPercent = CreateFrame("EditBox", nil, OptionsButton, "InputBoxTempl
 CGGuildPercent:SetSize(140, 30)
 CGGuildPercent:SetPoint("TOPLEFT", CGOptionsBtn, -22, -85)
 CGGuildPercent:SetAutoFocus(false)
-CGGuildPercent:SetMaxLetters(2)
+CGGuildPercent:SetMaxLetters(3)
 CGGuildPercent:SetJustifyH("CENTER")
 CGGuildPercent:SetText(self.db.global.houseCut)
 self.guildPercentInput = CGGuildPercent
