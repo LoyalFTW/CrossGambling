@@ -60,6 +60,68 @@ local SideColor = function(self)
     CGTheme:RegisterSide(self)
 end
 
+local function StyleSlickScrollBar(scrollFrame)
+    if not scrollFrame then return end
+
+    local bar = scrollFrame.ScrollBar or _G[(scrollFrame:GetName() or "") .. "ScrollBar"]
+    if not bar then return end
+
+    local function HideTexture(texture)
+        if texture then
+            texture:SetTexture(nil)
+            texture:SetAlpha(0)
+        end
+    end
+
+    HideTexture(bar.Background)
+    HideTexture(bar.Track)
+    HideTexture(bar.Top)
+    HideTexture(bar.Middle)
+    HideTexture(bar.Bottom)
+    if bar.SetBackdrop then
+        bar:SetBackdrop(nil)
+    end
+
+    local up = bar.ScrollUpButton or bar.ScrollUp or _G[(bar:GetName() or "") .. "ScrollUpButton"]
+    local down = bar.ScrollDownButton or bar.ScrollDown or _G[(bar:GetName() or "") .. "ScrollDownButton"]
+
+    local function StyleArrow(btn, text)
+        if not btn then return end
+        btn:SetNormalTexture("")
+        btn:SetPushedTexture("")
+        btn:SetDisabledTexture("")
+        btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+        if not btn._cgArrow then
+            btn._cgArrow = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            btn._cgArrow:SetAllPoints()
+            btn._cgArrow:SetJustifyH("CENTER")
+            btn._cgArrow:SetJustifyV("MIDDLE")
+            if CGTheme and CGTheme.RegisterFont then CGTheme:RegisterFont(btn._cgArrow) end
+        end
+        btn._cgArrow:SetText(text)
+    end
+
+    StyleArrow(up, "^")
+    StyleArrow(down, "v")
+
+    local thumb = bar.ThumbTexture or bar.thumbTexture or _G[(bar:GetName() or "") .. "ThumbTexture"]
+    if not thumb and bar.GetThumbTexture then
+        thumb = bar:GetThumbTexture()
+    end
+    if thumb then
+        thumb:SetTexture("Interface\\Buttons\\WHITE8X8")
+        thumb:SetVertexColor(CGTheme._buttonColor.r, CGTheme._buttonColor.g, CGTheme._buttonColor.b, 0.95)
+    end
+
+    if not bar._cgTrack then
+        bar._cgTrack = bar:CreateTexture(nil, "BACKGROUND")
+        bar._cgTrack:SetPoint("TOP", bar, "TOP", 0, -14)
+        bar._cgTrack:SetPoint("BOTTOM", bar, "BOTTOM", 0, 14)
+        bar._cgTrack:SetWidth(6)
+    end
+    bar._cgTrack:SetColorTexture(0, 0, 0, 0.35)
+end
+
 local function GetAddonRef()
     local ok, addon = pcall(function()
         return LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
@@ -1206,6 +1268,7 @@ playerListFrame:SetPoint("CENTER")
 local scrollFrame = CreateFrame("ScrollFrame", "PlayerListScrollFrame", playerListFrame, "UIPanelScrollFrameTemplate")
 scrollFrame:SetSize(266, 170)
 scrollFrame:SetPoint("TOPLEFT", 10, 10)
+StyleSlickScrollBar(scrollFrame)
 
 scrollFrame:EnableMouseWheel(true)
 scrollFrame:SetScript("OnMouseWheel", function(self, delta)

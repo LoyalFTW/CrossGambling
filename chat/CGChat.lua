@@ -2,14 +2,14 @@ CGChat = {}
 
 local function GetFontSize()
     if CrossGambling and CrossGambling.db and CrossGambling.db.global then
-        return CrossGambling.db.global.fontvalue or 14
+        return CrossGambling.db.global.chatFontSize or CrossGambling.db.global.fontvalue or 12
     end
-    return 14
+    return 12
 end
 
 local function GetFontColor()
     if CrossGambling and CrossGambling.db and CrossGambling.db.global and CrossGambling.db.global.colors then
-        local fc = CrossGambling.db.global.colors.fontColor
+        local fc = CrossGambling.db.global.colors.chatFontColor or CrossGambling.db.global.colors.fontColor
         return fc.r, fc.g, fc.b
     end
     return 1, 1, 1
@@ -98,7 +98,7 @@ function CGChat:BuildChatPanel(parentFrame, game, backdropApplyFn, sideColorAppl
             local playerName     = UnitName("player")
             local playerColor    = "|c" .. RAID_CLASS_COLORS[select(2, UnitClass("player"))].colorStr
             local r, g, b        = GetFontColor()
-            local formatted      = string.format("[%s]|r: |cFF%02x%02x%02x%s", playerName, r*255, g*255, b*255, message)
+            local formatted      = string.format("[%s]|r: |cFF%02x%02x%02x%s", playerName, math.floor(r*255), math.floor(g*255), math.floor(b*255), message)
             local withPlayerInfo = string.format("%s:%s", playerColor .. playerName, formatted)
             addon:SendMsg("CHAT_MSG", withPlayerInfo)
             self:SetText("")
@@ -129,6 +129,20 @@ function CGChat:BuildChatPanel(parentFrame, game, backdropApplyFn, sideColorAppl
     CrossGambling.CGRightMenu = CGRightMenu
 
     return CGRightMenu
+end
+
+function CGChat:RefreshFont()
+    if self.TextField then
+        self.TextField:SetFont("Fonts\\FRIZQT__.TTF", GetFontSize(), "")
+    end
+end
+
+function CGChat:SetFontSize(value)
+    if CrossGambling and CrossGambling.db and CrossGambling.db.global then
+        CrossGambling.db.global.chatFontSize = value
+        CrossGambling.db.global.fontvalue = value
+    end
+    self:RefreshFont()
 end
 
 function CGChat:BuildToggleButton(headerFrame, backdropApplyFn, game)
