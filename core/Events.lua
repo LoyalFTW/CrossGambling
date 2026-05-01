@@ -33,6 +33,9 @@ CGCall["New_Game"] = function()
     if self.game.state == "START" and self.game.host == false then
         self:RegisterChatEvents()
         self.game.state = "REGISTER"
+        if CGChat and CGChat.StartListening then
+            CGChat:StartListening()
+        end
         if CGCall["DisableClient"] then
             CGCall["DisableClient"]()
         end
@@ -95,5 +98,3 @@ CGCall["LastCall"] = function()
 end
 
 end
-
-C_ChatInfo.RegisterAddonMessagePrefix("CrossGambling")

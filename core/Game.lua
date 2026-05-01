@@ -28,6 +28,9 @@ local function isPlayerBanned(addon, playerName)
 end
 
 function CrossGambling:GameStart()
+    if CGChat and CGChat.StartListening then
+        CGChat:StartListening()
+    end
     local handled = self:DispatchModeHook("OnStart")
     if not handled then
         local joinWord  = self.db.global.joinWord  or "1"
@@ -206,6 +209,10 @@ function CrossGambling:CloseGame()
     self.game.players = {}
     self.game.result  = nil
     self.game.host    = false
+
+    if CGChat and CGChat.StopListening then
+        CGChat:StopListening()
+    end
 end
 
 function CrossGambling:rollMe(minAmount)
