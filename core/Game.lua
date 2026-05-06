@@ -172,10 +172,10 @@ function CrossGambling:CloseGame()
             for i = 1, #self.game.result.losers do
                 local RollNotification
                 if self.game.house == true then
-                    RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. self:addCommas(self.game.result.amountOwed) .. " gold! plus " .. self:addCommas(houseAmount) .. " to the guild"
+                    RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. self:addCommas(self.game.result.amountOwed) .. " g! plus " .. self:addCommas(houseAmount) .. " to the guild"
                     self:updatePlayerStat("guild", houseAmount)
                 else
-                    RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. self:addCommas(self.game.result.amountOwed) .. " gold!"
+                    RollNotification = self.game.result.losers[i].name .. " owes " .. self.game.result.winners[i].name .. " " .. self:addCommas(self.game.result.amountOwed) .. " g!"
                 end
 
                 if self.game.chatframeOption == false and self.game.host == true then
