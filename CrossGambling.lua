@@ -290,6 +290,10 @@ function CrossGambling:OnInitialize()
 	self:InitDB()
 	self:InitMinimap()
 	self:DrawSecondEvents()
+	self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnCombatStart")
+	self:RegisterEvent("PLAYER_REGEN_ENABLED", "OnCombatEnd")
+	self:RegisterEvent("ENCOUNTER_START", "OnEncounterStart")
+	self:RegisterEvent("ENCOUNTER_END", "OnEncounterEnd")
 	self:RegisterChatCommand("CrossGambling", "HandleSlashCommand")
 	self:RegisterChatCommand("cg", "HandleSlashCommand")
 	self.uiBuilt = false
@@ -426,6 +430,7 @@ function CrossGambling:InitDB()
             auditLog = {},
             auditRetention = 30,
             auditMaxEntries = 500,
+            suspendChatEventsInCombat = true,
 },
 }
 
@@ -532,7 +537,46 @@ function CrossGambling:SendChat(msg, method)
   pcall(SendChatMessage, msg, method or self.game.chatMethod)
 end
 
+function CrossGambling:ShouldSuspendChatEventsInCombat()
+	return self.db
+		and self.db.global
+		and self.db.global.suspendChatEventsInCombat ~= false
+		and InCombatLockdown()
+		and self:IsHighImpactCombatContext()
+end
+
+function CrossGambling:IsHighImpactCombatContext()
+	if self.bossEncounterActive then
+		return true
+	end
+
+	local _, instanceType = IsInInstance()
+	return instanceType == "arena" or instanceType == "pvp"
+end
+
+function CrossGambling:SuspendRegistrationChatEvents()
+	if self.game.state ~= gameStates[2] then
+		return
+	end
+
+	self.chatEventsSuspendedForCombat = true
+	self:UnRegisterChatEvents()
+end
+
+function CrossGambling:ResumeRegistrationChatEvents()
+	if self.chatEventsSuspendedForCombat and self.game.state == gameStates[2] then
+		self:RegisterChatEvents()
+	end
+end
+
 function CrossGambling:RegisterChatEvents()
+	if self:ShouldSuspendChatEventsInCombat() then
+		self:SuspendRegistrationChatEvents()
+		return
+	end
+
+	self.chatEventsSuspendedForCombat = false
+
     if self.game.chatMethod == chatMethods[1] then
         self:RegisterEvent("CHAT_MSG_PARTY", "handleChatMsg")
         self:RegisterEvent("CHAT_MSG_PARTY_LEADER", "handleChatMsg")
@@ -543,6 +587,32 @@ function CrossGambling:RegisterChatEvents()
     else
         self:RegisterEvent("CHAT_MSG_GUILD", "handleChatMsg")
     end
+end
+
+function CrossGambling:OnCombatStart()
+	if self:ShouldSuspendChatEventsInCombat() then
+		self:SuspendRegistrationChatEvents()
+	end
+end
+
+function CrossGambling:OnCombatEnd()
+	self:ResumeRegistrationChatEvents()
+end
+
+function CrossGambling:OnEncounterStart()
+	self.bossEncounterActive = true
+
+	if self:ShouldSuspendChatEventsInCombat() then
+		self:SuspendRegistrationChatEvents()
+	end
+end
+
+function CrossGambling:OnEncounterEnd()
+	self.bossEncounterActive = false
+
+	if not self:ShouldSuspendChatEventsInCombat() then
+		self:ResumeRegistrationChatEvents()
+	end
 end
 
 function CrossGambling:chatMethod()
@@ -571,6 +641,12 @@ end
 
 
 function CrossGambling:handleChatMsg(_, text, playerName)
+	if self:ShouldSuspendChatEventsInCombat() then
+		self.chatEventsSuspendedForCombat = true
+		self:UnRegisterChatEvents()
+		return
+	end
+
     if (self.game.state == gameStates[2]) then
         local playerName = strsplit("-", playerName, 2)
         self:RegisterGame(text, playerName)

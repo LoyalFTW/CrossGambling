@@ -558,9 +558,28 @@ function CGOptions:Build(isSlick)
         self:Refresh(self._state)
     end)
 
-    RowLabel(gamePanel, START_Y - ROW_H*3, "Join Word:")
+    RowLabel(gamePanel, START_Y - ROW_H*3, "Pause Boss/PvP:")
+    local combatChatBtn = MakeToggleBtn(gamePanel, 85, 22)
+    combatChatBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*3 + 4)
+    combatChatBtn:SetScript("OnClick", function(self)
+        local a = GetAddon()
+        if not a or not a.db or not a.db.global then return end
+
+        self._state = not self._state
+        a.db.global.suspendChatEventsInCombat = self._state
+        self:Refresh(self._state)
+
+        if type(a.ShouldSuspendChatEventsInCombat) == "function" and a:ShouldSuspendChatEventsInCombat() then
+            a.chatEventsSuspendedForCombat = true
+            a:UnRegisterChatEvents()
+        elseif a.chatEventsSuspendedForCombat and a.game and a.game.state == "REGISTER" then
+            a:RegisterChatEvents()
+        end
+    end)
+
+    RowLabel(gamePanel, START_Y - ROW_H*4, "Join Word:")
     local joinEB = MakeEditBox(gamePanel, 85, 22, 10)
-    joinEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*3 + 4)
+    joinEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*4 + 4)
     joinEB:SetText("1")
     joinEB:SetScript("OnEditFocusLost", function(self)
         self:HighlightText(0,0)
@@ -573,9 +592,9 @@ function CGOptions:Build(isSlick)
         self:ClearFocus()
     end)
 
-    RowLabel(gamePanel, START_Y - ROW_H*4, "Leave Word:")
+    RowLabel(gamePanel, START_Y - ROW_H*5, "Leave Word:")
     local leaveEB = MakeEditBox(gamePanel, 85, 22, 10)
-    leaveEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*4 + 4)
+    leaveEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*5 + 4)
     leaveEB:SetText("-1")
     leaveEB:SetScript("OnEditFocusLost", function(self)
         self:HighlightText(0,0)
@@ -588,9 +607,9 @@ function CGOptions:Build(isSlick)
         self:ClearFocus()
     end)
 
-    Divider(gamePanel, START_Y - ROW_H*5 - 4)
+    Divider(gamePanel, START_Y - ROW_H*6 - 4)
 
-    local statY = START_Y - ROW_H*5 - 12
+    local statY = START_Y - ROW_H*6 - 12
     local BW, BH = 138, 26
     local statsX = isSlick and 21 or 0
 
@@ -629,6 +648,7 @@ function CGOptions:Build(isSlick)
         if not a or not a.game then return end
         guildCutBtn:Refresh(a.game.house)
         realmBtn:Refresh(a.game.realmFilter)
+        combatChatBtn:Refresh(a.db.global.suspendChatEventsInCombat ~= false)
         houseCutEB:SetText(tostring(a.db.global.houseCut or 10))
         joinEB:SetText(a.db.global.joinWord or "1")
         leaveEB:SetText(a.db.global.leaveWord or "-1")
