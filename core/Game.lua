@@ -151,6 +151,7 @@ function CrossGambling:detectTie()
 
         if #tiedPlayers > 1 then
             self.game.players = tiedPlayers
+            self.game.playerIndexByName = nil
             for i = 1, #self.game.players do
                 self.game.players[i].roll = nil
             end
@@ -221,6 +222,7 @@ function CrossGambling:CloseGame()
     self.currentRoll  = nil
     self.game.state   = "START"
     self.game.players = {}
+    self.game.playerIndexByName = nil
     self.game.result  = nil
     self.game.host    = false
 

@@ -53,6 +53,7 @@ function DeathRollMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
         addon:UnregisterEvent("CHAT_MSG_SYSTEM")
         addon.game.state   = "START"
         addon.game.players = {}
+        addon.game.playerIndexByName = nil
         addon.game.result  = nil
     else
         addon.currentRoll        = actualRoll

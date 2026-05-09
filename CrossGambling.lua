@@ -181,6 +181,55 @@ local function isPlayerBanned(addon, playerName)
 	return false
 end
 
+function CrossGambling:NormalizePlayerName(name, preserveRealm)
+	if not name then
+		return nil
+	end
+
+	name = strtrim(tostring(name))
+	if name == "" then
+		return nil
+	end
+
+	if not preserveRealm then
+		name = strsplit("-", name, 2)
+		if not name or name == "" then
+			return nil
+		end
+	end
+
+	return strlower(name)
+end
+
+function CrossGambling:RebuildBanCache()
+	self.banLookup = {}
+
+	local bans = self.db and self.db.global and self.db.global.bans
+	if not bans then
+		return
+	end
+
+	for i = 1, #bans do
+		local normalizedName = self:NormalizePlayerName(bans[i])
+		if normalizedName then
+			self.banLookup[normalizedName] = true
+		end
+	end
+end
+
+function CrossGambling:IsPlayerBanned(playerName)
+	local normalizedPlayerName = self:NormalizePlayerName(playerName)
+	if not normalizedPlayerName then
+		return false
+	end
+
+	if not self.banLookup then
+		self:RebuildBanCache()
+	end
+
+	return self.banLookup[normalizedPlayerName] == true
+end
+
 function CrossGambling:PrintCommandHelp()
 	self:Print("Commands: show, hide, minimap, allstats, stats, joinstats, unjoinstats, listalts, updatestat, deletestat, resetstats, ban, unban, listbans, audit")
 	self:Print("Usage: /cg <command> [value]")
@@ -395,9 +444,10 @@ function CrossGambling:InitDB()
 				sessionStats = {},
 			}
 
-    CGCall = {}
+	CGCall = {}
 	self.db = LibStub("AceDB-3.0"):New("CrossGambling", defaults, true)
 	if(CrossGambling["stats"]) then CrossGambling["stats"] = self.db.global.stats end
+	self:RebuildBanCache()
 	
 end
 
@@ -649,6 +699,7 @@ function CrossGambling:banPlayer(info, playerName)
     end
 
     table.insert(self.db.global.bans, playerName)
+    self:RebuildBanCache()
     self:RemovePlayer(playerName)
     self:unregisterPlayer(playerName)
     self:Print(playerName .. " has been added to the ban list.")
@@ -671,6 +722,7 @@ function CrossGambling:unbanPlayer(info, playerName)
 
     if playerIndex then
         table.remove(self.db.global.bans, playerIndex)
+        self:RebuildBanCache()
         self:Print(playerName .. " has been removed from the ban list.")
     else
         self:Print(playerName .. " is not currently banned!")
@@ -721,12 +773,19 @@ end
 
 
 function CrossGambling:getPlayerByName(name)
-    for i = 1, #self.game.players do
-        if self.game.players[i].name == name then
-            return self.game.players[i]
+    local players = self.game.players
+    local indexByName = self.game.playerIndexByName
+
+    if not indexByName then
+        indexByName = {}
+        for i = 1, #players do
+            indexByName[players[i].name] = i
         end
+        self.game.playerIndexByName = indexByName
     end
-    return nil
+
+    local playerIndex = indexByName[name]
+    return playerIndex and players[playerIndex] or nil
 end
 
 function CrossGambling:hasPendingRolls()
@@ -796,13 +855,22 @@ end
 
 
 function CrossGambling:registerPlayer(playerName, playerRoll)
-    for i = 1, #self.game.players do
-        if (self.game.players[i].name == playerName) then
-            return
+    local players = self.game.players
+    local indexByName = self.game.playerIndexByName
+
+    if not indexByName then
+        indexByName = {}
+        self.game.playerIndexByName = indexByName
+        for i = 1, #players do
+            indexByName[players[i].name] = i
         end
     end
 
-    if isPlayerBanned(self, playerName) then
+    if indexByName[playerName] then
+        return
+    end
+
+    if self:IsPlayerBanned(playerName) then
 		if(self.game.chatframeOption == false and self.game.host == true) then
 			local RollNotification = "Sorry " .. playerName .. ", you're banned."
 			self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, RollNotification))
@@ -817,21 +885,31 @@ function CrossGambling:registerPlayer(playerName, playerRoll)
         roll = playerRoll
     }
 	
-    tinsert(self.game.players, newRegister)
+    local newIndex = #players + 1
+    players[newIndex] = newRegister
+    indexByName[playerName] = newIndex
 end
 
 function CrossGambling:unregisterPlayer(playerName)
-    for i = 1, #self.game.players do
-        if (self.game.players[i].name == playerName) then         
-		   tremove(self.game.players, i)
-            return
-        end
+    local players = self.game.players
+    local indexByName = self.game.playerIndexByName
+    local playerIndex = indexByName and indexByName[playerName]
+    if not playerIndex then
+        return
+    end
+
+    tremove(players, playerIndex)
+    indexByName[playerName] = nil
+
+    for i = playerIndex, #players do
+        indexByName[players[i].name] = i
     end
 end
 
 
 
 function CrossGambling:UnRegisterChatEvents()
+        self.chatEventsRegistered = false
         self:UnregisterEvent("CHAT_MSG_PARTY")
         self:UnregisterEvent("CHAT_MSG_PARTY_LEADER")
         self:UnregisterEvent("CHAT_MSG_RAID")

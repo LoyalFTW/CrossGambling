@@ -44,6 +44,8 @@ end
 local CGPlayers = {}
 local playerButtons = {}
 local playerButtonsFrame
+local playerIndexByName = {}
+local pendingPlayerListRefresh = false
 local function GetAddonRef()
     local ok, addon = pcall(function()
         return LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
@@ -939,13 +941,45 @@ CGMenuToggle:SetScript("OnMouseDown", function(self)
 end)
 
 function CrossGambling:RemovePlayer(name)
+    local playerIndex = playerIndexByName[name]
+    if not playerIndex then
+        return
+    end
 
-    for i, player in pairs(CGPlayers) do
-        if player.name == name then
-            table.remove(CGPlayers, i)
-            self:UpdatePlayerList()
-            return
+    table.remove(CGPlayers, playerIndex)
+    playerIndexByName[name] = nil
+
+    for i = playerIndex, #CGPlayers do
+        playerIndexByName[CGPlayers[i].name] = i
+    end
+
+    self:QueuePlayerListRefresh()
+end
+
+function CrossGambling:QueuePlayerListRefresh()
+    if pendingPlayerListRefresh then
+        return
+    end
+
+    pendingPlayerListRefresh = true
+    C_Timer.After(0, function()
+        pendingPlayerListRefresh = false
+        CrossGambling:UpdatePlayerList()
+    end)
+end
+
+local function InsertPlayerSorted(player)
+    local insertIndex = #CGPlayers + 1
+    for i = 1, #CGPlayers do
+        if player.name < CGPlayers[i].name then
+            insertIndex = i
+            break
         end
+    end
+
+    table.insert(CGPlayers, insertIndex, player)
+    for i = insertIndex, #CGPlayers do
+        playerIndexByName[CGPlayers[i].name] = i
     end
 end
 
@@ -955,20 +989,15 @@ function CrossGambling:AddPlayer(playerName)
         return
     end
 
-    for i, player in pairs(CGPlayers) do
-        if player.name == playerName then
-            return
-        end
+    if playerIndexByName[playerName] then
+        return
     end
     local newPlayer = {
         name = playerName,
         total = 0,
     }
-    table.insert(CGPlayers, newPlayer)
-    table.sort(CGPlayers, function(a, b)
-        return a.name < b.name
-    end)
-    self:UpdatePlayerList()
+    InsertPlayerSorted(newPlayer)
+    self:QueuePlayerListRefresh()
 end
 
 local playerListFrame = CreateFrame("Frame", "PlayerListFrame", CGLeftMenu)
@@ -995,10 +1024,6 @@ scrollFrame:SetScrollChild(playerButtonsFrame)
 playerButtons = {}
 
 function CrossGambling:UpdatePlayerList()
-    table.sort(CGPlayers, function(a, b)
-        return a.name < b.name
-    end)
-
     for i, button in ipairs(playerButtons) do
         button:Hide()
     end
@@ -1029,19 +1054,17 @@ end
 
 
 CGCall["PLAYER_ROLL"] = function(playerName, value)
-    for i, player in pairs(CGPlayers) do
-        if player.name == playerName then
-            player.roll = value 
-            break
-        end
+    local playerIndex = playerIndexByName[playerName]
+    if playerIndex then
+        CGPlayers[playerIndex].roll = value
     end
-    CrossGambling:UpdatePlayerList()
+    CrossGambling:QueuePlayerListRefresh()
 end
 
 CGCall["R_NewGame"] = function()
-    for i = #CGPlayers, 1, -1 do
-        CrossGambling:RemovePlayer(CGPlayers[i].name)
-    end
+    wipe(CGPlayers)
+    wipe(playerIndexByName)
+    CrossGambling:QueuePlayerListRefresh()
 CGEnter_UpdateJoinText()
 CGStartRoll:SetText("Start Rolling")
 CGEnter:Enable()
@@ -1054,6 +1077,7 @@ CGCall["DisableClient"] = function()
 		CGLastCall:Disable()
 		CGStartRoll:Disable()
 		CrossGambling.game.players = {}
+		CrossGambling.game.playerIndexByName = nil
 		CrossGambling.game.result = nil
 	if(CrossGambling.game.host) then
 		CGAcceptOnes:Enable()
