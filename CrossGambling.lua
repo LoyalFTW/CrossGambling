@@ -7,11 +7,6 @@ local gameStates = {
     "ROLL"
 }
 
-local gameModes = {
-    "Classic",
-	"1v1DeathRoll",
-    "BigTwo",
-}
 local chatMethods = {
     "PARTY",
     "RAID",
@@ -434,9 +429,11 @@ function CrossGambling:InitDB()
 },
 }
 
+        local defaultMode = (self.modeListOrder and self.modeListOrder[1]) or "Classic"
+
 		self.game = {
 				chatMethod = chatMethods[1],
-				mode = gameModes[1],
+				mode = defaultMode,
 				state = gameStates[1],
 				chatframeOption = true,
 				realmFilter = false,
@@ -818,25 +815,6 @@ function CrossGambling:listBans(info)
     end
 end
 
-
-function CrossGambling:changeGameMode()
-	local gameNum
-	for i = 1, #gameModes do
-        if (self.game.mode == gameModes[i]) then
-            gameNum = i
-        end
-    end
-
-    if (gameNum ~= nil) then
-            if (gameNum == #gameModes) then
-                self.game.mode = gameModes[1]
-            else
-                self.game.mode = gameModes[gameNum + 1]
-            end
-    else
-        self.game.mode = gameModes[1]
-    end
-end
 
 function CrossGambling:PromptNextRoll()
     local currentPlayer = self.game.players[self.currentPlayerIndex]
