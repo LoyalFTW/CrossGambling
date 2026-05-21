@@ -195,124 +195,9 @@ end
 
 local function RefreshAuditLogLocal(filter)
     local addon = GetAddonRef()
-    if not addon.auditFrame or not addon.auditFrame.scrollFrame then
-        return
+    if addon and type(addon.RefreshAuditFrame) == "function" then
+        addon:RefreshAuditFrame(filter)
     end
-
-    local scrollFrame = addon.auditFrame.scrollFrame
-    local content = addon.auditFrame.content
-    if not content then
-        content = CreateFrame("Frame", nil, scrollFrame)
-        content:SetPoint("TOPLEFT")
-        content:SetPoint("RIGHT")
-        scrollFrame:SetScrollChild(content)
-        addon.auditFrame.content = content
-    end
-
-    content._fontPool = content._fontPool or {}
-    content._fontUsed = content._fontUsed or 0
-
-    local pool = content._fontPool
-    for i = 1, #pool do
-        pool[i]:SetText("")
-        pool[i]:Hide()
-    end
-    content._fontUsed = 0
-    content:SetSize(1, 1)
-
-    local log = (addon.db and addon.db.global and addon.db.global.auditLog) or {}
-    if #log == 0 then
-        local fs = pool[1]
-        if not fs then
-            fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            pool[1] = fs
-        end
-        fs:ClearAllPoints()
-        fs:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
-        fs:SetText("No audit entries found.")
-        fs:Show()
-        content._fontUsed = 1
-        content:SetHeight(30)
-        scrollFrame:SetVerticalScroll(0)
-        return
-    end
-
-    local loweredFilter = filter and filter ~= "" and filter:lower() or nil
-    local yOffset, spacing = -10, 10
-    local maxWidth = 560
-    local poolIdx = 0
-    local function formatTimestamp(ts)
-        local t = date("*t", ts)
-        return string.format("%04d-%02d-%02d %02d:%02d:%02d", t.year, t.month, t.day, t.hour, t.min, t.sec)
-    end
-
-    for _, entry in ipairs(log) do
-        if type(entry) == "table" then
-            local ts = formatTimestamp(tonumber(entry.timestamp) or 0)
-            local textLine
-
-            if entry.action == "updateStat" then
-                textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100*|r Stats updated for |cffffff00%s|r\n    Before: |cffffff00%d|r\n    Change: |cffff8800%+d|r    After: |cff00ff00%d|r",
-                    ts, entry.player or "?", entry.oldAmount or 0, entry.addedAmount or 0, entry.newAmount or 0)
-            elseif entry.action == "joinStats" then
-                textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100*|r Joined alt |cffffff00%s|r to main |cffffff00%s|r\n    +%d stats, +%d deathroll",
-                    ts, entry.altname or "?", entry.mainname or "?", entry.statsAdded or 0, entry.deathrollStatsAdded or 0)
-            elseif entry.action == "unjoinStats" then
-                textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100*|r Unjoined alt |cffffff00%s|r from main |cffffff00%s|r\n    -%d stats, -%d deathroll",
-                    ts, entry.altname or "?", entry.mainname or "?", entry.pointsRemoved or 0, entry.deathrollStatsRemoved or 0)
-            elseif entry.action == "debt" then
-                textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100*|r |cffffff00%s|r owes |cffffff00%s|r %dg",
-                    ts, entry.loser or "?", entry.winner or "?", entry.amount or 0)
-            else
-                local extra = {}
-                for k, v in pairs(entry) do
-                    table.insert(extra, k .. "=" .. tostring(v))
-                end
-                table.sort(extra)
-                textLine = string.format("|cff999999[%s]|r Unknown entry:\n%s", ts, table.concat(extra, ", "))
-            end
-
-            if not loweredFilter or textLine:lower():find(loweredFilter, 1, true) then
-                poolIdx = poolIdx + 1
-                local fs = pool[poolIdx]
-                if not fs then
-                    fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                    pool[poolIdx] = fs
-                end
-                fs:ClearAllPoints()
-                fs:SetPoint("TOPLEFT", 10, yOffset)
-                fs:SetWidth(maxWidth)
-                fs:SetJustifyH("LEFT")
-                fs:SetWordWrap(true)
-                fs:SetText(textLine)
-                fs:Show()
-                yOffset = yOffset - fs:GetStringHeight() - spacing
-            end
-        end
-    end
-
-    if poolIdx == 0 then
-        local fs = pool[1]
-        if not fs then
-            fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            pool[1] = fs
-        end
-        fs:ClearAllPoints()
-        fs:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
-        fs:SetText("No audit entries found.")
-        fs:Show()
-        content._fontUsed = 1
-        content:SetHeight(30)
-    else
-        content._fontUsed = poolIdx
-        content:SetHeight(math.max(30, -yOffset + spacing))
-    end
-
-    scrollFrame:SetVerticalScroll(0)
 end
 local CrossGamblingUI
 
@@ -767,9 +652,15 @@ local title = auditFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 title:SetPoint("TOP", 0, -10)
 title:SetText("History Log")
 
+local summaryText = auditFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+summaryText:SetPoint("TOPLEFT", 20, -30)
+summaryText:SetPoint("TOPRIGHT", -20, -30)
+summaryText:SetJustifyH("CENTER")
+summaryText:SetText("0 entries")
+
 local searchBox = CreateFrame("EditBox", nil, auditFrame, "InputBoxTemplate")
 searchBox:SetSize(200, 20)
-searchBox:SetPoint("TOPLEFT", 20, -40)
+searchBox:SetPoint("TOPLEFT", 20, -54)
 searchBox:SetAutoFocus(false)
 
 local retentionDays = GetAuditRetentionOptionsLocal()
@@ -834,6 +725,7 @@ content._fontUsed = 0
 auditFrame.searchBox = searchBox
 auditFrame.scrollFrame = scrollFrame
 auditFrame.content = content
+auditFrame.summaryText = summaryText
 
 function auditFrame:UpdateLayout()
     local width, height = self:GetSize()
@@ -903,111 +795,7 @@ local function FormatTimestamp(ts)
 end
 
 function CrossGambling:UpdateAuditLogText(filter)
-    if not self.auditFrame or not self.auditFrame.scrollFrame then
-        return
-    end
-
-    local scrollFrame = self.auditFrame.scrollFrame
-    local content = self.auditFrame.content
-
-    if not content then
-        content = CreateFrame("Frame", nil, scrollFrame)
-        content:SetPoint("TOPLEFT")
-        content:SetPoint("RIGHT")
-        scrollFrame:SetScrollChild(content)
-        self.auditFrame.content = content
-        content._fontPool = {}
-        content._fontUsed = 0
-    end
-
-    if not content._fontPool then
-        content._fontPool = {}
-    end
-    if not content._fontUsed then
-        content._fontUsed = 0
-    end
-
-    local pool = content._fontPool
-    for i = 1, #pool do
-        pool[i]:SetText("")
-        pool[i]:Hide()
-    end
-    content._fontUsed = 0
-
-    content:SetSize(1, 1)
-
-    local log = self.db.global.auditLog or {}
-    if #log == 0 then
-        local fs = pool[1]
-        if not fs then
-            fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            pool[1] = fs
-        end
-        fs:SetPoint("TOPLEFT", content, "TOPLEFT", 10, -10)
-        fs:SetText("No audit entries found.")
-        fs:Show()
-        content._fontUsed = 1
-        content:SetHeight(30)
-        scrollFrame:SetVerticalScroll(0)
-        return
-    end
-
-    local yOffset, spacing = -10, 10
-    local maxWidth = 560
-    local poolIdx = 0
-
-    for _, entry in ipairs(log) do
-        if type(entry) == "table" then
-            local ts = FormatTimestamp(tonumber(entry.timestamp) or 0)
-            local textLine
-
-            if entry.action == "updateStat" then
-                textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100\226\128\162|r Stats updated for |cffffff00%s|r\n    Before: |cffffff00%d|r\n    Change: |cffff8800%+d|r    After: |cff00ff00%d|r",
-                    ts, entry.player or "?", entry.oldAmount or 0, entry.addedAmount or 0, entry.newAmount or 0)
-            elseif entry.action == "joinStats" then
-                textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100\226\128\162|r Joined alt |cffffff00%s|r to main |cffffff00%s|r\n    +%d stats, +%d deathroll",
-                    ts, entry.altname or "?", entry.mainname or "?", entry.statsAdded or 0, entry.deathrollStatsAdded or 0)
-            elseif entry.action == "unjoinStats" then
-                textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100\226\128\162|r Unjoined alt |cffffff00%s|r from main |cffffff00%s|r\n    -%d stats, -%d deathroll",
-                    ts, entry.altname or "?", entry.mainname or "?", entry.pointsRemoved or 0, entry.deathrollStatsRemoved or 0)
-            elseif entry.action == "debt" then
-                textLine = string.format(
-                    "|cff999999[%s]|r\n|cffffd100\226\128\162|r |cffffff00%s|r owes |cffffff00%s|r %dg",
-                    ts, entry.loser or "?", entry.winner or "?", entry.amount or 0)
-            else
-                local extra = {}
-                for k, v in pairs(entry) do
-                    table.insert(extra, k .. "=" .. tostring(v))
-                end
-                textLine = string.format("|cff999999[%s]|r Unknown entry:\n%s", ts, table.concat(extra, ", "))
-            end
-
-            if not filter or filter == "" or textLine:lower():find(filter:lower(), 1, true) then
-                poolIdx = poolIdx + 1
-                local fs = pool[poolIdx]
-                if not fs then
-                    fs = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                    pool[poolIdx] = fs
-                end
-                fs:ClearAllPoints()
-                fs:SetPoint("TOPLEFT", 10, yOffset)
-                fs:SetWidth(maxWidth)
-                fs:SetJustifyH("LEFT")
-                fs:SetWordWrap(true)
-                fs:SetText(textLine)
-                fs:Show()
-                yOffset = yOffset - fs:GetStringHeight() - spacing
-            end
-        end
-    end
-
-    content._fontUsed = poolIdx
-    local totalHeight = math.max(30, -yOffset + spacing)
-    content:SetHeight(totalHeight)
-    scrollFrame:SetVerticalScroll(0)
+    self:RefreshAuditFrame(filter)
 end
 
 local CGClassic = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")

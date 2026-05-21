@@ -213,6 +213,16 @@ function CrossGambling:auditMerges()
                 "%d. [%s] %s owes %s %dg",
                 i, entry.timestamp, entry.loser or "?", entry.winner or "?", entry.amount or 0
             ))
+        elseif entry.action == "deleteStat" then
+            emit(string.format(
+                "%d. [%s] Deleted stats for %s: stats=%d, deathroll=%d",
+                i, entry.timestamp, entry.player or "?", entry.oldAmount or 0, entry.oldDeathrollAmount or 0
+            ))
+        elseif entry.action == "resetStats" then
+            emit(string.format(
+                "%d. [%s] Reset stats: cleared %d players, %d deathroll players, %d linked alts",
+                i, entry.timestamp, entry.statsCount or 0, entry.deathrollCount or 0, entry.linkedAltCount or 0
+            ))
         else
             local extra = {}
             for key, value in pairs(entry) do
@@ -366,21 +376,44 @@ end
 function CrossGambling:deleteStat(info, player)
     local storedStatName = getKnownPlayerName(self, player)
     local storedDeathrollName = getKnownPlayerName(self, player)
+    local oldStats = self.db.global.stats[storedStatName] or 0
+    local oldDeathrollStats = self.db.global.deathrollStats[storedDeathrollName] or 0
     self.db.global.stats[storedStatName] = nil
     self.db.global.deathrollStats[storedDeathrollName] = nil
     self.db.global.joinstats[normalizePlayerNameLocal(self, player, true)] = nil
     if self.db.global.altStats then
         self.db.global.altStats[normalizePlayerNameLocal(self, player, true)] = nil
     end
+    self:AddAuditEntry({
+        action = "deleteStat",
+        player = storedStatName,
+        oldAmount = oldStats,
+        oldDeathrollAmount = oldDeathrollStats,
+        timestamp = time()
+    })
     self:Print("Successfully removed stats for " .. storedStatName .. ".")
 end
 
 function CrossGambling:resetStats(info)
+    local statsCount = 0
+    local deathrollCount = 0
+    local linkedAltCount = 0
+    for _ in pairs(self.db.global.stats or {}) do statsCount = statsCount + 1 end
+    for _ in pairs(self.db.global.deathrollStats or {}) do deathrollCount = deathrollCount + 1 end
+    for _ in pairs(self.db.global.joinstats or {}) do linkedAltCount = linkedAltCount + 1 end
+
     self.db.global.stats = {}
     self.db.global.joinstats = {}
     self.db.global.deathrollStats = {}
     self.db.global.altStats = {}
     self.db.global.mergeAudit = {}
     self.game.sessionStats = {}
+    self:AddAuditEntry({
+        action = "resetStats",
+        statsCount = statsCount,
+        deathrollCount = deathrollCount,
+        linkedAltCount = linkedAltCount,
+        timestamp = time()
+    })
     self:Print("All stats have been reset.")
 end
