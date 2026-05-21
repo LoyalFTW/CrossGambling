@@ -770,10 +770,6 @@ end)
 
     GetAddonRef().auditFrame = auditFrame
 
-function CrossGambling:PurgeOldAuditEntries()
-    self:TrimAuditLog()
-end
-
 C_Timer.After(0.1, function()
     if not CrossGambling.db or not CrossGambling.db.global then
         return 
@@ -788,15 +784,6 @@ end)
 
 
 
-
-local function FormatTimestamp(ts)
-    local t = date("*t", ts)
-    return string.format("%04d-%02d-%02d %02d:%02d:%02d", t.year, t.month, t.day, t.hour, t.min, t.sec)
-end
-
-function CrossGambling:UpdateAuditLogText(filter)
-    self:RefreshAuditFrame(filter)
-end
 
 local CGClassic = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 CGClassic:SetSize(105, 30)

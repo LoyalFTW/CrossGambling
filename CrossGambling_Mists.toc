@@ -27,7 +27,6 @@
 ## Category-zhCN: 赌博
 ## Category-zhTW: 賭博
 
-
 Libs.xml
 CrossGambling.lua
 chat/CGTheme.lua
@@ -36,6 +35,7 @@ chat/CGChat.lua
 core/GUI.lua
 core/ClassicGUI.lua
 core/ModeRegistry.lua
+core/History.lua
 modes/ClassicMode.lua
 modes/DeathRollMode.lua
 modes/BigTwoMode.lua
