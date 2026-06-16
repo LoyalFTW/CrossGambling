@@ -50,7 +50,9 @@ local options = {
             name = "All Stats",
             desc = "Shows all Stats(Out of Order in Guild)",
             type = "execute",
-            func = "reportStats"
+            func = function()
+                CrossGambling:reportStats(true)
+            end
         },
         stats = {
             name = "Fame/Shame",
@@ -93,6 +95,22 @@ local options = {
             desc = "Deletes All Stats",
             type = "execute",
             func = "resetStats"
+        },
+        exportstats = {
+            name = "Export Stats",
+            desc = "Open the stats export window",
+            type = "execute",
+            func = function()
+                CrossGambling:ShowStatsTransferFrame("export")
+            end
+        },
+        importstats = {
+            name = "Import Stats",
+            desc = "Open the stats import window",
+            type = "execute",
+            func = function()
+                CrossGambling:ShowStatsTransferFrame("import")
+            end
         },
         ban = {
             name = "Ban Player",
@@ -224,7 +242,7 @@ function CrossGambling:IsPlayerBanned(playerName)
 end
 
 function CrossGambling:PrintCommandHelp()
-	self:Print("Commands: show, hide, minimap, allstats, stats, joinstats, unjoinstats, listalts, updatestat, deletestat, resetstats, ban, unban, listbans, audit")
+	self:Print("Commands: show, hide, minimap, allstats, stats, joinstats, unjoinstats, listalts, updatestat, deletestat, resetstats, exportstats, importstats, ban, unban, listbans, audit")
 	self:Print("Usage: /cg <command> [value]")
 end
 
@@ -416,6 +434,7 @@ function CrossGambling:InitDB()
 			deathrollStats = {},
             housestats = 0,
             joinstats = {},
+            altStats = {},
             scale = 1,
             scalevalue = 1,
 			fontvalue = 14, 

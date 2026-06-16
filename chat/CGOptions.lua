@@ -403,7 +403,7 @@ function CGOptions:Build(isSlick)
     _buildCount = _buildCount + 1
     local frameName = "CGOptionsFrame" .. _buildCount
     local win = CreateFrame("Frame", frameName, UIParent, isSlick and "BackdropTemplate" or "BasicFrameTemplateWithInset")
-    win:SetSize(isSlick and 340 or 320, 370)
+    win:SetSize(isSlick and 340 or 320, 405)
     if isSlick then
         EnsureBackdrop(win)
         win:SetBackdrop(OPTION_BACKDROP)
@@ -629,8 +629,16 @@ function CGOptions:Build(isSlick)
     sessionBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX + BW + 4, statY - BH - 4)
     sessionBtn:SetScript("OnClick", function() GetAddon():reportSessionStats() end)
 
+    local exportBtn = MakeButton(gamePanel, "Export Stats", BW, BH)
+    exportBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX, statY - (BH+4)*2)
+    exportBtn:SetScript("OnClick", function() GetAddon():ShowStatsTransferFrame("export") end)
+
+    local importBtn = MakeButton(gamePanel, "Import Stats", BW, BH)
+    importBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX + BW + 4, statY - (BH+4)*2)
+    importBtn:SetScript("OnClick", function() GetAddon():ShowStatsTransferFrame("import") end)
+
     local resetBtn = MakeButton(gamePanel, "Reset All Stats", BW*2 + 4, BH)
-    resetBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX, statY - (BH+4)*2)
+    resetBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX, statY - (BH+4)*3)
     resetBtn:SetScript("OnClick", function()
         if not StaticPopupDialogs["CG_RESET_STATS"] then
             StaticPopupDialogs["CG_RESET_STATS"] = {
