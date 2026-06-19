@@ -485,9 +485,11 @@ function CrossGambling:InitMinimap()
 	end
 end,
 	OnTooltipShow = function(tooltip)
-            local version = "v12.0.09"
-            if version:find("project-version", 1, true) then 
-                version = "Dev" 
+            local getAddOnMetadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
+            local version = getAddOnMetadata and getAddOnMetadata("CrossGambling", "Version") or nil
+            version = version or "Dev"
+            if version:find("project-version", 1, true) then
+                version = "Dev"
             end
             tooltip:AddDoubleLine("Cross Gambling", "|cFFAAAAAA" .. version .. "|r", 1, 0.82, 0, 1, 1, 1)
             tooltip:AddLine(" ")
