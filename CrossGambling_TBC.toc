@@ -1,4 +1,4 @@
-## Interface: 20505
+## Interface: 20506
 ## Title:Cross|cffff7d0aGambling
 ## Author: Jay
 ## Version: @project-version@
