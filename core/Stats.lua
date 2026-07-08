@@ -1,35 +1,11 @@
-local function normalizePlayerNameLocal(addon, name, preserveRealm)
-    if addon and type(addon.NormalizePlayerName) == "function" then
-        return addon:NormalizePlayerName(name, preserveRealm)
-    end
-
-    if not name then
-        return nil
-    end
-
-    name = strtrim(tostring(name))
-    if name == "" then
-        return nil
-    end
-
-    if not preserveRealm then
-        name = strsplit("-", name, 2)
-        if not name or name == "" then
-            return nil
-        end
-    end
-
-    return strlower(name)
-end
-
 local function getStoredName(statsTable, name)
-    local normalized = normalizePlayerNameLocal(CrossGambling, name, true)
+    local normalized = CrossGambling:NormalizePlayerName(name, true)
     if not normalized then
         return nil
     end
 
     for existingName in pairs(statsTable or {}) do
-        if normalizePlayerNameLocal(CrossGambling, existingName, true) == normalized then
+        if CrossGambling:NormalizePlayerName(existingName, true) == normalized then
             return existingName
         end
     end
@@ -404,8 +380,8 @@ function CrossGambling:joinStats(info, args)
 
     local storedMainName = getKnownPlayerName(self, mainname)
     local storedAltName = getKnownPlayerName(self, altname)
-    local normalizedMainName = normalizePlayerNameLocal(self, storedMainName, true)
-    local normalizedAltName = normalizePlayerNameLocal(self, storedAltName, true)
+    local normalizedMainName = self:NormalizePlayerName(storedMainName, true)
+    local normalizedAltName = self:NormalizePlayerName(storedAltName, true)
 
     if normalizedMainName == normalizedAltName then
         DEFAULT_CHAT_FRAME:AddMessage("Main and alt cannot be the same character.")
@@ -460,7 +436,7 @@ function CrossGambling:unjoinStats(info, altname)
         return
     end
 
-    local normalizedAltName = normalizePlayerNameLocal(self, altname, true)
+    local normalizedAltName = self:NormalizePlayerName(altname, true)
     local mainname = self.db.global.joinstats[normalizedAltName]
     if not mainname then
         DEFAULT_CHAT_FRAME:AddMessage("Alt is not joined to any main.")
@@ -729,7 +705,7 @@ function CrossGambling:ShowStatsTransferFrame(mode)
 end
 
 function CrossGambling:getMainName(playerName)
-    local normalizedPlayerName = normalizePlayerNameLocal(self, playerName, true)
+    local normalizedPlayerName = self:NormalizePlayerName(playerName, true)
     local mainName = self.db.global.joinstats[normalizedPlayerName] or playerName
     return getKnownPlayerName(self, mainName)
 end
@@ -822,9 +798,9 @@ function CrossGambling:deleteStat(info, player)
     local oldDeathrollStats = self.db.global.deathrollStats[storedDeathrollName] or 0
     self.db.global.stats[storedStatName] = nil
     self.db.global.deathrollStats[storedDeathrollName] = nil
-    self.db.global.joinstats[normalizePlayerNameLocal(self, player, true)] = nil
+    self.db.global.joinstats[self:NormalizePlayerName(player, true)] = nil
     if self.db.global.altStats then
-        self.db.global.altStats[normalizePlayerNameLocal(self, player, true)] = nil
+        self.db.global.altStats[self:NormalizePlayerName(player, true)] = nil
     end
     self:AddAuditEntry({
         action = "deleteStat",
