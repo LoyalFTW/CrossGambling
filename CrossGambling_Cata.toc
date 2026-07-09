@@ -29,7 +29,6 @@
 
 Libs.xml
 CrossGambling.lua
-core/Utils.lua
 chat/CGTheme.lua
 chat/CGOptions.lua
 chat/CGChat.lua

@@ -1,3 +1,46 @@
+local function normalizePlayerNameLocal(addon, name, preserveRealm)
+    if addon and type(addon.NormalizePlayerName) == "function" then
+        return addon:NormalizePlayerName(name, preserveRealm)
+    end
+
+    if not name then
+        return nil
+    end
+
+    name = strtrim(tostring(name))
+    if name == "" then
+        return nil
+    end
+
+    if not preserveRealm then
+        name = strsplit("-", name, 2)
+        if not name or name == "" then
+            return nil
+        end
+    end
+
+    return strlower(name)
+end
+
+local function isPlayerBannedLocal(addon, playerName)
+    if addon and type(addon.IsPlayerBanned) == "function" then
+        return addon:IsPlayerBanned(playerName)
+    end
+
+    local normalizedPlayerName = normalizePlayerNameLocal(addon, playerName)
+    if not normalizedPlayerName then
+        return false
+    end
+
+    for _, bannedPlayer in ipairs((addon and addon.db and addon.db.global and addon.db.global.bans) or {}) do
+        if normalizePlayerNameLocal(addon, bannedPlayer) == normalizedPlayerName then
+            return true
+        end
+    end
+
+    return false
+end
+
 local CGPlayers = {}
 local playerButtons = {}
 local playerButtonsFrame
@@ -714,7 +757,7 @@ end
 
 
 function CrossGambling:AddPlayer(playerName)
-    if self:IsPlayerBanned(playerName) then
+    if isPlayerBannedLocal(self, playerName) then
         return
     end
 
