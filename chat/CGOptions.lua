@@ -9,6 +9,13 @@ local OPTION_BACKDROP = {
     insets = {left = 1, right = 1, top = 1, bottom = 1},
 }
 
+local SUPPORT_LINKS = {
+    { label = "PayPal", url = "https://www.paypal.com/donate/?business=Jhookftw1@hotmail.com", color = "ff5ea0e0" },
+    { label = "Buy Me a Coffee", url = "https://www.buymeacoffee.com/azroaddons", color = "ffffc95c" },
+    { label = "Patreon", url = "https://www.patreon.com/join/AzroAddons", color = "ffff8a7a" },
+    { label = "Discord", url = "https://discord.gg/3FXEtAfYp9", color = "ff8a93ff" },
+}
+
 local function GetAddon()
     return LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
 end
@@ -87,6 +94,52 @@ local function StyleSlickButton(btn)
     end)
 
     return btn
+end
+
+local function StyleFrameChrome(frame, isSlick)
+    if not frame then return end
+
+    EnsureBackdrop(frame)
+    if isSlick then
+        frame:SetBackdrop(OPTION_BACKDROP)
+        frame:SetBackdropBorderColor(0, 0, 0)
+        frame:SetBackdropColor(CGTheme._frameColor.r, CGTheme._frameColor.g, CGTheme._frameColor.b)
+        if CGTheme and CGTheme.RegisterFrame then
+            CGTheme:RegisterFrame(frame)
+        end
+    elseif frame.SetBackdrop then
+        frame:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true,
+            tileSize = 16,
+            edgeSize = 14,
+            insets = {left = 4, right = 4, top = 4, bottom = 4},
+        })
+        frame:SetBackdropColor(0.04, 0.04, 0.06, 0.96)
+        frame:SetBackdropBorderColor(0.85, 0.66, 0.22, 0.9)
+    end
+end
+
+local function StylePanel(panel, isSlick)
+    if not panel then return end
+
+    EnsureBackdrop(panel)
+    panel:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeSize = 1,
+    })
+    if isSlick then
+        panel:SetBackdropColor(CGTheme._frameColor.r, CGTheme._frameColor.g, CGTheme._frameColor.b)
+        panel:SetBackdropBorderColor(0.18, 0.18, 0.18, 0.9)
+        if CGTheme and CGTheme.RegisterFrame then
+            CGTheme:RegisterFrame(panel)
+        end
+    else
+        panel:SetBackdropColor(0.02, 0.02, 0.03, 0.68)
+        panel:SetBackdropBorderColor(0.55, 0.43, 0.18, 0.72)
+    end
 end
 
 local function MakeButton(parent, text, w, h)
@@ -378,6 +431,69 @@ local function MakeDropdown(parent, name, choices, width, getValue, setValue)
     return dd
 end
 
+local function MakeCopyableSupportRow(parent, label, url, accentHex, y, isSlick)
+    local labelText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    labelText:SetPoint("TOPLEFT", parent, "TOPLEFT", 18, y)
+    labelText:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -18, y)
+    labelText:SetJustifyH("LEFT")
+    labelText:SetWordWrap(false)
+    labelText:SetText("|c" .. (accentHex or "ffffd100") .. label .. "|r")
+    if isSlick then StyleSlickFont(labelText) end
+
+    local boxBg = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    boxBg:SetPoint("TOPLEFT", parent, "TOPLEFT", 18, y - 17)
+    boxBg:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -18, y - 17)
+    boxBg:SetHeight(24)
+    boxBg:SetBackdrop({
+        bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeFile = "Interface\\ChatFrame\\ChatFrameBackground",
+        edgeSize = 1,
+    })
+    if isSlick then
+        boxBg:SetBackdropColor(0.05, 0.05, 0.06, 0.95)
+        boxBg:SetBackdropBorderColor(0.18, 0.18, 0.18, 1)
+    else
+        boxBg:SetBackdropColor(0.03, 0.025, 0.015, 0.88)
+        boxBg:SetBackdropBorderColor(0.55, 0.43, 0.18, 0.85)
+    end
+    boxBg:EnableMouse(true)
+
+    local eb = CreateFrame("EditBox", nil, boxBg)
+    eb:SetAutoFocus(false)
+    eb:SetPoint("TOPLEFT", boxBg, "TOPLEFT", 7, -3)
+    eb:SetPoint("BOTTOMRIGHT", boxBg, "BOTTOMRIGHT", -7, 3)
+    eb:SetFontObject(isSlick and GameFontNormalSmall or GameFontHighlightSmall)
+    if isSlick then
+        eb:SetTextColor(0.76, 0.97, 0.94)
+    else
+        eb:SetTextColor(1, 0.95, 0.78)
+    end
+    eb:SetText(url)
+    eb:SetCursorPosition(0)
+    eb:SetScript("OnEditFocusGained", function(self) self:HighlightText(0, -1) end)
+    eb:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    eb:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    eb:SetScript("OnEditFocusLost", function(self)
+        self:HighlightText(0, 0)
+        self:SetText(url)
+        self:SetCursorPosition(0)
+    end)
+
+    boxBg:SetScript("OnEnter", function(self)
+        self:SetBackdropBorderColor(1, 0.82, 0, 1)
+    end)
+    boxBg:SetScript("OnLeave", function(self)
+        if isSlick then
+            self:SetBackdropBorderColor(0.18, 0.18, 0.18, 1)
+        else
+            self:SetBackdropBorderColor(0.55, 0.43, 0.18, 0.85)
+        end
+    end)
+    boxBg:SetScript("OnMouseDown", function() eb:SetFocus() end)
+
+    return y - 49
+end
+
 function CGOptions:Build(isSlick)
     self._isSlick = isSlick and true or false
 
@@ -395,24 +511,17 @@ function CGOptions:Build(isSlick)
     end
 
     local TABS = isSlick
-        and {"Game", "Theme", "Colors", "Chat", "History"}
-        or  {"Game", "Theme", "History"}
+        and {"Game", "Theme", "Colors", "Chat", "History", "Support"}
+        or  {"Game", "Theme", "History", "Support"}
 
-    local tabW = math.floor((isSlick and 300 or 260) / #TABS)
+    local tabBarW = isSlick and 360 or 300
+    local tabW = math.floor((tabBarW - (#TABS - 1) * 2) / #TABS)
 
     _buildCount = _buildCount + 1
     local frameName = "CGOptionsFrame" .. _buildCount
     local win = CreateFrame("Frame", frameName, UIParent, isSlick and "BackdropTemplate" or "BasicFrameTemplateWithInset")
-    win:SetSize(isSlick and 340 or 320, 405)
-    if isSlick then
-        EnsureBackdrop(win)
-        win:SetBackdrop(OPTION_BACKDROP)
-        win:SetBackdropBorderColor(0, 0, 0)
-        win:SetBackdropColor(CGTheme._frameColor.r, CGTheme._frameColor.g, CGTheme._frameColor.b)
-        if CGTheme and CGTheme.RegisterFrame then
-            CGTheme:RegisterFrame(win)
-        end
-    end
+    win:SetSize(isSlick and 380 or 340, 425)
+    StyleFrameChrome(win, isSlick)
     AnchorToMainFrame(win)
     win:SetMovable(true)
     win:EnableMouse(true)
@@ -429,8 +538,10 @@ function CGOptions:Build(isSlick)
     local titleText = win:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     titleText:SetPoint("TOP", win, "TOP", 0, -5)
     titleText:SetText("CrossGambling \226\128\148 Options")
+    titleText:SetTextColor(1, 0.82, 0)
     if isSlick then
         StyleSlickFont(titleText)
+        titleText:SetTextColor(1, 0.82, 0)
         local closeBtn = MakeButton(win, "X", 22, 20)
         closeBtn:SetPoint("TOPRIGHT", win, "TOPRIGHT", -4, -4)
         closeBtn:SetScript("OnClick", function() win:Hide() end)
@@ -438,6 +549,12 @@ function CGOptions:Build(isSlick)
     elseif win.CloseButton then
         win.CloseButton:SetScript("OnClick", function() win:Hide() end)
     end
+
+    local headerGlow = win:CreateTexture(nil, "ARTWORK")
+    headerGlow:SetPoint("TOPLEFT", win, "TOPLEFT", 9, -24)
+    headerGlow:SetPoint("TOPRIGHT", win, "TOPRIGHT", -9, -24)
+    headerGlow:SetHeight(2)
+    headerGlow:SetColorTexture(1, 0.82, 0, isSlick and 0.62 or 0.78)
 
     local tabBtns   = {}
     local tabPanels = {}
@@ -461,21 +578,10 @@ function CGOptions:Build(isSlick)
         end
         tabBtns[i] = tb
 
-        local panel = CreateFrame("Frame", nil, win, isSlick and "BackdropTemplate" or nil)
+        local panel = CreateFrame("Frame", nil, win, "BackdropTemplate")
         panel:SetPoint("TOPLEFT",     win, "TOPLEFT",  10, -62)
         panel:SetPoint("BOTTOMRIGHT", win, "BOTTOMRIGHT", -10, 10)
-        if isSlick then
-            panel:SetBackdrop({
-                bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-                edgeFile = "Interface\\ChatFrame\\ChatFrameBackground",
-                edgeSize = 1,
-            })
-            panel:SetBackdropColor(CGTheme._frameColor.r, CGTheme._frameColor.g, CGTheme._frameColor.b)
-            panel:SetBackdropBorderColor(0.18, 0.18, 0.18, 0.9)
-            if CGTheme and CGTheme.RegisterFrame then
-                CGTheme:RegisterFrame(panel)
-            end
-        end
+        StylePanel(panel, isSlick)
         panel:Hide()
         tabPanels[i] = panel
     end
@@ -495,6 +601,12 @@ function CGOptions:Build(isSlick)
                     b:SetBackdropBorderColor(1, 0.82, 0)
                 else
                     b:SetBackdropBorderColor(0, 0, 0)
+                end
+            elseif not isSlick then
+                if i == idx then
+                    b:LockHighlight()
+                else
+                    b:UnlockHighlight()
                 end
             end
         end
@@ -797,6 +909,30 @@ function CGOptions:Build(isSlick)
             cb:SetChecked(a.db.global.auditRetention == cb.days)
         end
     end)
+
+    local supportPanel = isSlick and tabPanels[6] or tabPanels[4]
+
+    local supportHdr = supportPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    supportHdr:SetPoint("TOP", supportPanel, "TOP", 0, -12)
+    supportHdr:SetText("Support CrossGambling")
+    supportHdr:SetTextColor(1, 0.82, 0)
+    if isSlick then
+        StyleSlickFont(supportHdr)
+        supportHdr:SetTextColor(1, 0.82, 0)
+    end
+
+    local supportSub = supportPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    supportSub:SetPoint("TOP", supportHdr, "BOTTOM", 0, -5)
+    supportSub:SetPoint("LEFT", supportPanel, "LEFT", 18, 0)
+    supportSub:SetPoint("RIGHT", supportPanel, "RIGHT", -18, 0)
+    supportSub:SetJustifyH("CENTER")
+    supportSub:SetText("Click a link box and press Ctrl+C to copy it.")
+    if isSlick then StyleSlickFont(supportSub) end
+
+    local supportY = -62
+    for _, link in ipairs(SUPPORT_LINKS) do
+        supportY = MakeCopyableSupportRow(supportPanel, link.label, link.url, link.color, supportY, isSlick)
+    end
 
     if isSlick then
         local colPanel = tabPanels[3]
@@ -1207,7 +1343,7 @@ function CGOptions:Open(tabName)
     if not self.frame then return end
     self.frame:Show()
     local map = self._isSlick
-        and {Game=1, Theme=2, Colors=3, Chat=4, ["Chat Settings"]=4, History=5}
-        or  {Game=1, Theme=2, History=3}
+        and {Game=1, Theme=2, Colors=3, Chat=4, ["Chat Settings"]=4, History=5, Support=6}
+        or  {Game=1, Theme=2, History=3, Support=4}
     if tabName and map[tabName] and self.ShowTab then self.ShowTab(map[tabName]) end
 end
