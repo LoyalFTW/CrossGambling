@@ -1,5 +1,6 @@
 local ClassicMode = {}
-ClassicMode.name  = "Classic"
+ClassicMode.name        = "Classic"
+ClassicMode.description = "Everyone rolls 1-wager. Highest roll wins the difference from the lowest roll."
 
 function ClassicMode:OnRollReceived(addon, game, playerName, actualRoll, minRoll, maxRoll)
     if minRoll ~= 1 or maxRoll ~= addon.db.global.wager then return end

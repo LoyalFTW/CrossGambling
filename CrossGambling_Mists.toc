@@ -38,15 +38,14 @@ core/ModeRegistry.lua
 core/History.lua
 modes/ClassicMode.lua
 modes/DeathRollMode.lua
-modes/BigTwoMode.lua
+modes/OverUnderMode.lua
+modes/EliminationMode.lua
+modes/HotPotatoMode.lua
+modes/RaffleMode.lua
 core/Game.lua
 core/Stats.lua
 core/Events.lua
-
-
-
-
-
+core/DebugBots.lua
 
 
 

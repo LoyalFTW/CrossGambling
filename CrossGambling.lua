@@ -130,12 +130,30 @@ local options = {
             type = "execute",
             func = "listBans"
         },
-		audit = { 
+		audit = {
 			name = "List Merges",
 			desc = "See all merged players or changes",
 			type = "execute",
-			func = "auditMerges" 
+			func = "auditMerges"
 		},
+        testing = {
+            name = "Testing Mode",
+            desc = "[on|off] - Enable to unlock /cg testbots and debug chat echoes. Off by default.",
+            type = "input",
+            set = "SetTestingMode"
+        },
+        testbots = {
+            name = "Test Bots",
+            desc = "[count] - Start a local bot-only test game in the current mode. Requires /cg testing on first.",
+            type = "input",
+            set = "StartBotTest"
+        },
+        stoptest = {
+            name = "Stop Bot Test",
+            desc = "Stops/resets an in-progress bot test game",
+            type = "execute",
+            func = "StopBotTest"
+        },
     }
 }
 
@@ -242,7 +260,7 @@ function CrossGambling:IsPlayerBanned(playerName)
 end
 
 function CrossGambling:PrintCommandHelp()
-	self:Print("Commands: show, hide, minimap, allstats, stats, joinstats, unjoinstats, listalts, updatestat, deletestat, resetstats, exportstats, importstats, ban, unban, listbans, audit")
+	self:Print("Commands: show, hide, minimap, allstats, stats, joinstats, unjoinstats, listalts, updatestat, deletestat, resetstats, exportstats, importstats, ban, unban, listbans, audit, testing, testbots, stoptest")
 	self:Print("Usage: /cg <command> [value]")
 end
 
@@ -426,12 +444,16 @@ function CrossGambling:InitDB()
                 hide = false,
             },
             wager = 1000,
+            minWager = 1,
+            maxWager = 1000000,
+            testingMode = false,
             houseCut = 10,
 			colors = { frameColor = {r = 0.27, g = 0.27, b = 0.27}, buttonColor = {r = 0.30, g = 0.30, b = 0.30}, sideColor = {r = 0.20, g = 0.20, b = 0.20}, fontColor = {r = 1, g = 0, b = 0} },
             themechoice = 1,
             theme = uiThemes[2],
             stats = {},
 			deathrollStats = {},
+			modeStats = {},
             housestats = 0,
             joinstats = {},
             altStats = {},
@@ -455,7 +477,8 @@ function CrossGambling:InitDB()
 				chatframeOption = true,
 				realmFilter = false,
 				house = false,
-				host = false, 
+				host = false,
+				hostName = nil,
 				players = {},
 				PlayerName = UnitName("player"),
 				PlayerClass = select(2, UnitClass("player")),
@@ -509,6 +532,45 @@ function CrossGambling:ToggleMinimap()
 end
 end
 
+function CrossGambling:GetWagerLimits()
+	local global = self.db and self.db.global
+	return (global and global.minWager) or 1, (global and global.maxWager) or 1000000
+end
+
+function CrossGambling:ValidateWager(value)
+	local numericValue = tonumber(value)
+	if not numericValue then
+		return nil
+	end
+
+	local minWager, maxWager = self:GetWagerLimits()
+	numericValue = math.floor(numericValue)
+	if numericValue < minWager then
+		numericValue = minWager
+	elseif numericValue > maxWager then
+		numericValue = maxWager
+	end
+
+	return numericValue
+end
+
+function CrossGambling:SetWager(value)
+	if not self.db or not self.db.global then
+		return
+	end
+
+	local normalizedValue = self:ValidateWager(value)
+	if not normalizedValue then
+		normalizedValue = self.db.global.wager or 1000
+	end
+
+	self.db.global.wager = normalizedValue
+
+	if self.wagerInput then
+		self.wagerInput:SetText(tostring(normalizedValue))
+	end
+end
+
 function CrossGambling:SetHouseCut(value)
 	if not self.db or not self.db.global then
 		return
@@ -549,7 +611,26 @@ function CrossGambling:SendMsg(event, arg1)
   end
 end
 
+function CrossGambling:SetTestingMode(info, args)
+	local value = strtrim(tostring(args or "")):lower()
+	local isOn = self.db and self.db.global and self.db.global.testingMode
+
+	if value == "on" then
+		self.db.global.testingMode = true
+	elseif value == "off" then
+		self.db.global.testingMode = false
+	else
+		self:Print("Usage: /cg testing on|off (currently " .. (isOn and "ON" or "OFF") .. ")")
+		return
+	end
+
+	self:Print("CrossGambling: Testing mode is now " .. (self.db.global.testingMode and "ON" or "OFF") .. ".")
+end
+
 function CrossGambling:SendChat(msg, method)
+  if self.db and self.db.global and self.db.global.testingMode then
+    self:Print("|cff888888[" .. (method or self.game.chatMethod or "Chat") .. "]|r " .. msg)
+  end
   pcall(SendChatMessage, msg, method or self.game.chatMethod)
 end
 
@@ -580,7 +661,14 @@ function CrossGambling:SuspendRegistrationChatEvents()
 end
 
 function CrossGambling:ResumeRegistrationChatEvents()
-	if self.chatEventsSuspendedForCombat and self.game.state == gameStates[2] then
+	if not self.chatEventsSuspendedForCombat then
+		return
+	end
+
+	local mode = self:GetCurrentMode()
+	local pickPhaseActive = self.game.state == gameStates[3] and mode and mode.usesChatPick
+
+	if self.game.state == gameStates[2] or pickPhaseActive then
 		self:RegisterChatEvents()
 	end
 end
@@ -666,6 +754,9 @@ function CrossGambling:handleChatMsg(_, text, playerName)
     if (self.game.state == gameStates[2]) then
         local playerName = strsplit("-", playerName, 2)
         self:RegisterGame(text, playerName)
+    elseif (self.game.state == gameStates[3]) then
+        local playerName = strsplit("-", playerName, 2)
+        self:DispatchModeHook("OnChatText", playerName, text)
     end
 end
 
@@ -781,13 +872,18 @@ end
 
 function CrossGambling:CGRolls()
     if (self.game.state == gameStates[2]) then
-        if (#self.game.players > 1) then
-            self:UnRegisterChatEvents()
+        local mode = self:GetCurrentMode()
+        local minPlayers = (mode and mode.minPlayers) or 2
+
+        if (#self.game.players >= minPlayers) then
+            if not (mode and mode.usesChatPick) then
+                self:UnRegisterChatEvents()
+            end
             self:RegisterEvent("CHAT_MSG_SYSTEM", "handleSystemMessage")
             self.game.state = gameStates[3]
             CGCall["START_ROLLS"]()
         else
-			self:SendChat("Not enough Players!")
+			self:SendChat("Not enough Players! This mode needs at least " .. minPlayers .. ".")
         end
     elseif (self.game.state == gameStates[3]) then
         local playersRoll = self:CheckRolls()

@@ -67,7 +67,13 @@ function CrossGambling:RegisterGame(text, playerName)
             return
         end
 
-        local mode    = self:GetCurrentMode()
+        local mode = self:GetCurrentMode()
+
+        if mode and mode.maxPlayers and not self:getPlayerByName(playerName) and #self.game.players >= mode.maxPlayers then
+            self:SendChat("CrossGambling: This game mode is full (" .. mode.maxPlayers .. " max).")
+            return
+        end
+
         local allowed = true
         if mode and type(mode.OnPlayerJoin) == "function" then
             allowed = mode:OnPlayerJoin(self, self.game, playerName)
@@ -173,8 +179,11 @@ function CrossGambling:TieBreaker(tieType)
 end
 
 function CrossGambling:CloseGame()
+    local closingMode = self.game.mode
+
     self:DispatchModeHook("OnEnd")
     self:UnregisterEvent("CHAT_MSG_SYSTEM")
+    self:UnRegisterChatEvents()
 
     if self.game.result ~= nil then
         if #self.game.result.losers > 0 and #self.game.result.winners > 0 then
@@ -199,8 +208,8 @@ function CrossGambling:CloseGame()
                     self:SendChat(RollNotification)
                 end
 
-                self:updatePlayerStat(self.game.result.losers[i].name, self.game.result.amountOwed * -1)
-                self:updatePlayerStat(self.game.result.winners[i].name, self.game.result.amountOwed * #self.game.result.losers)
+                self:updatePlayerStat(self.game.result.losers[i].name, self.game.result.amountOwed * -1, closingMode)
+                self:updatePlayerStat(self.game.result.winners[i].name, self.game.result.amountOwed * #self.game.result.losers, closingMode)
 
                 self:AddAuditEntry({
                     timestamp = time(),
@@ -225,6 +234,7 @@ function CrossGambling:CloseGame()
     self.game.playerIndexByName = nil
     self.game.result  = nil
     self.game.host    = false
+    self.game.hostName = nil
 
     if CGChat and CGChat.StopListening then
         CGChat:StopListening()

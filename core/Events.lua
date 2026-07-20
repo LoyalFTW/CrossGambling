@@ -73,11 +73,15 @@ CGCall["Remove_Player"] = function(playerName)
 end
 
 CGCall["SET_WAGER"] = function(value)
-    self.db.global.wager = tonumber(value)
+    self.db.global.wager = self:ValidateWager(value) or self.db.global.wager
 end
 
 CGCall["GAME_MODE"] = function(value)
     self.game.mode = tostring(value)
+end
+
+CGCall["HOST_NAME"] = function(value)
+    self.game.hostName = tostring(value)
 end
 
 CGCall["SET_HOUSE"] = function(value)
@@ -97,6 +101,11 @@ CGCall["START_ROLLS"] = function()
             self:SendChat(prompt)
         else
             self:SendMsg(format("CHAT_MSG:%s:%s:%s", self.game.PlayerName, self.game.PlayerClass, prompt))
+        end
+
+        local mode = self:GetCurrentMode()
+        if mode and mode.description and mode.description ~= "" then
+            self:AnnounceOrPrint(mode.description)
         end
 
         self:DispatchModeHook("OnStartRolls")

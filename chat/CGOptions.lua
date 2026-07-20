@@ -895,11 +895,7 @@ function CGOptions:Build(isSlick)
     local purgeNowBtn = MakeButton(histPanel, "Purge Log Now", 280, 28)
     purgeNowBtn:SetPoint("TOP", histPanel, "TOP", 0, -115)
     purgeNowBtn:SetScript("OnClick", function()
-        local a = GetAddon()
-        a.db.global.auditLog = {}
-        local af = a.auditFrame
-        if af then a:UpdateAuditLogText(af.searchBox and af.searchBox:GetText() or "") end
-        DEFAULT_CHAT_FRAME:AddMessage("CrossGambling: History log purged.")
+        GetAddon():ConfirmPurgeAuditLog()
     end)
 
     histPanel:SetScript("OnShow", function()

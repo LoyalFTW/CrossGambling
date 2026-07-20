@@ -211,7 +211,16 @@ CGGameMode:SetSize(150, 28)
 CGGameMode:SetPoint("TOPRIGHT", MainHeader, "BOTTOMRIGHT", -4, -2)
 CGGameMode:SetText(self.game.mode)
 CGGameMode:SetNormalFontObject("GameFontNormal")
-CGGameMode:SetScript("OnClick", function() self:changeGameMode() CGGameMode:SetText(self.game.mode) end)
+CGGameMode:SetScript("OnClick", function()
+    if IsShiftKeyDown() then
+        self:PostModeRules()
+    else
+        self:changeGameMode()
+        CGGameMode:SetText(self.game.mode)
+        self:RefreshGameModeTooltip(CGGameMode)
+    end
+end)
+self:AttachGameModeTooltip(CGGameMode)
 
 local CGEditBox
 
@@ -237,20 +246,19 @@ CGEditBox:SetTextInsets(10, 10, 5, 5)
 CGEditBox:SetMaxLetters(6)
 CGEditBox:SetJustifyH("CENTER")
 CGEditBox:SetText(self.db.global.wager or "")
+self.wagerInput = CGEditBox
 CGEditBox:SetScript("OnEnterPressed", function(box)
-    local value = tonumber(box:GetText())
-    if value then CrossGambling.db.global.wager = value end
+    CrossGambling:SetWager(box:GetText())
     box:ClearFocus()
 end)
 CGEditBox:SetScript("OnTextChanged", function(box, userInput)
     if userInput then
         local value = tonumber(box:GetText())
-        if value then CrossGambling.db.global.wager = value end
+        if value then CrossGambling.db.global.wager = CrossGambling:ValidateWager(value) or CrossGambling.db.global.wager end
     end
 end)
 CGEditBox:SetScript("OnEditFocusLost", function(box)
-    local value = tonumber(box:GetText())
-    if value then CrossGambling.db.global.wager = value end
+    CrossGambling:SetWager(box:GetText())
 end)
 
 local CGLastCall
@@ -271,7 +279,8 @@ CGAcceptOnes:SetScript("OnClick", function()
     else
         self.game.state = "START"
         self.game.host = true
-        self.db.global.wager = tonumber(CGEditBox:GetText()) or self.db.global.wager
+        self.game.hostName = self.game.PlayerName
+        self:SetWager(CGEditBox:GetText())
         self.game.mode = CGGameMode:GetText()
         self.game.chatMethod = GCchatMethod:GetText()
         self:SetHouseCut(CGGuildPercent:GetText())
@@ -298,6 +307,7 @@ CGAcceptOnes:SetScript("OnClick", function()
         self:SendMsg("GAME_MODE", self.game.mode)
         self:SendMsg("Chat_Method", self.game.chatMethod)
         self:SendMsg("SET_HOUSE", self.db.global.houseCut)
+        self:SendMsg("HOST_NAME", self.game.PlayerName)
     end
 
     CGAcceptOnes:Enable()
@@ -419,8 +429,7 @@ purgeButton:SetSize(70, 24)
 purgeButton:SetPoint("TOPRIGHT", -10, -46)
 purgeButton:SetText("Purge Now")
 purgeButton:SetScript("OnClick", function()
-    CrossGambling.db.global.auditLog = {}
-    RefreshAuditLogLocal(searchBox:GetText())
+    self:ConfirmPurgeAuditLog()
 end)
 
 local retentionDays = GetAuditRetentionOptionsLocal()
@@ -823,8 +832,6 @@ function CrossGambling:UpdatePlayerList()
 
 end
 
-
-
 CGCall["PLAYER_ROLL"] = function(playerName, value)
     local playerIndex = playerIndexByName[playerName]
     if playerIndex then
@@ -841,8 +848,6 @@ CGEnter_UpdateJoinText()
 CGStartRoll:SetText("Start Rolling")
 CGEnter:Enable()
 end
-
-
 
 CGCall["DisableClient"] = function()
 		CGAcceptOnes:Disable()

@@ -6,10 +6,13 @@ CGTheme._sideColor   = {r = 0.20, g = 0.20, b = 0.20}
 CGTheme._fontColor   = {r = 1.00, g = 0.82, b = 0.00}
 
 CGTheme._btnFrames  = {}
+CGTheme._btnFontStrings = {}
 CGTheme._sideFrames = {}
 CGTheme._frameFrames = {}
 CGTheme._fontStrings = {}
 CGTheme._mainFrame  = nil
+
+CGTheme._BUTTON_LABEL_COLOR = {r = 1.00, g = 0.82, b = 0.00}
 
 CGTheme.isSlick = false
 
@@ -92,7 +95,9 @@ function CGTheme:RegisterBtn(frame)
     if frame and frame.GetFontString then
         local fs = frame:GetFontString()
         if fs then
-            self:RegisterFont(fs)
+            table.insert(self._btnFontStrings, fs)
+            fs:SetFont(self:GetFontPath(), self:GetFontSize(), self:GetFontFlags())
+            fs:SetTextColor(self._BUTTON_LABEL_COLOR.r, self._BUTTON_LABEL_COLOR.g, self._BUTTON_LABEL_COLOR.b)
         end
     end
 end
@@ -119,6 +124,7 @@ end
 
 function CGTheme:ClearRegistry()
     self._btnFrames  = {}
+    self._btnFontStrings = {}
     self._sideFrames = {}
     self._frameFrames = {}
     self._fontStrings = {}
@@ -199,6 +205,12 @@ function CGTheme:ApplyColors()
             fs:SetFont(self:GetFontPath(), self:GetFontSize(), self:GetFontFlags())
         end
     end
+    for _, fs in ipairs(self._btnFontStrings) do
+        if fs and fs.SetTextColor then
+            fs:SetFont(self:GetFontPath(), self:GetFontSize(), self:GetFontFlags())
+            fs:SetTextColor(self._BUTTON_LABEL_COLOR.r, self._BUTTON_LABEL_COLOR.g, self._BUTTON_LABEL_COLOR.b)
+        end
+    end
 end
 
 function CGTheme:LoadColors()
@@ -252,6 +264,12 @@ function CGTheme:ApplyFont()
         if fs and fs.SetTextColor then
             fs:SetTextColor(self._fontColor.r, self._fontColor.g, self._fontColor.b)
             fs:SetFont(self:GetFontPath(), self:GetFontSize(), self:GetFontFlags())
+        end
+    end
+    for _, fs in ipairs(self._btnFontStrings) do
+        if fs and fs.SetTextColor then
+            fs:SetFont(self:GetFontPath(), self:GetFontSize(), self:GetFontFlags())
+            fs:SetTextColor(self._BUTTON_LABEL_COLOR.r, self._BUTTON_LABEL_COLOR.g, self._BUTTON_LABEL_COLOR.b)
         end
     end
 end

@@ -54,7 +54,7 @@ end
 
 local FULL_STATS_BATCH_SIZE = 18
 local FULL_STATS_BATCH_DELAY = 2
-local STATS_EXPORT_VERSION = "CrossGamblingStatsExport;3"
+local STATS_EXPORT_VERSION = "CrossGamblingStatsExport;4"
 local TRANSFER_BACKDROP = {
     bgFile = "Interface\\AddOns\\CrossGambling\\media\\CG.tga",
     edgeFile = "Interface\\AddOns\\CrossGambling\\media\\CG.tga",
@@ -90,20 +90,22 @@ local function styleTransferFont(fontString)
     end
 end
 
-local function styleTransferButton(button)
+local function styleTransferButton(button, smallFont)
     ensureBackdrop(button)
     button:SetBackdrop(TRANSFER_BACKDROP)
     button:SetBackdropBorderColor(0, 0, 0)
+    if CGTheme and CGTheme._buttonColor then
+        button:SetBackdropColor(CGTheme._buttonColor.r, CGTheme._buttonColor.g, CGTheme._buttonColor.b)
+    end
 
     local fontString = button:GetFontString()
     if not fontString then
-        fontString = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        fontString = button:CreateFontString(nil, "OVERLAY", smallFont and "GameFontNormalSmall" or "GameFontNormal")
         button:SetFontString(fontString)
     end
     fontString:SetAllPoints(button)
     fontString:SetJustifyH("CENTER")
     fontString:SetJustifyV("MIDDLE")
-    styleTransferFont(fontString)
 
     if CGTheme and CGTheme.RegisterBtn then
         CGTheme:RegisterBtn(button)
@@ -126,11 +128,20 @@ local function styleTransferButton(button)
     end)
 end
 
-local function createTransferButton(parent, text, width, height, slick)
+local function createTransferButton(parent, text, width, height, slick, smallFont)
     local button = CreateFrame("Button", nil, parent, slick and "BackdropTemplate" or "UIPanelButtonTemplate")
     button:SetSize(width, height)
     if slick then
-        styleTransferButton(button)
+        styleTransferButton(button, smallFont)
+    else
+        button:SetNormalFontObject("GameFontNormal")
+        if smallFont then
+            local fontString = button:GetFontString()
+            if fontString then
+                local path, _, flags = fontString:GetFont()
+                fontString:SetFont(path, 10, flags)
+            end
+        end
     end
     button:SetText(text)
     return button
@@ -209,6 +220,17 @@ local function appendStatLines(lines, recordType, source)
     return count
 end
 
+local function appendModeStatLines(lines, modeStats)
+    local count = 0
+    for _, modeName in ipairs(sortedKeys(modeStats)) do
+        for _, playerName in ipairs(sortedKeys(modeStats[modeName])) do
+            table.insert(lines, string.format("MODESTAT;%s;%s;%s", modeName, playerName, tostring(modeStats[modeName][playerName] or 0)))
+            count = count + 1
+        end
+    end
+    return count
+end
+
 local function createStatsExport(addon, exportType)
     exportType = exportType or "all"
     local global = (addon.db and addon.db.global) or {}
@@ -216,7 +238,21 @@ local function createStatsExport(addon, exportType)
         STATS_EXPORT_VERSION,
     }
 
-    if exportType == "deathroll" then
+    local modeKey = exportType:match("^mode:(.+)$")
+
+    if modeKey then
+        table.insert(lines, "DATASET;MODE:" .. modeKey)
+        local modeData = (global.modeStats and global.modeStats[modeKey]) or {}
+        local count = 0
+        for _, playerName in ipairs(sortedKeys(modeData)) do
+            table.insert(lines, string.format("MODESTAT;%s;%s;%s", modeKey, playerName, tostring(modeData[playerName] or 0)))
+            count = count + 1
+        end
+        if count == 0 then
+            table.insert(lines, "NOTE;No stats to export for " .. modeKey)
+        end
+        return table.concat(lines, "\n")
+    elseif exportType == "deathroll" then
         table.insert(lines, "DATASET;DEATHROLL")
         if appendStatLines(lines, "DEATHROLL", global.deathrollStats) == 0 then
             table.insert(lines, "NOTE;No Deathroll stats to export")
@@ -251,6 +287,8 @@ local function createStatsExport(addon, exportType)
         ))
     end
 
+    appendModeStatLines(lines, global.modeStats or {})
+
     return table.concat(lines, "\n")
 end
 
@@ -261,6 +299,7 @@ local function parseStatsExport(text)
         sessionStats = {},
         joinstats = {},
         altStats = {},
+        modeStats = {},
         housestats = 0,
         dataset = "FULL",
     }
@@ -270,6 +309,7 @@ local function parseStatsExport(text)
         sessionStats = 0,
         joinstats = 0,
         altStats = 0,
+        modeStats = 0,
     }
 
     local sawVersion = false
@@ -281,7 +321,7 @@ local function parseStatsExport(text)
 
             if recordType == "CrossGamblingStatsExport" then
                 sawVersion = true
-                if fields[2] ~= "1" and fields[2] ~= "2" and fields[2] ~= "3" then
+                if fields[2] ~= "1" and fields[2] ~= "2" and fields[2] ~= "3" and fields[2] ~= "4" then
                     return nil, "Unsupported export version."
                 end
             elseif recordType == "DATASET" then
@@ -330,6 +370,17 @@ local function parseStatsExport(text)
                     deathrollStats = deathrollStats,
                 }
                 counts.altStats = counts.altStats + 1
+            elseif recordType == "MODESTAT" then
+                local modeName = fields[2]
+                local playerName = fields[3]
+                local amount = tonumber(fields[4])
+                if not modeName or modeName == "" or not playerName or playerName == "" or not amount then
+                    return nil, "Invalid MODESTAT line."
+                end
+
+                imported.modeStats[modeName] = imported.modeStats[modeName] or {}
+                imported.modeStats[modeName][playerName] = amount
+                counts.modeStats = counts.modeStats + 1
             else
                 return nil, "Unknown export line: " .. tostring(recordType)
             end
@@ -358,7 +409,12 @@ local function ensureStatsImportDialog(addon)
                 return
             end
 
-            if pending.dataset == "DEATHROLL" then
+            local modeKey = pending.dataset and pending.dataset:match("^MODE:(.+)$")
+
+            if modeKey then
+                addon.db.global.modeStats = addon.db.global.modeStats or {}
+                addon.db.global.modeStats[modeKey] = (pending.modeStats and pending.modeStats[modeKey]) or {}
+            elseif pending.dataset == "DEATHROLL" then
                 addon.db.global.deathrollStats = pending.deathrollStats
             elseif pending.dataset == "SESSION" then
                 addon.game = addon.game or {}
@@ -368,6 +424,7 @@ local function ensureStatsImportDialog(addon)
                 addon.db.global.joinstats = pending.joinstats
                 addon.db.global.altStats = pending.altStats
                 addon.db.global.housestats = pending.housestats
+                addon.db.global.modeStats = pending.modeStats
                 if CrossGambling["stats"] then
                     CrossGambling["stats"] = addon.db.global.stats
                 end
@@ -377,6 +434,7 @@ local function ensureStatsImportDialog(addon)
                 addon.db.global.joinstats = pending.joinstats
                 addon.db.global.altStats = pending.altStats
                 addon.db.global.housestats = pending.housestats
+                addon.db.global.modeStats = pending.modeStats
                 if CrossGambling["stats"] then
                     CrossGambling["stats"] = addon.db.global.stats
                 end
@@ -541,18 +599,18 @@ function CrossGambling:reportStats(full)
 
     sendChatLine(self, lines[1])
     sendChatLine(self, lines[2])
-    SendChatMessage("-- Top 3 Winners --", self.game.chatMethod)
+    sendChatLine(self, "-- Top 3 Winners --")
 		for i = 1, math.min(3, #winners) do
-			SendChatMessage(string.format("%d. %s won %d total", i, winners[i].name, math.abs(winners[i].amount)), self.game.chatMethod)
+			sendChatLine(self, string.format("%d. %s won %d total", i, winners[i].name, math.abs(winners[i].amount)))
 		end
 
 		table.sort(losers, function(a, b)
 			return a.amount < b.amount
 		end)
 
-		SendChatMessage("-- Top 3 Losers --", self.game.chatMethod)
+		sendChatLine(self, "-- Top 3 Losers --")
 		for i = 1, math.min(3, #losers) do
-			SendChatMessage(string.format("%d. %s lost %d total", i, losers[i].name, math.abs(losers[i].amount)), self.game.chatMethod)
+			sendChatLine(self, string.format("%d. %s lost %d total", i, losers[i].name, math.abs(losers[i].amount)))
 		end
 
 end
@@ -574,11 +632,12 @@ function CrossGambling:ImportStatsText(text)
 
     if counts then
         self:Print(string.format(
-            "Ready to import %s: %d stats, %d deathroll stats, %d session stats, %d joined alts, and %d saved alt records.",
+            "Ready to import %s: %d stats, %d deathroll stats, %d session stats, %d mode stats, %d joined alts, and %d saved alt records.",
             imported.dataset or "FULL",
             counts.stats or 0,
             counts.deathrollStats or 0,
             counts.sessionStats or 0,
+            counts.modeStats or 0,
             counts.joinstats or 0,
             counts.altStats or 0
         ))
@@ -598,7 +657,7 @@ function CrossGambling:ShowStatsTransferFrame(mode)
 
     if not self.statsTransferFrame then
         local frame = CreateFrame("Frame", "CrossGamblingStatsTransferFrame", UIParent, slick and "BackdropTemplate" or "BasicFrameTemplateWithInset")
-        frame:SetSize(620, 430)
+        frame:SetSize(700, 480)
         frame:SetPoint("CENTER")
         frame:SetMovable(true)
         frame:EnableMouse(true)
@@ -610,6 +669,7 @@ function CrossGambling:ShowStatsTransferFrame(mode)
         frame.addon = self
         frame.exportType = "all"
         frame.isSlick = slick
+        frame.datasetButtons = {}
 
         if slick then
             ensureBackdrop(frame)
@@ -630,10 +690,26 @@ function CrossGambling:ShowStatsTransferFrame(mode)
         end
         frame.title = title
 
+        local modeLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        modeLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -62)
+        modeLabel:SetText("By Game Mode:")
+        if slick then
+            styleTransferFont(modeLabel)
+        end
+
         function frame:RefreshExportText()
-            local exportTitle = self.exportType == "deathroll" and "Deathrolls"
-                or self.exportType == "session" and "Session Stats"
-                or "All Stats"
+            local exportTitle
+            local modeKey = self.exportType:match("^mode:(.+)$")
+            if modeKey then
+                exportTitle = modeKey
+            elseif self.exportType == "deathroll" then
+                exportTitle = "Deathrolls"
+            elseif self.exportType == "session" then
+                exportTitle = "Session Stats"
+            else
+                exportTitle = "All Stats"
+            end
+
             local exportText = self.addon:ExportStatsText(self.exportType)
             self.title:SetText("CrossGambling Export Stats - " .. exportTitle)
             self.editBox:SetText(exportText)
@@ -642,39 +718,62 @@ function CrossGambling:ShowStatsTransferFrame(mode)
             self.editBox:HighlightText()
         end
 
-        local allStatsButton = createTransferButton(frame, "All Stats", 110, 24, slick)
-        allStatsButton:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -34)
-        allStatsButton:SetScript("OnClick", function()
-            frame.exportType = "all"
-            frame.mode = "export"
-            frame:RefreshExportText()
+        function frame:SetActiveDatasetButton(activeBtn)
+            for _, btn in ipairs(self.datasetButtons) do
+                if btn == activeBtn then
+                    btn:LockHighlight()
+                else
+                    btn:UnlockHighlight()
+                end
+            end
+        end
+
+        local function addDatasetButton(label, exportType, width, height, setPoint, smallFont)
+            local btn = createTransferButton(frame, label, width, height, slick, smallFont)
+            setPoint(btn)
+            btn:SetScript("OnClick", function()
+                frame.exportType = exportType
+                frame.mode = "export"
+                frame:RefreshExportText()
+                frame:SetActiveDatasetButton(btn)
+            end)
+            table.insert(frame.datasetButtons, btn)
+            return btn
+        end
+
+        local allStatsButton = addDatasetButton("All Stats", "all", 110, 24, function(btn)
+            btn:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -34)
+        end)
+        local deathrollButton = addDatasetButton("Deathrolls", "deathroll", 110, 24, function(btn)
+            btn:SetPoint("LEFT", allStatsButton, "RIGHT", 8, 0)
+        end)
+        addDatasetButton("Session Stats", "session", 110, 24, function(btn)
+            btn:SetPoint("LEFT", deathrollButton, "RIGHT", 8, 0)
         end)
 
-        local deathrollButton = createTransferButton(frame, "Deathrolls", 110, 24, slick)
-        deathrollButton:SetPoint("LEFT", allStatsButton, "RIGHT", 8, 0)
-        deathrollButton:SetScript("OnClick", function()
-            frame.exportType = "deathroll"
-            frame.mode = "export"
-            frame:RefreshExportText()
-        end)
+        local previousModeButton
+        for _, modeName in ipairs(self.modeListOrder or {}) do
+            local anchor = previousModeButton
+            previousModeButton = addDatasetButton(modeName, "mode:" .. modeName, 100, 22, function(btn)
+                if anchor then
+                    btn:SetPoint("LEFT", anchor, "RIGHT", 5, 0)
+                else
+                    btn:SetPoint("TOPLEFT", modeLabel, "BOTTOMLEFT", 0, -6)
+                end
+            end, true)
+        end
 
-        local sessionButton = createTransferButton(frame, "Session Stats", 110, 24, slick)
-        sessionButton:SetPoint("LEFT", deathrollButton, "RIGHT", 8, 0)
-        sessionButton:SetScript("OnClick", function()
-            frame.exportType = "session"
-            frame.mode = "export"
-            frame:RefreshExportText()
-        end)
+        frame:SetActiveDatasetButton(allStatsButton)
 
         local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-        scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -66)
+        scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -114)
         scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -34, 52)
 
         local editBox = CreateFrame("EditBox", nil, scrollFrame)
         editBox:SetMultiLine(true)
         editBox:SetAutoFocus(false)
         editBox:SetFontObject(ChatFontNormal)
-        editBox:SetSize(540, 320)
+        editBox:SetSize(620, 320)
         editBox:SetTextInsets(4, 4, 4, 4)
         if slick then
             styleTransferFont(editBox)
@@ -735,11 +834,11 @@ function CrossGambling:getMainName(playerName)
 end
 
 function CrossGambling:reportSessionStats()
-    SendChatMessage("-- Current Session Stats --", self.game.chatMethod)
+    sendChatLine(self, "-- Current Session Stats --")
 
     local sessionSortlist = self:sortStats(self.game.sessionStats or {})
     if #sessionSortlist == 0 then
-        SendChatMessage("No stats available for the current session.", self.game.chatMethod)
+        sendChatLine(self, "No stats available for the current session.")
     else
         self:reportSortedStats(sessionSortlist, "Current Session")
     end
@@ -748,7 +847,7 @@ end
 function CrossGambling:reportSortedStats(sortlist, title)
     for k, v in ipairs(sortlist) do
         local sortsign = v.amount < 0 and "lost" or "won"
-        SendChatMessage(string.format("%d. %s %s %d total", k, v.name, sortsign, math.abs(v.amount)), self.game.chatMethod)
+        sendChatLine(self, string.format("%d. %s %s %d total", k, v.name, sortsign, math.abs(v.amount)))
     end
 end
 
@@ -761,21 +860,32 @@ function CrossGambling:sortStats(stats)
     return sortedStats
 end
 
-function CrossGambling:updatePlayerStat(playerName, amount, isDeathroll)
+function CrossGambling:updatePlayerStat(playerName, amount, modeName)
     local storedPlayerName = getKnownPlayerName(self, playerName)
     self.game.sessionStats[storedPlayerName] = (self.game.sessionStats[storedPlayerName] or 0) + amount
     self.db.global.stats[storedPlayerName] = (self.db.global.stats[storedPlayerName] or 0) + amount
-    if isDeathroll then
-        local storedDeathrollName = getKnownPlayerName(self, storedPlayerName)
-        self.db.global.deathrollStats[storedDeathrollName] = (self.db.global.deathrollStats[storedDeathrollName] or 0) + amount
+
+    if modeName == true then
+        modeName = "1v1DeathRoll"
+    end
+
+    if modeName then
+        if modeName == "1v1DeathRoll" then
+            local storedDeathrollName = getKnownPlayerName(self, storedPlayerName)
+            self.db.global.deathrollStats[storedDeathrollName] = (self.db.global.deathrollStats[storedDeathrollName] or 0) + amount
+        end
+
+        self.db.global.modeStats = self.db.global.modeStats or {}
+        self.db.global.modeStats[modeName] = self.db.global.modeStats[modeName] or {}
+        self.db.global.modeStats[modeName][storedPlayerName] = (self.db.global.modeStats[modeName][storedPlayerName] or 0) + amount
     end
 end
 
 function CrossGambling:reportDeathrollStats()
-    SendChatMessage("-- Deathroll Stats --", self.game.chatMethod)
+    sendChatLine(self, "-- Deathroll Stats --")
     local deathrollSortlist = self:sortStats(combineStatsByMain(self, self.db.global.deathrollStats))
     if #deathrollSortlist == 0 then
-        SendChatMessage("No stats available for Deathrolls.", self.game.chatMethod)
+        sendChatLine(self, "No stats available for Deathrolls.")
     else
         self:reportSortedStats(deathrollSortlist, "Deathrolls")
     end
@@ -847,6 +957,7 @@ function CrossGambling:resetStats(info)
     self.db.global.stats = {}
     self.db.global.joinstats = {}
     self.db.global.deathrollStats = {}
+    self.db.global.modeStats = {}
     self.db.global.altStats = {}
     self.db.global.mergeAudit = {}
     self.game.sessionStats = {}

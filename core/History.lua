@@ -1,25 +1,25 @@
 local auditRetentionOptions = {5, 10, 30, "Never"}
 
-local function emitHistoryLine(addon, message)
-    local method = addon and addon.game and addon.game.chatMethod
+function CrossGambling:AnnounceOrPrint(message)
+    local method = self.game and self.game.chatMethod
     if method == "PARTY" then
         if IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid() then
-            addon:SendChat(message, method)
+            self:SendChat(message, method)
             return
         end
     elseif method == "RAID" then
         if IsInRaid(LE_PARTY_CATEGORY_HOME) or IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
-            addon:SendChat(message, method)
+            self:SendChat(message, method)
             return
         end
     elseif method == "GUILD" then
         if IsInGuild() then
-            addon:SendChat(message, method)
+            self:SendChat(message, method)
             return
         end
     end
 
-    addon:Print(message)
+    self:Print(message)
 end
 
 function CrossGambling:TrimAuditLog()
@@ -115,6 +115,35 @@ function CrossGambling:AddAuditEntry(entry)
     if self.auditFrame and self.auditFrame:IsShown() and type(self.RefreshAuditFrame) == "function" then
         self:RefreshAuditFrame(self.auditFrame.searchBox and self.auditFrame.searchBox:GetText() or "")
     end
+end
+
+function CrossGambling:PurgeAuditLogNow()
+    local count = (self.db and self.db.global and self.db.global.auditLog and #self.db.global.auditLog) or 0
+
+    if self.db and self.db.global then
+        self.db.global.auditLog = {}
+    end
+
+    if self.auditFrame and type(self.RefreshAuditFrame) == "function" then
+        self:RefreshAuditFrame(self.auditFrame.searchBox and self.auditFrame.searchBox:GetText() or "")
+    end
+
+    self:Print(string.format("CrossGambling: History log purged (%d %s removed).", count, count == 1 and "entry" or "entries"))
+end
+
+function CrossGambling:ConfirmPurgeAuditLog()
+    if not StaticPopupDialogs["CG_PURGE_HISTORY"] then
+        StaticPopupDialogs["CG_PURGE_HISTORY"] = {
+            text         = "Purge the entire history log? This cannot be undone.",
+            button1      = "Yes",
+            button2      = "No",
+            OnAccept     = function() self:PurgeAuditLogNow() end,
+            timeout      = 0,
+            whileDead    = true,
+            hideOnEscape = true,
+        }
+    end
+    StaticPopup_Show("CG_PURGE_HISTORY")
 end
 
 function CrossGambling:FormatAuditTimestamp(timestamp, compact)
@@ -330,39 +359,39 @@ end
 
 function CrossGambling:auditMerges()
     if not self.db.global.auditLog or #self.db.global.auditLog == 0 then
-        emitHistoryLine(self, "No audit log entries found.")
+        self:AnnounceOrPrint("No audit log entries found.")
         return
     end
 
-    emitHistoryLine(self, "-- Audit Log --")
+    self:AnnounceOrPrint("-- Audit Log --")
     for i, entry in ipairs(self.db.global.auditLog) do
         if entry.action == "updateStat" then
-            emitHistoryLine(self, string.format(
+            self:AnnounceOrPrint(string.format(
                 "%d. [%s] Updated stats for %s: old=%d, added=%d, new=%d",
                 i, entry.timestamp, entry.player, entry.oldAmount, entry.addedAmount, entry.newAmount
             ))
         elseif entry.action == "joinStats" then
-            emitHistoryLine(self, string.format(
+            self:AnnounceOrPrint(string.format(
                 "%d. [%s] Joined alt '%s' to main '%s' with %d stats and %d deathroll stats",
                 i, entry.timestamp, entry.altname, entry.mainname, entry.statsAdded or 0, entry.deathrollStatsAdded or 0
             ))
         elseif entry.action == "unjoinStats" then
-            emitHistoryLine(self, string.format(
+            self:AnnounceOrPrint(string.format(
                 "%d. [%s] Unjoined alt '%s' from main '%s', points subtracted: %d, deathroll: %d",
                 i, entry.timestamp, entry.altname, entry.mainname, entry.pointsRemoved or 0, entry.deathrollStatsRemoved or 0
             ))
         elseif entry.action == "debt" then
-            emitHistoryLine(self, string.format(
+            self:AnnounceOrPrint(string.format(
                 "%d. [%s] %s owes %s %dg",
                 i, entry.timestamp, entry.loser or "?", entry.winner or "?", entry.amount or 0
             ))
         elseif entry.action == "deleteStat" then
-            emitHistoryLine(self, string.format(
+            self:AnnounceOrPrint(string.format(
                 "%d. [%s] Deleted stats for %s: stats=%d, deathroll=%d",
                 i, entry.timestamp, entry.player or "?", entry.oldAmount or 0, entry.oldDeathrollAmount or 0
             ))
         elseif entry.action == "resetStats" then
-            emitHistoryLine(self, string.format(
+            self:AnnounceOrPrint(string.format(
                 "%d. [%s] Reset stats: cleared %d players, %d deathroll players, %d linked alts",
                 i, entry.timestamp, entry.statsCount or 0, entry.deathrollCount or 0, entry.linkedAltCount or 0
             ))
@@ -372,7 +401,7 @@ function CrossGambling:auditMerges()
                 table.insert(extra, key .. "=" .. tostring(value))
             end
             table.sort(extra)
-            emitHistoryLine(self, string.format(
+            self:AnnounceOrPrint(string.format(
                 "%d. [%s] %s",
                 i,
                 entry.timestamp or "?",

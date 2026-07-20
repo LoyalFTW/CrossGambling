@@ -1,5 +1,6 @@
 local DeathRollMode = {}
-DeathRollMode.name  = "1v1DeathRoll"
+DeathRollMode.name        = "1v1DeathRoll"
+DeathRollMode.description = "1v1 only. Starting at the wager, each player rolls 1-to-the-last-roll in turn. Whoever rolls a 1 loses the wager."
 
 function DeathRollMode:OnStart(addon, game)
     addon.currentRoll        = addon.db.global.wager
@@ -47,8 +48,8 @@ function DeathRollMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
             loser.name, loser.name, winner.name,
             addon:addCommas(addon.db.global.wager)
         ))
-        addon:updatePlayerStat(loser.name,  -addon.db.global.wager, true)
-        addon:updatePlayerStat(winner.name,  addon.db.global.wager, true)
+        addon:updatePlayerStat(loser.name,  -addon.db.global.wager, DeathRollMode.name)
+        addon:updatePlayerStat(winner.name,  addon.db.global.wager, DeathRollMode.name)
         addon:UnRegisterChatEvents()
         addon:UnregisterEvent("CHAT_MSG_SYSTEM")
         addon.game.state   = "START"
