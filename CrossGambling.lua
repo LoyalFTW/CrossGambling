@@ -437,7 +437,47 @@ function CrossGambling:ShowThemePicker()
 	picker:Show()
 end
 
+-- The saved variable used to be called "CrossGambling", the same name as the addon table.
+-- WoW loads saved variables after the addon files, so every login the global addon table
+-- was replaced by last session's serialized copy (functions are not saved), and anything
+-- calling CrossGambling:Method() at runtime blew up with "attempt to call method (a nil
+-- value)". Saved data lives in CrossGamblingDB now; take the global back and carry any
+-- legacy data over the first time an upgraded client logs in. The TOCs still list the old
+-- CrossGambling saved variable so that data can be read once - drop it from the TOCs (and
+-- delete this) in a later release, once players have had a version with the migration.
+local legacyDBKeys = {
+	"global", "profiles", "profileKeys", "namespaces",
+	"char", "realm", "class", "race", "faction", "factionrealm", "factionrealmregion", "locale",
+}
+
+local function reclaimGlobal()
+	local saved = _G.CrossGambling
+	_G.CrossGambling = CrossGambling
+
+	if saved == CrossGambling or type(saved) ~= "table" then
+		return
+	end
+
+	local current = _G.CrossGamblingDB
+	if type(current) == "table" and next(current) ~= nil then
+		return
+	end
+
+	local migrated = {}
+	for _, key in ipairs(legacyDBKeys) do
+		if type(saved[key]) == "table" then
+			migrated[key] = saved[key]
+		end
+	end
+
+	if next(migrated) ~= nil then
+		_G.CrossGamblingDB = migrated
+	end
+end
+
 function CrossGambling:InitDB()
+	reclaimGlobal()
+
     local defaults = {
         global = {
             minimap = {
@@ -487,7 +527,7 @@ function CrossGambling:InitDB()
 			}
 
 	CGCall = {}
-	self.db = LibStub("AceDB-3.0"):New("CrossGambling", defaults, true)
+	self.db = LibStub("AceDB-3.0"):New("CrossGamblingDB", defaults, true)
 	if(CrossGambling["stats"]) then CrossGambling["stats"] = self.db.global.stats end
 	self:RebuildBanCache()
 	
