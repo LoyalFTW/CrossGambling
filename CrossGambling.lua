@@ -437,7 +437,39 @@ function CrossGambling:ShowThemePicker()
 	picker:Show()
 end
 
+local LEGACY_DB_KEYS = {
+	"global", "profiles", "profileKeys", "namespaces",
+	"char", "realm", "class", "race", "faction", "factionrealm", "factionrealmregion", "locale",
+}
+
+local function ReclaimGlobalFromSavedVariables()
+	local saved = _G.CrossGambling
+	_G.CrossGambling = CrossGambling
+
+	if saved == CrossGambling or type(saved) ~= "table" then
+		return
+	end
+
+	local current = _G.CrossGamblingDB
+	if type(current) == "table" and next(current) ~= nil then
+		return
+	end
+
+	local migrated = {}
+	for _, key in ipairs(LEGACY_DB_KEYS) do
+		if type(saved[key]) == "table" then
+			migrated[key] = saved[key]
+		end
+	end
+
+	if next(migrated) ~= nil then
+		_G.CrossGamblingDB = migrated
+	end
+end
+
 function CrossGambling:InitDB()
+	ReclaimGlobalFromSavedVariables()
+
     local defaults = {
         global = {
             minimap = {
@@ -487,7 +519,7 @@ function CrossGambling:InitDB()
 			}
 
 	CGCall = {}
-	self.db = LibStub("AceDB-3.0"):New("CrossGambling", defaults, true)
+	self.db = LibStub("AceDB-3.0"):New("CrossGamblingDB", defaults, true)
 	if(CrossGambling["stats"]) then CrossGambling["stats"] = self.db.global.stats end
 	self:RebuildBanCache()
 	
