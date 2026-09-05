@@ -1,5 +1,7 @@
 CGTheme = {}
 
+local addonObject = CrossGambling
+
 CGTheme._frameColor  = {r = 0.27, g = 0.27, b = 0.27}
 CGTheme._buttonColor = {r = 0.30, g = 0.30, b = 0.30}
 CGTheme._sideColor   = {r = 0.20, g = 0.20, b = 0.20}
@@ -56,7 +58,7 @@ local function NormalizeFontFlags(flags)
 end
 
 function CGTheme:GetFontPath()
-    local a = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    local a = addonObject
     local db = a and a.db and a.db.global
     if not db then return DEFAULT_FONT end
 
@@ -80,12 +82,12 @@ function CGTheme:GetFontPath()
 end
 
 function CGTheme:GetFontSize()
-    local a = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    local a = addonObject
     return (a and a.db and a.db.global and a.db.global.uiFontSize) or 12
 end
 
 function CGTheme:GetFontFlags()
-    local a = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    local a = addonObject
     local flags = a and a.db and a.db.global and a.db.global.fontFlags
     return NormalizeFontFlags(flags)
 end
@@ -132,7 +134,7 @@ function CGTheme:ClearRegistry()
 end
 
 function CGTheme:GetTheme()
-    local a = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    local a = addonObject
     if a and a.db then return a.db.global.theme or "Slick" end
     return "Slick"
 end
@@ -144,7 +146,7 @@ function CGTheme:Init()
 end
 
 function CGTheme:Switch(name)
-    local a = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    local a = addonObject
     if not a or not a.db then return end
 
     a.db.global.theme = name
@@ -214,7 +216,7 @@ function CGTheme:ApplyColors()
 end
 
 function CGTheme:LoadColors()
-    local a = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    local a = addonObject
     if not a or not a.db or not a.db.global.colors then return end
 
     a.db.global.uiFontSize = a.db.global.uiFontSize or 12
@@ -244,7 +246,7 @@ function CGTheme:LoadColors()
 end
 
 function CGTheme:SaveColors()
-    local a = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    local a = addonObject
     if not a or not a.db then return end
     local c = a.db.global.colors
     c.chatFontColor = c.chatFontColor or {r = self._fontColor.r, g = self._fontColor.g, b = self._fontColor.b}
@@ -312,7 +314,7 @@ function CGTheme:ChangeColor(element)
         self._buttonColor.r, self._buttonColor.g, self._buttonColor.b = 0.30, 0.30, 0.30
         self._sideColor.r,   self._sideColor.g,   self._sideColor.b   = 0.20, 0.20, 0.20
         self._fontColor.r,   self._fontColor.g,   self._fontColor.b   = 1.00, 0.82, 0.00
-        local a = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+        local a = addonObject
         if a and a.db and a.db.global and a.db.global.colors then
             a.db.global.colors.chatFontColor = {r = 1.00, g = 0.82, b = 0.00}
         end

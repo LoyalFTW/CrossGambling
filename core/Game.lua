@@ -19,6 +19,11 @@ function CrossGambling:HostNewGame()
     local game = self.game
     local global = self.db.global
 
+    if not self:CanSendToChannel(game.chatMethod) then
+        self:Print(self:GetUnavailableChannelMessage(game.chatMethod))
+        return false
+    end
+
     if game.state ~= "START" then
         self:ResetGameState()
     end
@@ -50,6 +55,7 @@ function CrossGambling:HostNewGame()
     self:SendMsg("Chat_Method", game.chatMethod)
     self:SendMsg("SET_HOUSE", game.houseCut)
     self:SendMsg("HOST_NAME", game.PlayerName)
+    return true
 end
 
 function CrossGambling:GameStart()

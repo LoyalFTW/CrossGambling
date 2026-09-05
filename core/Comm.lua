@@ -72,6 +72,17 @@ function CrossGambling:CanSendToChannel(method)
     return false
 end
 
+function CrossGambling:GetUnavailableChannelMessage(method)
+    if method == "PARTY" then
+        return "You're not in a party."
+    elseif method == "RAID" then
+        return "You're not in a raid."
+    elseif method == "GUILD" then
+        return "You're not in a guild."
+    end
+    return "The selected chat channel is not available."
+end
+
 function CrossGambling:Announce(message)
     local game = self.game
     if not game or not game.host then

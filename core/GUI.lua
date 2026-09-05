@@ -3,6 +3,8 @@ local playerButtons = {}
 local playerButtonsFrame
 local playerIndexByName = {}
 local pendingPlayerListRefresh = false
+
+local addonObject = CrossGambling
 local CG = "Interface\\AddOns\\CrossGambling\\media\\CG.tga"
 local Backdrop = {
 	bgFile = CG,
@@ -96,13 +98,7 @@ local function StyleSlickScrollBar(scrollFrame)
 end
 
 local function GetAddonRef()
-    local ok, addon = pcall(function()
-        return LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
-    end)
-    if ok and addon then
-        return addon
-    end
-    return CrossGambling
+    return addonObject
 end
 
 local function GetAuditRetentionOptionsLocal()
@@ -390,6 +386,7 @@ end)
 
 CGAcceptOnes:SetScript("OnClick", function()
     CGAcceptOnes:Disable()
+    local gameReady = true
 
     if CGAcceptOnes:GetText() == "Host Game" then
         CGAcceptOnes:SetText("New Game")
@@ -398,12 +395,21 @@ CGAcceptOnes:SetScript("OnClick", function()
         self.game.mode = CGGameMode:GetText()
         self.game.chatMethod = GCchatMethod:GetText()
         self:SetHouseCut(CGGuildPercent:GetText())
-        self:HostNewGame()
+        gameReady = self:HostNewGame()
     end
 
     CGAcceptOnes:Enable()
-    CGLastCall:Enable()
-    CGStartRoll:Enable()
+    if gameReady then
+        CGLastCall:Enable()
+        CGStartRoll:Enable()
+        CGLastCall:SetAlpha(1)
+        CGStartRoll:SetAlpha(1)
+    else
+        CGLastCall:Disable()
+        CGStartRoll:Disable()
+        CGLastCall:SetAlpha(0.4)
+        CGStartRoll:SetAlpha(0.4)
+    end
 end)
 
 

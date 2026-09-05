@@ -1,5 +1,7 @@
 CGChat = {} 
 
+local addonObject = CrossGambling
+
 local function GetFontSize()
     if CrossGambling and CrossGambling.db and CrossGambling.db.global then
         return CrossGambling.db.global.chatFontSize or CrossGambling.db.global.fontvalue or 12
@@ -16,7 +18,7 @@ local function GetFontColor()
 end
 
 function CGChat:BuildChatPanel(parentFrame, game, backdropApplyFn, sideColorApplyFn)
-    local addon = LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    local addon = addonObject
 
     local CGRightMenu = CreateFrame("Frame", "CGRightMenuChat", parentFrame, "BackdropTemplate")
     CGRightMenu:SetPoint("TOPLEFT", parentFrame, "TOPRIGHT", 0, 0)

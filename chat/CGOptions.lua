@@ -1,4 +1,6 @@
 CGOptions = {}
+
+local addonObject = CrossGambling
 local _buildCount = 0
 local OPTION_BACKDROP = {
     bgFile = "Interface\\AddOns\\CrossGambling\\media\\CG.tga",
@@ -17,7 +19,7 @@ local SUPPORT_LINKS = {
 }
 
 local function GetAddon()
-    return LibStub("AceAddon-3.0"):GetAddon("CrossGambling")
+    return addonObject
 end
 
 local function EnsureBackdrop(frame)
