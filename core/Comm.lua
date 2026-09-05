@@ -17,8 +17,12 @@ local hostOnlyMessages = {
     GAME_OVER = true,
 }
 
+local function IsInInstanceGroup()
+    return LE_PARTY_CATEGORY_INSTANCE ~= nil and IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
+end
+
 local function ResolveChannel(method)
-    if (method == "PARTY" or method == "RAID") and IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+    if (method == "PARTY" or method == "RAID") and IsInInstanceGroup() then
         return "INSTANCE_CHAT"
     end
     return method
@@ -49,11 +53,14 @@ function CrossGambling:SendChat(msg, method)
 end
 
 function CrossGambling:CanSendToChannel(method)
-    if method == "PARTY" then
+    local channel = ResolveChannel(method)
+    if channel == "INSTANCE_CHAT" then
+        return true
+    elseif channel == "PARTY" then
         return IsInGroup() and not IsInRaid()
-    elseif method == "RAID" then
+    elseif channel == "RAID" then
         return IsInRaid()
-    elseif method == "GUILD" then
+    elseif channel == "GUILD" then
         return IsInGuild()
     end
     return false

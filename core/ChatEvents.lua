@@ -55,18 +55,19 @@ function CrossGambling:RegisterChatEvents()
     for _, eventName in ipairs(events) do
         self:RegisterEvent(eventName, "handleChatMsg")
     end
+    self.chatEventsRegistered = true
 end
 
 function CrossGambling:UnRegisterChatEvents()
     for _, eventName in ipairs(allChatEvents) do
         self:UnregisterEvent(eventName)
     end
+    self.chatEventsRegistered = false
 end
 
 function CrossGambling:chatMethod()
     local current = self.game.chatMethod
-    local currentEvents = chatEventsByMethod[current] or chatEventsByMethod.PARTY
-    local wasRegistered = currentEvents[1] ~= nil and self:IsEventRegistered(currentEvents[1])
+    local wasRegistered = self.chatEventsRegistered == true
 
     local newMethod = chatMethods[1]
     for i = 1, #chatMethods do
