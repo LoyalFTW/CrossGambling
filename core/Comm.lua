@@ -21,9 +21,15 @@ local function IsInInstanceGroup()
     return LE_PARTY_CATEGORY_INSTANCE ~= nil and IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
 end
 
-local function ResolveChannel(method)
+function CrossGambling:ResolveChatChannel(method)
     if (method == "PARTY" or method == "RAID") and IsInInstanceGroup() then
         return "INSTANCE_CHAT"
+    end
+    if method == "RAID" and IsInGroup() and not IsInRaid() then
+        return "PARTY"
+    end
+    if method == "PARTY" and IsInRaid() then
+        return "RAID"
     end
     return method
 end
@@ -36,7 +42,7 @@ function CrossGambling:SendMsg(event, arg1)
 
     local method = self.game and self.game.chatMethod
     if method then
-        pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, "NORMAL", ADDON_PREFIX, msg, ResolveChannel(method))
+        pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, "NORMAL", ADDON_PREFIX, msg, self:ResolveChatChannel(method))
     end
 end
 
@@ -49,11 +55,11 @@ function CrossGambling:SendChat(msg, method)
     if self:IsTestingMode() then
         self:Print("|cff888888[" .. (method or "Chat") .. "]|r " .. msg)
     end
-    pcall(SendChatMessage, msg, ResolveChannel(method))
+    pcall(SendChatMessage, msg, self:ResolveChatChannel(method))
 end
 
 function CrossGambling:CanSendToChannel(method)
-    local channel = ResolveChannel(method)
+    local channel = self:ResolveChatChannel(method)
     if channel == "INSTANCE_CHAT" then
         return true
     elseif channel == "PARTY" then

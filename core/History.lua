@@ -2,21 +2,9 @@ local auditRetentionOptions = {5, 10, 30, "Never"}
 
 function CrossGambling:AnnounceOrPrint(message)
     local method = self.game and self.game.chatMethod
-    if method == "PARTY" then
-        if IsInGroup(LE_PARTY_CATEGORY_HOME) and not IsInRaid() then
-            self:SendChat(message, method)
-            return
-        end
-    elseif method == "RAID" then
-        if IsInRaid(LE_PARTY_CATEGORY_HOME) or IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
-            self:SendChat(message, method)
-            return
-        end
-    elseif method == "GUILD" then
-        if IsInGuild() then
-            self:SendChat(message, method)
-            return
-        end
+    if self:CanSendToChannel(method) then
+        self:SendChat(message, method)
+        return
     end
 
     self:Print(message)

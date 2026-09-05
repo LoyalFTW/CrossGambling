@@ -4,6 +4,7 @@ local chatMethods = { "PARTY", "RAID", "GUILD" }
 local chatEventsByMethod = {
     PARTY = { "CHAT_MSG_PARTY", "CHAT_MSG_PARTY_LEADER", "CHAT_MSG_INSTANCE_CHAT", "CHAT_MSG_INSTANCE_CHAT_LEADER" },
     RAID  = { "CHAT_MSG_RAID", "CHAT_MSG_RAID_LEADER", "CHAT_MSG_INSTANCE_CHAT", "CHAT_MSG_INSTANCE_CHAT_LEADER" },
+    INSTANCE_CHAT = { "CHAT_MSG_INSTANCE_CHAT", "CHAT_MSG_INSTANCE_CHAT_LEADER" },
     GUILD = { "CHAT_MSG_GUILD" },
 }
 
@@ -51,7 +52,8 @@ function CrossGambling:RegisterChatEvents()
 
     self.chatEventsSuspendedForCombat = false
 
-    local events = chatEventsByMethod[self.game.chatMethod] or chatEventsByMethod.PARTY
+    local channel = self:ResolveChatChannel(self.game.chatMethod)
+    local events = chatEventsByMethod[channel] or chatEventsByMethod.PARTY
     for _, eventName in ipairs(events) do
         self:RegisterEvent(eventName, "handleChatMsg")
     end
