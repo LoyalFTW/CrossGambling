@@ -1,11 +1,12 @@
 
 local HotPotatoMode = {}
 HotPotatoMode.name        = "HotPotato"
-HotPotatoMode.description = "Everyone rolls 1-100 each round; the lowest roller holds the potato. After 5 rounds, whoever's left holding it pays everyone else the wager."
+HotPotatoMode.description = "Everyone rolls 1-100 each round; the lowest roller catches the potato. Its hidden fuse explodes after a random round from 1 to 4, and whoever is holding it pays everyone else the wager."
 HotPotatoMode.minPlayers  = 3
 
-local MAX_ROUNDS = 5
-local ROLL_MAX   = 100
+local MIN_EXPLOSION_ROUND = 1
+local MAX_EXPLOSION_ROUND = 4
+local ROLL_MAX            = 100
 
 local function everyoneSet(game)
     local set = {}
@@ -15,10 +16,10 @@ local function everyoneSet(game)
     return set
 end
 
-local function payOut(addon, game)
+local function payOut(addon, game, lowVal)
     local hp    = game.hotpotato
     local wager = addon:GetWager()
-    local lines = { string.format("CrossGambling: %s is left holding the potato and pays everyone!", hp.holder) }
+    local lines = { string.format("CrossGambling: %s rolled lowest (%d)... BOOM! The potato explodes! They pay everyone!", hp.holder, lowVal) }
 
     for i = 1, #game.players do
         local p = game.players[i]
@@ -54,27 +55,33 @@ local function resolveRound(addon, game)
     end
 
     hp.holder = lowest[1]
-    addon:Announce(string.format(
-        "CrossGambling: %s rolled lowest (%d) and holds the potato! Round %d/%d complete.",
-        hp.holder, lowVal, hp.round, MAX_ROUNDS
-    ))
 
-    if hp.round >= MAX_ROUNDS then
-        payOut(addon, game)
+    if hp.round >= hp.explosionRound then
+        payOut(addon, game, lowVal)
         return
     end
+
+    addon:Announce(string.format(
+        "CrossGambling: %s rolled lowest (%d) and catches the potato... the fuse is still burning!",
+        hp.holder, lowVal
+    ))
 
     hp.round   = hp.round + 1
     hp.pending = everyoneSet(game)
     addon:ClearRolls()
-    addon:Announce(string.format("CrossGambling: Round %d/%d - roll 1-%d!", hp.round, MAX_ROUNDS, ROLL_MAX))
+    addon:Announce(string.format("CrossGambling: Pass it fast! Round %d - everyone roll 1-%d!", hp.round, ROLL_MAX))
 end
 
 function HotPotatoMode:OnStartRolls(addon, game)
-    game.hotpotato = { round = 1, holder = nil, pending = everyoneSet(game) }
+    game.hotpotato = {
+        round = 1,
+        explosionRound = math.random(MIN_EXPLOSION_ROUND, MAX_EXPLOSION_ROUND),
+        holder = nil,
+        pending = everyoneSet(game),
+    }
     addon:Announce(string.format(
-        "CrossGambling: Hot Potato! Round 1/%d - everyone rolls 1-%d. Lowest roll holds the potato!",
-        MAX_ROUNDS, ROLL_MAX
+        "CrossGambling: HOT POTATO! The hidden fuse will blow sometime in rounds 1-4. Everyone roll 1-%d - lowest catches it!",
+        ROLL_MAX
     ))
 end
 
