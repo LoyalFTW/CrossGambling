@@ -4,20 +4,152 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   release:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
 
       - name: Package and Upload
-        uses: BigWigsMods/packager@master
+        uses: BigWigsMods/packager@6d50adb6e8517eefef63f4afb16a6518166a6b28
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
           WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Announce on Discord
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          API_URL: ${{ github.api_url }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          tag = os.environ["TAG"]
+          repo = os.environ["REPO"]
+          release_url = f'{os.environ["SERVER_URL"]}/{repo}/releases/tag/{tag}'
+          curseforge_url = "https://www.curseforge.com/wow/addons/crossgambling"
+
+          release_request = urllib.request.Request(
+              f'{os.environ["API_URL"]}/repos/{repo}/releases/tags/{tag}',
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f'Bearer {os.environ["GITHUB_TOKEN"]}',
+                  "User-Agent": "CrossGamblingReleaseBot (GitHub Actions)"
+              }
+          )
+          with urllib.request.urlopen(release_request) as response:
+              release = json.loads(response.read().decode("utf-8"))
+
+          notes = release.get("body", "").strip() or "A new CrossGambling update is available."
+          if len(notes) > 3300:
+              notes = notes[:3290].rstrip() + "\n\n...more details in the full changelog."
+
+          description = f"{notes}\n\n[View full release notes]({release_url})"
+          payload = {
+              "username": "CrossGambling Changelog",
+              "allowed_mentions": {"parse": []},
+              "embeds": [{
+                  "title": f"CrossGambling {tag} released",
+                  "url": release_url,
+                  "description": description,
+                  "color": 16743690,
+                  "fields": [
+                      {
+                          "name": "Download",
+                          "value": f"[GitHub Release]({release_url}) | [CurseForge]({curseforge_url})",
+                          "inline": False
+                      }
+                  ],
+                  "footer": {
+                      "text": "CrossGambling - Win big or go broke"
+                  }
+              }]
+          }
+
+          request = urllib.request.Request(
+              os.environ["DISCORD_WEBHOOK"] + "?wait=true",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "Content-Type": "application/json",
+                  "User-Agent": "CrossGamblingReleaseBot (GitHub Actions)"
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(request) as response:
+              if response.status not in (200, 204):
+                  raise RuntimeError(f"Discord webhook failed: HTTP {response.status}")
+              message = json.loads(response.read().decode("utf-8"))
+
+          guild_id = message.get("guild_id")
+          channel_id = message.get("channel_id")
+          message_id = message.get("id")
+          print(f"Discord accepted message ID {message_id} in channel ID {channel_id}.")
+          if guild_id and channel_id and message_id:
+              print(f"Discord message link: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}")
+          PY
+
+  discord-test:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test Discord Webhook
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          payload = {
+              "username": "CrossGambling Changelog",
+              "allowed_mentions": {"parse": []},
+              "embeds": [{
+                  "title": "CrossGambling Discord connection test",
+                  "description": "This test message confirms which Discord channel receives release announcements.",
+                  "color": 16743690,
+                  "footer": {
+                      "text": "CrossGambling - Release workflow test"
+                  }
+              }]
+          }
+
+          request = urllib.request.Request(
+              os.environ["DISCORD_WEBHOOK"] + "?wait=true",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "Content-Type": "application/json",
+                  "User-Agent": "CrossGamblingReleaseBot (GitHub Actions)"
+              },
+              method="POST",
+          )
+          with urllib.request.urlopen(request) as response:
+              message = json.loads(response.read().decode("utf-8"))
+
+          guild_id = message.get("guild_id")
+          channel_id = message.get("channel_id")
+          message_id = message.get("id")
+          print(f"Discord accepted message ID {message_id} in channel ID {channel_id}.")
+          if guild_id and channel_id and message_id:
+              print(f"Discord message link: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}")
+          PY
