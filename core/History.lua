@@ -150,7 +150,7 @@ end
 
 function CrossGambling:GetAuditSummary()
     local log = self.db and self.db.global and self.db.global.auditLog or {}
-    local counts = { total = 0, debt = 0, updateStat = 0, joinStats = 0, unjoinStats = 0, deleteStat = 0, resetStats = 0, unknown = 0 }
+    local counts = { total = 0, debt = 0, doubleOrNothing = 0, updateStat = 0, joinStats = 0, unjoinStats = 0, deleteStat = 0, resetStats = 0, unknown = 0 }
 
     for _, entry in ipairs(log) do
         if type(entry) == "table" then
@@ -233,6 +233,27 @@ function CrossGambling:FormatAuditEntry(entry)
             dim, ts, reset, gold, reset, name, entry.loser or "?", reset, name, entry.winner or "?", reset,
             red, self:addCommas(entry.amount or 0), reset
         )
+    elseif entry.action == "doubleOrNothing" then
+        local outcome = entry.outcome or "unknown"
+        local outcomeText
+        local outcomeColor = orange
+        if outcome == "doubled" then
+            outcomeText = "DOUBLED to " .. self:addCommas(entry.finalAmount or 0) .. "g"
+            outcomeColor = red
+        elseif outcome == "cleared" then
+            outcomeText = "CLEARED - nothing owed"
+            outcomeColor = green
+        elseif outcome == "cancelled" then
+            outcomeText = "CANCELLED - original result kept"
+        else
+            outcomeText = strupper(tostring(outcome))
+        end
+        local rollText = entry.rolledOne and ("  " .. entry.rolledOne .. " rolled 1") or ""
+        return string.format(
+            "%s[%s]%s %sDouble or Nothing%s  %s%s%s vs %s%s%s\n%sOriginal:%s %sg  %sOutcome:%s %s%s%s%s",
+            dim, ts, reset, gold, reset, name, entry.loser or "?", reset, name, entry.winner or "?", reset,
+            dim, reset, self:addCommas(entry.originalAmount or 0), dim, reset, outcomeColor, outcomeText, reset, rollText
+        )
     elseif entry.action == "deleteStat" then
         return string.format(
             "%s[%s]%s %sDeleted Stats%s  %s%s%s\n%sStats:%s %s  %sDeathroll:%s %s",
@@ -280,8 +301,8 @@ function CrossGambling:RefreshAuditFrame(filter)
     local log = self.db and self.db.global and self.db.global.auditLog or {}
     local summary = self:GetAuditSummary()
     if self.auditFrame.summaryText then
-        self.auditFrame.summaryText:SetText(string.format("%d entries  |  %d rounds  |  %d edits  |  %d links",
-            summary.total, summary.debt, summary.updateStat + summary.deleteStat + summary.resetStats, summary.joinStats + summary.unjoinStats))
+        self.auditFrame.summaryText:SetText(string.format("%d entries  |  %d rounds  |  %d D/N  |  %d edits  |  %d links",
+            summary.total, summary.debt, summary.doubleOrNothing, summary.updateStat + summary.deleteStat + summary.resetStats, summary.joinStats + summary.unjoinStats))
     end
 
     filter = filter and tostring(filter) or ""
@@ -372,6 +393,13 @@ function CrossGambling:auditMerges()
             self:AnnounceOrPrint(string.format(
                 "%d. [%s] %s owes %s %dg",
                 i, entry.timestamp, entry.loser or "?", entry.winner or "?", entry.amount or 0
+            ))
+        elseif entry.action == "doubleOrNothing" then
+            self:AnnounceOrPrint(string.format(
+                "%d. [%s] Double or Nothing: %s vs %s, original=%dg, outcome=%s, final=%dg%s",
+                i, entry.timestamp, entry.loser or "?", entry.winner or "?", entry.originalAmount or 0,
+                entry.outcome or "unknown", entry.finalAmount or 0,
+                entry.rolledOne and (", " .. entry.rolledOne .. " rolled 1") or ""
             ))
         elseif entry.action == "deleteStat" then
             self:AnnounceOrPrint(string.format(

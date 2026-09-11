@@ -28,12 +28,12 @@
 ## Category-zhTW: 賭博
 
 Libs.xml
-CrossGambling.lua
+core/CrossGambling.lua
 core/Utils.lua
 core/DB.lua
-core/Minimap.lua
+ui/Minimap.lua
 core/Comm.lua
-core/ChatEvents.lua
+chat/ChatEvents.lua
 core/Players.lua
 core/ModeRegistry.lua
 core/Game.lua
@@ -49,6 +49,6 @@ modes/RaffleMode.lua
 chat/CGTheme.lua
 chat/CGOptions.lua
 chat/CGChat.lua
-core/GUI.lua
-core/ClassicGUI.lua
-core/DebugBots.lua
+ui/GUI.lua
+ui/ClassicGUI.lua
+dev/DebugBots.lua

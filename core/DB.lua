@@ -35,6 +35,7 @@ local defaults = {
         auditRetention = 30,
         auditMaxEntries = 500,
         suspendChatEventsInCombat = true,
+        doubleOrNothingEnabled = false,
     },
 }
 
@@ -87,6 +88,8 @@ function CrossGambling:NewGameState()
         PlayerName = UnitName("player"),
         PlayerClass = select(2, UnitClass("player")),
         result = nil,
+        doubleOrNothingEnabled = false,
+        doubleOrNothing = nil,
         sessionStats = {},
     }
 end

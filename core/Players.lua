@@ -50,7 +50,9 @@ function CrossGambling:unregisterPlayer(playerName)
         indexByName[players[i].name] = i
     end
 
-    if self.game.state == "ROLL" then
+    if self.game.doubleOrNothing and (playerName == self.game.doubleOrNothing.loser or playerName == self.game.doubleOrNothing.winner) then
+        self:SettleDoubleOrNothing(self.game.doubleOrNothing.amount, playerName .. " left. Double or Nothing was cancelled.")
+    elseif self.game.state == "ROLL" then
         self:DispatchModeHook("OnPlayerLeave", playerName)
     end
 

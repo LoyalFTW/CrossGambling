@@ -56,6 +56,9 @@ function DeathRollMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
         local loser  = currentPlayer
         local winner = game.players[3 - dr.turn]
         local wager  = addon:GetWager()
+        if addon:BeginDoubleOrNothing(loser.name, winner.name, wager, DeathRollMode.name) then
+            return
+        end
         local line   = addon:SettleDebt(loser.name, winner.name, wager, DeathRollMode.name)
         addon:FinishGame({ format("%s rolls a 1 and loses! %s", loser.name, line) })
     else

@@ -15,6 +15,8 @@ local hostOnlyMessages = {
     Disable_Join = true,
     PLAYER_ROLL = true,
     GAME_OVER = true,
+    DOUBLE_OR_NOTHING_OFFER = true,
+    DOUBLE_OR_NOTHING_ROLL = true,
 }
 
 local function IsInInstanceGroup()
@@ -118,7 +120,7 @@ function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
     if eventType == "CHAT_MSG" then
         local name, class, message = strmatch(rest, "^([^:]+):([^:]+):(.+)$")
         if name and message then
-            self:OnPanelChatMessage(name, class, message)
+            self:OnPanelChatMessage(name, class, message, shortSender)
         end
         return
     end
@@ -166,10 +168,30 @@ function CrossGambling:OnGameMessage(eventType, arg1, arg2, sender)
         if not game.host then
             self:ResetGameState()
         end
+    elseif eventType == "DOUBLE_OR_NOTHING_OFFER" then
+        if not game.host and arg1 then
+            local loser, winner, amount = strsplit("|", arg1)
+            game.doubleOrNothing = { loser = loser, winner = winner, amount = tonumber(amount), accepted = {} }
+            game.state = "DOUBLE_OR_NOTHING_OFFER"
+        end
+    elseif eventType == "DOUBLE_OR_NOTHING_ROLL" then
+        if not game.host and arg1 then
+            local loser, winner, turn, maxRoll = strsplit("|", arg1)
+            game.doubleOrNothing = game.doubleOrNothing or {}
+            game.doubleOrNothing.loser = loser
+            game.doubleOrNothing.winner = winner
+            game.doubleOrNothing.turn = turn
+            game.doubleOrNothing.max = tonumber(maxRoll)
+            game.state = "DOUBLE_OR_NOTHING_ROLL"
+        end
     end
 end
 
-function CrossGambling:OnPanelChatMessage(name, class, message)
+function CrossGambling:OnPanelChatMessage(name, class, message, sender)
+    if self.game.host and self.game.state == "DOUBLE_OR_NOTHING_OFFER" then
+        self:HandleDoubleOrNothingChat(sender or name, message)
+    end
+
     local panel = self.CGRightMenu
     if not panel or not panel.TextField then
         return

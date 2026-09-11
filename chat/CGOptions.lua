@@ -22,6 +22,18 @@ local function GetAddon()
     return addonObject
 end
 
+local function AttachTooltip(frame, title, text)
+    frame:HookScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(title, 1, 0.82, 0)
+        GameTooltip:AddLine(text, 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    frame:HookScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+end
+
 local function EnsureBackdrop(frame)
     if frame and not frame.SetBackdrop then
         Mixin(frame, BackdropTemplateMixin)
@@ -522,7 +534,7 @@ function CGOptions:Build(isSlick)
     _buildCount = _buildCount + 1
     local frameName = "CGOptionsFrame" .. _buildCount
     local win = CreateFrame("Frame", frameName, UIParent, isSlick and "BackdropTemplate" or "BasicFrameTemplateWithInset")
-    win:SetSize(isSlick and 380 or 340, 425)
+    win:SetSize(isSlick and 380 or 340, 445)
     StyleFrameChrome(win, isSlick)
     AnchorToMainFrame(win)
     win:SetMovable(true)
@@ -652,6 +664,7 @@ function CGOptions:Build(isSlick)
         self:Refresh(self._state)
         DEFAULT_CHAT_FRAME:AddMessage("CrossGambling: Guild cut " .. (self._state and "ON" or "OFF") .. ".")
     end)
+    AttachTooltip(guildCutBtn, "Guild Cut", "Deducts the House Cut percentage from the winner's payout and records that amount for the guild. The loser still owes the full debt.")
 
     RowLabel(gamePanel, START_Y - ROW_H, "House Cut %:")
     local houseCutEB = MakeEditBox(gamePanel, 85, 22, 3)
@@ -671,6 +684,7 @@ function CGOptions:Build(isSlick)
         a.game.realmFilter = self._state
         self:Refresh(self._state)
     end)
+    AttachTooltip(realmBtn, "Realm Filter", "Prevents players reported as being on an ineligible realm from joining games you host.")
 
     RowLabel(gamePanel, START_Y - ROW_H*3, "Pause Boss/PvP:")
     local combatChatBtn = MakeToggleBtn(gamePanel, 85, 22)
@@ -690,10 +704,23 @@ function CGOptions:Build(isSlick)
             a:RegisterChatEvents()
         end
     end)
+    AttachTooltip(combatChatBtn, "Pause Boss/PvP", "Temporarily pauses player chat input during boss encounters and PvP combat, then resumes it when combat ends. System roll results can still be detected.")
 
-    RowLabel(gamePanel, START_Y - ROW_H*4, "Join Word:")
+    RowLabel(gamePanel, START_Y - ROW_H*4, "Double/Nothing:")
+    local doubleOrNothingBtn = MakeToggleBtn(gamePanel, 85, 22)
+    doubleOrNothingBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*4 + 4)
+    doubleOrNothingBtn:SetScript("OnClick", function(self)
+        local a = GetAddon()
+        self._state = not self._state
+        a.db.global.doubleOrNothingEnabled = self._state
+        self:Refresh(self._state)
+        DEFAULT_CHAT_FRAME:AddMessage("CrossGambling: Double or Nothing " .. (self._state and "ON" or "OFF") .. " for new games.")
+    end)
+    AttachTooltip(doubleOrNothingBtn, "Double or Nothing", "For new single-debt games, offers the winner and loser a 30-second chance to accept an alternating death roll. The debt is either doubled or cleared, and the outcome is recorded in History. Off by default.")
+
+    RowLabel(gamePanel, START_Y - ROW_H*5, "Join Word:")
     local joinEB = MakeEditBox(gamePanel, 85, 22, 10)
-    joinEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*4 + 4)
+    joinEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*5 + 4)
     joinEB:SetText("1")
     joinEB:SetScript("OnEditFocusLost", function(self)
         self:HighlightText(0,0)
@@ -705,10 +732,11 @@ function CGOptions:Build(isSlick)
         if v and v ~= "" then GetAddon().db.global.joinWord = v end
         self:ClearFocus()
     end)
+    AttachTooltip(joinEB, "Join Word", "The exact chat message players type during registration to join your game. Press Enter or click away to save it.")
 
-    RowLabel(gamePanel, START_Y - ROW_H*5, "Leave Word:")
+    RowLabel(gamePanel, START_Y - ROW_H*6, "Leave Word:")
     local leaveEB = MakeEditBox(gamePanel, 85, 22, 10)
-    leaveEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*5 + 4)
+    leaveEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*6 + 4)
     leaveEB:SetText("-1")
     leaveEB:SetScript("OnEditFocusLost", function(self)
         self:HighlightText(0,0)
@@ -720,10 +748,11 @@ function CGOptions:Build(isSlick)
         if v and v ~= "" then GetAddon().db.global.leaveWord = v end
         self:ClearFocus()
     end)
+    AttachTooltip(leaveEB, "Leave Word", "The exact chat message joined players type during registration to withdraw. Press Enter or click away to save it.")
 
-    Divider(gamePanel, START_Y - ROW_H*6 - 4)
+    Divider(gamePanel, START_Y - ROW_H*7 - 4)
 
-    local statY = START_Y - ROW_H*6 - 12
+    local statY = START_Y - ROW_H*7 - 12
     local BW, BH = 138, 26
     local statsX = isSlick and 21 or 0
 
@@ -771,6 +800,7 @@ function CGOptions:Build(isSlick)
         guildCutBtn:Refresh(a.game.house)
         realmBtn:Refresh(a.game.realmFilter)
         combatChatBtn:Refresh(a.db.global.suspendChatEventsInCombat ~= false)
+        doubleOrNothingBtn:Refresh(a.db.global.doubleOrNothingEnabled == true)
         houseCutEB:SetText(tostring(a.db.global.houseCut or 10))
         joinEB:SetText(a.db.global.joinWord or "1")
         leaveEB:SetText(a.db.global.leaveWord or "-1")
