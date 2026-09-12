@@ -12,6 +12,7 @@ local defaults = {
     global = {
         minimap = {
             hide = false,
+            showInCompartment = true,
         },
         wager = DEFAULT_WAGER,
         minWager = 1,
