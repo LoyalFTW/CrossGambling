@@ -14,6 +14,7 @@ function CrossGambling:ResetGameState()
     game.result = nil
     game.doubleOrNothingEnabled = false
     game.doubleOrNothing = nil
+    game.completedDoubleOrNothing = nil
     self:ResetPlayers()
 end
 
@@ -43,6 +44,7 @@ function CrossGambling:HostNewGame()
     game.houseCut = global.houseCut
     game.doubleOrNothingEnabled = global.doubleOrNothingEnabled == true
     self:ResetPlayers()
+    self:ClearCompletedGameBoard()
 
     if CGCall["R_NewGame"] then
         CGCall["R_NewGame"]()
@@ -199,6 +201,9 @@ function CrossGambling:SettleDoubleOrNothing(amount, resultLine)
         return
     end
 
+    doubleOrNothing.finalAmount = amount
+    doubleOrNothing.resultLine = resultLine
+    game.completedDoubleOrNothing = doubleOrNothing
     game.doubleOrNothing = nil
     game.state = "ROLL"
 
@@ -275,6 +280,7 @@ function CrossGambling:StartDoubleOrNothingRoll()
     doubleOrNothing.max = doubleOrNothing.amount
     self:UnRegisterChatEvents()
     self:SyncDoubleOrNothingRoll()
+    self:QueueGameBoardRefresh()
     self:Announce(string.format("Double or Nothing! %s starts: type /roll %d.", doubleOrNothing.turn, doubleOrNothing.max))
 end
 
@@ -301,6 +307,7 @@ function CrossGambling:HandleDoubleOrNothingChat(playerName, text)
     end
 
     doubleOrNothing.accepted[normalizedName] = true
+    self:QueueGameBoardRefresh()
     if doubleOrNothing.accepted[loserKey] and doubleOrNothing.accepted[winnerKey] then
         self:StartDoubleOrNothingRoll()
     else
@@ -364,6 +371,7 @@ function CrossGambling:BeginDoubleOrNothing(loserName, winnerName, amount, modeN
     game.state = "DOUBLE_OR_NOTHING_OFFER"
     self:RegisterChatEvents()
     self:SendMsg("DOUBLE_OR_NOTHING_OFFER", table.concat({ loserName, winnerName, tostring(amount) }, "|"))
+    self:QueueGameBoardRefresh()
     self:Announce(string.format("%s owes %s %sg. %s and %s: type 1 within 30 seconds for Double or Nothing, or type pass to settle now.", loserName, winnerName, self:addCommas(amount), loserName, winnerName))
 
     C_Timer.After(30, function()
@@ -418,6 +426,7 @@ function CrossGambling:CloseGame()
         return
     end
 
+    self:CaptureCompletedGameBoard()
     self:DispatchModeHook("OnEnd")
 
     if self.game.host then

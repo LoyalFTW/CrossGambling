@@ -1,0 +1,11 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <Script file="Foundry.lua"/>
+  <Script file="Modules\Commands.lua"/>
+  <Script file="Modules\Events.lua"/>
+  <Script file="Modules\Lifecycle.lua"/>
+  <Script file="Modules\DB.lua"/>
+  <Script file="Modules\List.lua"/>
+  <Script file="Modules\Settings.lua"/>
+  <Script file="Modules\Tooltip.lua"/>
+  <Script file="Modules\Menu.lua"/>
+</Ui>

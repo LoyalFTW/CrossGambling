@@ -18,6 +18,7 @@ end
 
 local function payOut(addon, game, lowVal)
     local hp    = game.hotpotato
+    hp.exploded = true
     local wager = addon:GetWager()
     local lines = { string.format("CrossGambling: %s rolled lowest (%d)... BOOM! The potato explodes! They pay everyone!", hp.holder, lowVal) }
 

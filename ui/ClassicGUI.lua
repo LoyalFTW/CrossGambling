@@ -1,9 +1,3 @@
-local CGPlayers = {}
-local playerButtons = {}
-local playerButtonsFrame
-local playerIndexByName = {}
-local pendingPlayerListRefresh = false
-
 local addonObject = CrossGambling
 local function GetAddonRef()
     return addonObject
@@ -641,131 +635,27 @@ CGMenuToggle:SetScript("OnMouseDown", function(self)
 	end
 end)
 
-function CrossGambling:RemovePlayer(name)
-    local playerIndex = playerIndexByName[name]
-    if not playerIndex then
-        return
-    end
-
-    table.remove(CGPlayers, playerIndex)
-    playerIndexByName[name] = nil
-
-    for i = playerIndex, #CGPlayers do
-        playerIndexByName[CGPlayers[i].name] = i
-    end
-
-    self:QueuePlayerListRefresh()
-end
-
-function CrossGambling:QueuePlayerListRefresh()
-    if pendingPlayerListRefresh then
-        return
-    end
-
-    pendingPlayerListRefresh = true
-    C_Timer.After(0, function()
-        pendingPlayerListRefresh = false
-        CrossGambling:UpdatePlayerList()
-    end)
-end
-
-local function InsertPlayerSorted(player)
-    local insertIndex = #CGPlayers + 1
-    for i = 1, #CGPlayers do
-        if player.name < CGPlayers[i].name then
-            insertIndex = i
-            break
-        end
-    end
-
-    table.insert(CGPlayers, insertIndex, player)
-    for i = insertIndex, #CGPlayers do
-        playerIndexByName[CGPlayers[i].name] = i
-    end
-end
-
-
-function CrossGambling:AddPlayer(playerName)
-    if playerIndexByName[playerName] then
-        return
-    end
-    local newPlayer = {
-        name = playerName,
-        total = 0,
-    }
-    InsertPlayerSorted(newPlayer)
-    self:QueuePlayerListRefresh()
-end
-
-local playerListFrame = CreateFrame("Frame", "PlayerListFrame", CGLeftMenu)
-playerListFrame:SetSize(300, 150)
-playerListFrame:SetPoint("CENTER")
-
-local scrollFrame = CreateFrame("ScrollFrame", "PlayerListScrollFrame", playerListFrame, "UIPanelScrollFrameTemplate")
-scrollFrame:SetSize(266, 170)
-scrollFrame:SetPoint("TOPLEFT", 10, 15)
-scrollFrame:EnableMouseWheel(true)
-scrollFrame:SetScript("OnMouseWheel", function(self, delta)
-    local currentValue = scrollFrame:GetVerticalScroll()
-    local rowHeight = 30
-    local numRows = #CGPlayers
-    local maxRows = math.max(numRows * rowHeight - scrollFrame:GetHeight(), 0)
-    local newValue = math.max(0, math.min(currentValue - delta * rowHeight, maxRows))
-    scrollFrame:SetVerticalScroll(newValue)
-end)
-
-playerButtonsFrame = CreateFrame("Frame", "PlayerButtonsFrame", scrollFrame)
-playerButtonsFrame:SetSize(280, 1) 
-scrollFrame:SetScrollChild(playerButtonsFrame)
-
-playerButtons = {}
-
-function CrossGambling:UpdatePlayerList()
-    for i, button in ipairs(playerButtons) do
-        button:Hide()
-    end
-
-    for i, player in ipairs(CGPlayers) do
-        local playerButton = playerButtons[i]
-        if not playerButton then
-            playerButton = CreateFrame("Button", "PlayerButton"..i, playerButtonsFrame, "InsetFrameTemplate")
-            playerButton:SetSize(260, 20)
-            playerButton:SetNormalFontObject("GameFontNormal")
-            playerButton:SetHighlightFontObject("GameFontHighlight")
-            playerButtons[i] = playerButton
-        end
-
-        playerButton:ClearAllPoints()
-        playerButton:SetPoint("TOPLEFT", playerButtonsFrame, 0, -i * 20)
-        playerButton:Show()
-
-        if player.roll ~= nil then
-            playerButton:SetText(player.name .. " : " .. player.roll)
-        else
-            playerButton:SetText(player.name)
-        end
-    end
-
-end
+CrossGamblingGameBoard:Create(CrossGambling, CGLeftMenu, {
+    header = CGLeftMenuHeader,
+    width = 300,
+    height = 220,
+    rowHeight = 27,
+})
 
 CGCall["PLAYER_ROLL"] = function(playerName, value)
-    local playerIndex = playerIndexByName[playerName]
-    if playerIndex then
-        CGPlayers[playerIndex].roll = value
-    end
-    CrossGambling:QueuePlayerListRefresh()
+    CrossGambling:QueueGameBoardRefresh()
 end
 
 CGCall["R_NewGame"] = function()
-    wipe(CGPlayers)
-    wipe(playerIndexByName)
-    CrossGambling:QueuePlayerListRefresh()
+CrossGambling:ClearCompletedGameBoard()
+CrossGambling:QueueGameBoardRefresh()
 CGEnter_UpdateJoinText()
 CGStartRoll:SetText("Start Rolling")
 CGEnter:Enable()
 end
 
 CGCall["DisableClient"] = function()
+    CrossGambling:QueueGameBoardRefresh()
     CGAcceptOnes:Disable()
     CGLastCall:Disable()
     CGStartRoll:Disable()
@@ -777,10 +667,12 @@ CGCall["DisableClient"] = function()
 end
 
 CGCall["Disable_Join"] = function()
+    CrossGambling:QueueGameBoardRefresh()
     CGEnter:Disable()
 end
 
 CGCall["GAME_OVER"] = function()
+    CrossGambling:QueueGameBoardRefresh()
     CGAcceptOnes:Enable()
     CGLastCall:Enable()
     CGStartRoll:Enable()

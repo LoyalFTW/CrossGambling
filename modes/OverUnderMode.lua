@@ -55,6 +55,8 @@ function OverUnderMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
     end
 
     ou.resolved = true
+    ou.result = actualRoll
+    ou.outcomes = {}
 
     local bank     = game.hostName
     local wager    = addon:GetWager()
@@ -75,9 +77,11 @@ function OverUnderMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
             )
 
             if won then
+                ou.outcomes[player.name] = true
                 addon:SettleDebt(bank, player.name, wager, OverUnderMode.name)
                 table.insert(lines, string.format("%s (%s) wins %sg from the house!", player.name, pick, addon:addCommas(wager)))
             else
+                ou.outcomes[player.name] = false
                 addon:SettleDebt(player.name, bank, wager, OverUnderMode.name)
                 table.insert(lines, string.format("%s (%s) pays %sg to the house.", player.name, pick, addon:addCommas(wager)))
             end

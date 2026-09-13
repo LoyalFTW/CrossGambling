@@ -1,0 +1,24 @@
+## Interface: 11509, 20506, 50504, 120100
+## Title: Foundry-1.0
+## Notes: Foundry library, 1.0.x. Native-first toolkit bridge for WoW addons.
+## Version: v1.0.105
+## Author: BawrLabs
+## X-License: MIT
+## Category: Libraries
+## X-Category: Library
+## X-Curse-Project-ID: 1558554
+## X-Wago-ID: RNLkL8Go
+## DefaultState: enabled
+## LoadOnDemand: 0
+## SavedVariables:
+## SavedVariablesPerCharacter:
+
+Foundry.lua
+Modules/Commands.lua
+Modules/Events.lua
+Modules/Lifecycle.lua
+Modules/DB.lua
+Modules/List.lua
+Modules/Settings.lua
+Modules/Tooltip.lua
+Modules/Menu.lua

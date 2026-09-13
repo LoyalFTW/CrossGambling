@@ -29,10 +29,12 @@ function CrossGambling:changeGameMode()
     for i = 1, #list do
         if list[i] == current then
             self.game.mode = list[(i % #list) + 1]
+            if self.QueueGameBoardRefresh then self:QueueGameBoardRefresh() end
             return
         end
     end
     self.game.mode = list[1]
+    if self.QueueGameBoardRefresh then self:QueueGameBoardRefresh() end
 end
 
 function CrossGambling:DispatchModeHook(hookName, ...)

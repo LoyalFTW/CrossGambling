@@ -166,6 +166,7 @@ function CrossGambling:OnGameMessage(eventType, arg1, arg2, sender)
         end
     elseif eventType == "GAME_OVER" then
         if not game.host then
+            self:CaptureCompletedGameBoard()
             self:ResetGameState()
         end
     elseif eventType == "DOUBLE_OR_NOTHING_OFFER" then
@@ -184,6 +185,10 @@ function CrossGambling:OnGameMessage(eventType, arg1, arg2, sender)
             game.doubleOrNothing.max = tonumber(maxRoll)
             game.state = "DOUBLE_OR_NOTHING_ROLL"
         end
+    end
+
+    if self.QueueGameBoardRefresh then
+        self:QueueGameBoardRefresh()
     end
 end
 

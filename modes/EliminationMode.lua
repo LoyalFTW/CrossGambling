@@ -8,6 +8,7 @@ local LOSER_MARK = "Loser"
 
 local function finishElimination(addon, game, winnerName)
     local elim  = game.elimination
+    elim.winner = winnerName
     local wager = addon:GetWager()
     local lines = { string.format("CrossGambling: %s wins the Elimination pot!", winnerName) }
 

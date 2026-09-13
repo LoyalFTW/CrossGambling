@@ -55,6 +55,8 @@ function DeathRollMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
     if actualRoll == 1 then
         local loser  = currentPlayer
         local winner = game.players[3 - dr.turn]
+        dr.loser = loser.name
+        dr.winner = winner.name
         local wager  = addon:GetWager()
         if addon:BeginDoubleOrNothing(loser.name, winner.name, wager, DeathRollMode.name) then
             return

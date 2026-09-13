@@ -49,6 +49,7 @@ modes/RaffleMode.lua
 chat/CGTheme.lua
 chat/CGOptions.lua
 chat/CGChat.lua
+ui/GameBoard.lua
 ui/GUI.lua
 ui/ClassicGUI.lua
 dev/DebugBots.lua
