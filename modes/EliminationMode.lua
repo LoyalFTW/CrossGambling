@@ -39,7 +39,7 @@ local function startFinale(addon, game)
     addon:ClearRolls(elim.alive)
 
     addon:Announce(string.format(
-        "CrossGambling: Final 1v1! %s vs %s - DeathRoll rules now! %s rolls 1-%d first!",
+        "CrossGambling: Final 1v1! %s vs %s - DeathRoll rules now! %s types /roll %d first!",
         finalists[1], finalists[2], finalists[1], wager
     ))
 end
@@ -56,7 +56,7 @@ local function startRound(addon, game)
     addon:ClearRolls(elim.pending)
 
     addon:Announce(string.format(
-        "CrossGambling: Round %d - %d players remain, roll 1-%d!",
+        "CrossGambling: Round %d - %d players remain, type /roll %d!",
         elim.round, addon:CountKeys(elim.alive), wager
     ))
 end
@@ -68,8 +68,8 @@ local function resolveEliminationStep(addon, game)
 
     if #lowest > 1 then
         addon:Announce(string.format(
-            "CrossGambling: Tie at %d between %s! Re-roll to see who's out.",
-            lowestVal, table.concat(lowest, ", ")
+            "CrossGambling: Tie at %d between %s! Type /roll %d to see who's out.",
+            lowestVal, table.concat(lowest, ", "), addon:GetWager()
         ))
 
         elim.pending = {}
@@ -107,7 +107,7 @@ function EliminationMode:OnStartRolls(addon, game)
     end
 
     addon:Announce(string.format(
-        "CrossGambling: Elimination! Everyone rolls 1-%d each round - lowest roll is out. The last two settle it with DeathRoll rules!",
+        "CrossGambling: Elimination! Everyone types /roll %d each round - lowest roll is out. The last two settle it with DeathRoll rules!",
         wager
     ))
 end

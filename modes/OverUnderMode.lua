@@ -12,7 +12,7 @@ local ROLL_MAX = 100
 function OverUnderMode:OnStartRolls(addon, game)
     game.overunder = { picks = {}, resolved = false }
     addon:Announce(string.format(
-        "CrossGambling: Over/Under! Target is %d. Type \"over\" or \"under\" to lock in your pick, then %s rolls 1-%d to decide!",
+        "CrossGambling: Over/Under! Target is %d. Type \"over\" or \"under\" to lock in your pick, then %s types /roll %d to decide!",
         TARGET, game.hostName or "the host", ROLL_MAX
     ))
 end

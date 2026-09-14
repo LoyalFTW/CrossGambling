@@ -7,7 +7,7 @@ RaffleMode.hostRolls   = true
 
 function RaffleMode:OnStartRolls(addon, game)
     addon:Announce(string.format(
-        "CrossGambling: Raffle! %s rolls 1-%d to draw the winning ticket!",
+        "CrossGambling: Raffle! %s types /roll %d to draw the winning ticket!",
         game.hostName or "The host", #game.players
     ))
 end

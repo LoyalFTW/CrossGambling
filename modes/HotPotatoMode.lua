@@ -44,7 +44,7 @@ local function resolveRound(addon, game)
 
     if #lowest > 1 then
         addon:Announce(string.format(
-            "CrossGambling: Tie at %d between %s! Re-roll 1-%d to see who takes the potato.",
+            "CrossGambling: Tie at %d between %s! Type /roll %d to see who takes the potato.",
             lowVal, table.concat(lowest, ", "), ROLL_MAX
         ))
         hp.pending = {}
@@ -70,7 +70,7 @@ local function resolveRound(addon, game)
     hp.round   = hp.round + 1
     hp.pending = everyoneSet(game)
     addon:ClearRolls()
-    addon:Announce(string.format("CrossGambling: Pass it fast! Round %d - everyone roll 1-%d!", hp.round, ROLL_MAX))
+    addon:Announce(string.format("CrossGambling: Pass it fast! Round %d - everyone type /roll %d!", hp.round, ROLL_MAX))
 end
 
 function HotPotatoMode:OnStartRolls(addon, game)
@@ -81,7 +81,7 @@ function HotPotatoMode:OnStartRolls(addon, game)
         pending = everyoneSet(game),
     }
     addon:Announce(string.format(
-        "CrossGambling: HOT POTATO! The hidden fuse will blow sometime in rounds 1-4. Everyone roll 1-%d - lowest catches it!",
+        "CrossGambling: HOT POTATO! The hidden fuse will blow sometime in rounds 1-4. Everyone type /roll %d - lowest catches it!",
         ROLL_MAX
     ))
 end

@@ -156,6 +156,10 @@ function GameBoard:RegisterModeAdapter(name, adapter)
     self.adapters[name] = adapter
 end
 
+function GameBoard:SetPlayerClickHandler(handler)
+    self.playerClickHandler = handler
+end
+
 GameBoard:RegisterModeAdapter("Classic", function(addon, view)
     local game = addon.game
     local highlow = game.highlow
@@ -483,6 +487,7 @@ function Controller:AcquireRow(index)
     if row then return row end
     row = CreateFrame("Frame", nil, self.content, "BackdropTemplate")
     row:SetSize(self.width - 30, self.rowHeight)
+    row:EnableMouse(true)
     row:SetBackdrop(ROW_BACKDROP)
     row:SetBackdropBorderColor(0, 0, 0, 0.85)
     if self.options.styleRow then self.options.styleRow(row) end
@@ -506,6 +511,26 @@ function Controller:AcquireRow(index)
     row.flash:SetAllPoints()
     row.flash:SetColorTexture(1, 0.82, 0.20, 0.28)
     row.flash:Hide()
+    row.hover = row:CreateTexture(nil, "HIGHLIGHT")
+    row.hover:SetAllPoints()
+    row.hover:SetColorTexture(1, 1, 1, 0.10)
+    row.hover:Hide()
+    row:SetScript("OnEnter", function(frame)
+        frame.hover:Show()
+        GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+        GameTooltip:SetText(frame.playerName or "Player", 1, 1, 1)
+        GameTooltip:AddLine("Click to open Player Card", 0.65, 0.85, 1)
+        GameTooltip:Show()
+    end)
+    row:SetScript("OnLeave", function(frame)
+        frame.hover:Hide()
+        GameTooltip:Hide()
+    end)
+    row:SetScript("OnMouseUp", function(frame, button)
+        if button == "LeftButton" and GameBoard.playerClickHandler and frame.playerName then
+            GameBoard.playerClickHandler(self.addon, frame.playerName, frame)
+        end
+    end)
     row:SetScript("OnUpdate", function(frame, elapsed)
         if not frame.flashRemaining then return end
         frame.flashRemaining = frame.flashRemaining - elapsed
@@ -542,6 +567,7 @@ function Controller:Refresh()
         frame:SetBackdropColor(color[1], color[2], color[3], color[4])
         frame.rank:SetText(data.rank)
         frame.name:SetText(classColorName(data.name))
+        frame.playerName = data.name
         frame.badge:SetText(data.badge or "")
         frame:SetAlpha(data.role == "out" and 0.62 or 1)
         frame:Show()

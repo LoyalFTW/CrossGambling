@@ -25,6 +25,7 @@ local defaults = {
         stats = {},
         deathrollStats = {},
         modeStats = {},
+        playerCardStats = {},
         housestats = 0,
         joinstats = {},
         altStats = {},
@@ -91,6 +92,8 @@ function CrossGambling:NewGameState()
         result = nil,
         doubleOrNothingEnabled = false,
         doubleOrNothing = nil,
+        playerCardOutcome = nil,
+        playerCardCommitted = false,
         sessionStats = {},
     }
 end

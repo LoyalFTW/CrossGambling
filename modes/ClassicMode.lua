@@ -93,6 +93,7 @@ function CrossGambling:NewHighLowMode(name, description, options)
             pending[game.players[i].name] = true
         end
         game.highlow = { stage = "main", pending = pending }
+        addon:Announce(string.format("CrossGambling: Entries have closed. Type /roll %d now!", RollCeiling(addon)))
     end
 
     function Mode:GetRollRange(addon, game)

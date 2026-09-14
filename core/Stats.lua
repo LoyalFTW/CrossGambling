@@ -34,7 +34,7 @@ end
 
 local FULL_STATS_BATCH_SIZE = 18
 local FULL_STATS_BATCH_DELAY = 2
-local STATS_EXPORT_VERSION = "CrossGamblingStatsExport;4"
+local STATS_EXPORT_VERSION = "CrossGamblingStatsExport;5"
 local TRANSFER_BACKDROP = {
     bgFile = "Interface\\AddOns\\CrossGambling\\media\\CG.tga",
     edgeFile = "Interface\\AddOns\\CrossGambling\\media\\CG.tga",
@@ -211,6 +211,36 @@ local function appendModeStatLines(lines, modeStats)
     return count
 end
 
+local function appendPlayerCardLines(lines, playerCardStats)
+    for _, playerName in ipairs(sortedKeys(playerCardStats)) do
+        local record = playerCardStats[playerName] or {}
+        table.insert(lines, string.format(
+            "CARD;%s;%s;%s;%s;%s;%s;%s;%s;%s",
+            playerName,
+            tostring(record.games or 0),
+            tostring(record.wins or 0),
+            tostring(record.losses or 0),
+            tostring(record.pushes or 0),
+            tostring(record.streak or 0),
+            tostring(record.bestWinStreak or 0),
+            tostring(record.bestLossStreak or 0),
+            tostring(record.lastPlayed or 0)
+        ))
+        for _, modeName in ipairs(sortedKeys(record.modes)) do
+            local mode = record.modes[modeName] or {}
+            table.insert(lines, string.format(
+                "CARDMODE;%s;%s;%s;%s;%s;%s",
+                playerName,
+                modeName,
+                tostring(mode.games or 0),
+                tostring(mode.wins or 0),
+                tostring(mode.losses or 0),
+                tostring(mode.pushes or 0)
+            ))
+        end
+    end
+end
+
 local function createStatsExport(addon, exportType)
     exportType = exportType or "all"
     local global = (addon.db and addon.db.global) or {}
@@ -268,6 +298,7 @@ local function createStatsExport(addon, exportType)
     end
 
     appendModeStatLines(lines, global.modeStats or {})
+    appendPlayerCardLines(lines, global.playerCardStats or {})
 
     return table.concat(lines, "\n")
 end
@@ -280,6 +311,7 @@ local function parseStatsExport(text)
         joinstats = {},
         altStats = {},
         modeStats = {},
+        playerCardStats = {},
         housestats = 0,
         dataset = "FULL",
     }
@@ -290,6 +322,7 @@ local function parseStatsExport(text)
         joinstats = 0,
         altStats = 0,
         modeStats = 0,
+        playerCardStats = 0,
     }
 
     local sawVersion = false
@@ -301,7 +334,7 @@ local function parseStatsExport(text)
 
             if recordType == "CrossGamblingStatsExport" then
                 sawVersion = true
-                if fields[2] ~= "1" and fields[2] ~= "2" and fields[2] ~= "3" and fields[2] ~= "4" then
+                if fields[2] ~= "1" and fields[2] ~= "2" and fields[2] ~= "3" and fields[2] ~= "4" and fields[2] ~= "5" then
                     return nil, "Unsupported export version."
                 end
             elseif recordType == "DATASET" then
@@ -361,6 +394,49 @@ local function parseStatsExport(text)
                 imported.modeStats[modeName] = imported.modeStats[modeName] or {}
                 imported.modeStats[modeName][playerName] = amount
                 counts.modeStats = counts.modeStats + 1
+            elseif recordType == "CARD" then
+                local playerName = fields[2]
+                local games = tonumber(fields[3])
+                local wins = tonumber(fields[4])
+                local losses = tonumber(fields[5])
+                local pushes = tonumber(fields[6])
+                local streak = tonumber(fields[7])
+                local bestWinStreak = tonumber(fields[8])
+                local bestLossStreak = tonumber(fields[9])
+                local lastPlayed = tonumber(fields[10])
+                if not playerName or playerName == "" or not games or not wins or not losses or not pushes or not streak or not bestWinStreak or not bestLossStreak or not lastPlayed then
+                    return nil, "Invalid CARD line."
+                end
+                imported.playerCardStats[playerName] = {
+                    games = games,
+                    wins = wins,
+                    losses = losses,
+                    pushes = pushes,
+                    streak = streak,
+                    bestWinStreak = bestWinStreak,
+                    bestLossStreak = bestLossStreak,
+                    lastPlayed = lastPlayed > 0 and lastPlayed or nil,
+                    modes = {},
+                }
+                counts.playerCardStats = counts.playerCardStats + 1
+            elseif recordType == "CARDMODE" then
+                local playerName = fields[2]
+                local modeName = fields[3]
+                local games = tonumber(fields[4])
+                local wins = tonumber(fields[5])
+                local losses = tonumber(fields[6])
+                local pushes = tonumber(fields[7])
+                if not playerName or playerName == "" or not modeName or modeName == "" or not games or not wins or not losses or not pushes then
+                    return nil, "Invalid CARDMODE line."
+                end
+                imported.playerCardStats[playerName] = imported.playerCardStats[playerName] or { modes = {} }
+                imported.playerCardStats[playerName].modes = imported.playerCardStats[playerName].modes or {}
+                imported.playerCardStats[playerName].modes[modeName] = {
+                    games = games,
+                    wins = wins,
+                    losses = losses,
+                    pushes = pushes,
+                }
             else
                 return nil, "Unknown export line: " .. tostring(recordType)
             end
@@ -405,6 +481,7 @@ local function ensureStatsImportDialog(addon)
                 addon.db.global.altStats = pending.altStats
                 addon.db.global.housestats = pending.housestats
                 addon.db.global.modeStats = pending.modeStats
+                addon.db.global.playerCardStats = pending.playerCardStats
             else
                 addon.db.global.stats = pending.stats
                 addon.db.global.deathrollStats = pending.deathrollStats
@@ -412,6 +489,7 @@ local function ensureStatsImportDialog(addon)
                 addon.db.global.altStats = pending.altStats
                 addon.db.global.housestats = pending.housestats
                 addon.db.global.modeStats = pending.modeStats
+                addon.db.global.playerCardStats = pending.playerCardStats
             end
             addon.pendingStatsImport = nil
             addon:Print("Stats import complete.")
@@ -606,14 +684,15 @@ function CrossGambling:ImportStatsText(text)
 
     if counts then
         self:Print(string.format(
-            "Ready to import %s: %d stats, %d deathroll stats, %d session stats, %d mode stats, %d joined alts, and %d saved alt records.",
+            "Ready to import %s: %d stats, %d deathroll stats, %d session stats, %d mode stats, %d joined alts, %d saved alt records, and %d player cards.",
             imported.dataset or "FULL",
             counts.stats or 0,
             counts.deathrollStats or 0,
             counts.sessionStats or 0,
             counts.modeStats or 0,
             counts.joinstats or 0,
-            counts.altStats or 0
+            counts.altStats or 0,
+            counts.playerCardStats or 0
         ))
     end
 
@@ -906,6 +985,9 @@ function CrossGambling:deleteStat(info, player)
     local oldDeathrollStats = self.db.global.deathrollStats[storedDeathrollName] or 0
     self.db.global.stats[storedStatName] = nil
     self.db.global.deathrollStats[storedDeathrollName] = nil
+    if self.db.global.playerCardStats then
+        self.db.global.playerCardStats[storedStatName] = nil
+    end
     self.db.global.joinstats[normalizePlayerNameLocal(self, player, true)] = nil
     if self.db.global.altStats then
         self.db.global.altStats[normalizePlayerNameLocal(self, player, true)] = nil
@@ -932,6 +1014,7 @@ function CrossGambling:resetStats(info)
     self.db.global.joinstats = {}
     self.db.global.deathrollStats = {}
     self.db.global.modeStats = {}
+    self.db.global.playerCardStats = {}
     self.db.global.altStats = {}
     self.db.global.mergeAudit = {}
     self.game.sessionStats = {}

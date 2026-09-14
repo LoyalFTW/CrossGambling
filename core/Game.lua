@@ -15,6 +15,8 @@ function CrossGambling:ResetGameState()
     game.doubleOrNothingEnabled = false
     game.doubleOrNothing = nil
     game.completedDoubleOrNothing = nil
+    game.playerCardOutcome = nil
+    game.playerCardCommitted = false
     self:ResetPlayers()
 end
 
@@ -145,7 +147,6 @@ function CrossGambling:CGRolls()
             CGCall["Disable_Join"]()
         end
 
-        self:Announce("Entries have closed. Roll now!")
         self:DispatchModeHook("OnStartRolls")
 
     elseif game.state == "ROLL" then
@@ -385,6 +386,7 @@ end
 
 function CrossGambling:SettleDebt(loserName, winnerName, amount, modeName, winnerAmount)
     winnerAmount = winnerAmount or amount
+    self:TrackPlayerCardDebt(loserName, winnerName, amount, winnerAmount)
     self:updatePlayerStat(loserName, -amount, modeName)
     self:updatePlayerStat(winnerName, winnerAmount, modeName)
 
@@ -414,6 +416,7 @@ function CrossGambling:ApplyHouseCut(amount)
 end
 
 function CrossGambling:FinishGame(lines)
+    self:CommitPlayerCardGame()
     for _, line in ipairs(lines or {}) do
         self:Announce(line)
     end

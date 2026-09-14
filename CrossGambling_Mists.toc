@@ -38,6 +38,7 @@ core/Players.lua
 core/ModeRegistry.lua
 core/Game.lua
 core/Stats.lua
+core/PlayerCardStats.lua
 core/History.lua
 modes/ClassicMode.lua
 modes/BigTwoMode.lua
@@ -50,6 +51,7 @@ chat/CGTheme.lua
 chat/CGOptions.lua
 chat/CGChat.lua
 ui/GameBoard.lua
+ui/PlayerCard.lua
 ui/GUI.lua
 ui/ClassicGUI.lua
 dev/DebugBots.lua
