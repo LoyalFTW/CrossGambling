@@ -1,6 +1,8 @@
 
-function CrossGambling:ResetGameState()
+function CrossGambling:ResetGameState(preserveSession)
     local game = self.game
+    local sessionId = preserveSession and game.sessionId or nil
+    local protocolVersion = preserveSession and game.protocolVersion or nil
 
     self:UnregisterEvent("CHAT_MSG_SYSTEM")
     self:UnRegisterChatEvents()
@@ -9,6 +11,8 @@ function CrossGambling:ResetGameState()
     game.state = "START"
     game.host = false
     game.hostName = nil
+    game.sessionId = sessionId
+    game.protocolVersion = protocolVersion
     game.wager = nil
     game.houseCut = nil
     game.result = nil
@@ -17,6 +21,13 @@ function CrossGambling:ResetGameState()
     game.completedDoubleOrNothing = nil
     game.playerCardOutcome = nil
     game.playerCardCommitted = false
+    game.highlow = nil
+    game.deathroll = nil
+    game.elimination = nil
+    game.hotpotato = nil
+    game.overunder = nil
+    self.syncCandidate = nil
+    self.snapshotBuffers = nil
     self:ResetPlayers()
 end
 
@@ -40,6 +51,8 @@ function CrossGambling:HostNewGame()
         self:ResetGameState()
     end
 
+    game.sessionId = self:NewSessionId()
+    game.protocolVersion = self:GetCommProtocolVersion()
     game.host = true
     game.hostName = game.PlayerName
     game.wager = global.wager
@@ -69,6 +82,7 @@ function CrossGambling:HostNewGame()
     self:SendMsg("Chat_Method", game.chatMethod)
     self:SendMsg("SET_HOUSE", game.houseCut)
     self:SendMsg("HOST_NAME", game.PlayerName)
+    self:QueueStateBroadcast()
     return true
 end
 
@@ -148,6 +162,7 @@ function CrossGambling:CGRolls()
         end
 
         self:DispatchModeHook("OnStartRolls")
+        self:QueueStateBroadcast()
 
     elseif game.state == "ROLL" then
         local turn = self:GetCurrentTurn()
@@ -267,6 +282,7 @@ function CrossGambling:SyncDoubleOrNothingRoll()
         doubleOrNothing.turn,
         tostring(doubleOrNothing.max),
     }, "|"))
+    self:QueueStateBroadcast()
 end
 
 function CrossGambling:StartDoubleOrNothingRoll()
@@ -309,6 +325,7 @@ function CrossGambling:HandleDoubleOrNothingChat(playerName, text)
 
     doubleOrNothing.accepted[normalizedName] = true
     self:QueueGameBoardRefresh()
+    self:QueueStateBroadcast()
     if doubleOrNothing.accepted[loserKey] and doubleOrNothing.accepted[winnerKey] then
         self:StartDoubleOrNothingRoll()
     else
@@ -373,6 +390,7 @@ function CrossGambling:BeginDoubleOrNothing(loserName, winnerName, amount, modeN
     self:RegisterChatEvents()
     self:SendMsg("DOUBLE_OR_NOTHING_OFFER", table.concat({ loserName, winnerName, tostring(amount) }, "|"))
     self:QueueGameBoardRefresh()
+    self:QueueStateBroadcast()
     self:Announce(string.format("%s owes %s %sg. %s and %s: type 1 within 30 seconds for Double or Nothing, or type pass to settle now.", loserName, winnerName, self:addCommas(amount), loserName, winnerName))
 
     C_Timer.After(30, function()
@@ -430,6 +448,9 @@ function CrossGambling:CloseGame()
     end
 
     self:CaptureCompletedGameBoard()
+    if self.game.host then
+        self:SendStateSnapshot()
+    end
     self:DispatchModeHook("OnEnd")
 
     if self.game.host then

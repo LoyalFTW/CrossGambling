@@ -2,6 +2,9 @@
 CGCall = CGCall or {}
 
 local ADDON_PREFIX = "CrossGambling"
+local PROTOCOL_VERSION = 2
+local SNAPSHOT_CHUNK_SIZE = 160
+local MAX_SNAPSHOT_SIZE = 32768
 
 local hostOnlyMessages = {
     SET_WAGER = true,
@@ -17,7 +20,140 @@ local hostOnlyMessages = {
     GAME_OVER = true,
     DOUBLE_OR_NOTHING_OFFER = true,
     DOUBLE_OR_NOTHING_ROLL = true,
+    STATE_CHUNK = true,
 }
+
+local function EncodeLengthValue(tag, value)
+    value = tostring(value)
+    return tag .. #value .. ":" .. value
+end
+
+local function EncodeValue(value, depth)
+    depth = depth or 0
+    if depth > 8 then
+        return "z"
+    end
+    local valueType = type(value)
+    if valueType == "nil" then
+        return "z"
+    elseif valueType == "boolean" then
+        return value and "b1" or "b0"
+    elseif valueType == "number" then
+        return EncodeLengthValue("n", value)
+    elseif valueType == "string" then
+        return EncodeLengthValue("s", value)
+    elseif valueType ~= "table" then
+        return "z"
+    end
+    local keys = {}
+    for key in pairs(value) do
+        if type(key) == "string" or type(key) == "number" then
+            keys[#keys + 1] = key
+        end
+    end
+    table.sort(keys, function(a, b)
+        if type(a) == type(b) then
+            return a < b
+        end
+        return type(a) < type(b)
+    end)
+    local encoded = { "t", tostring(#keys), ":" }
+    for _, key in ipairs(keys) do
+        encoded[#encoded + 1] = EncodeValue(key, depth + 1)
+        encoded[#encoded + 1] = EncodeValue(value[key], depth + 1)
+    end
+    return table.concat(encoded)
+end
+
+local function DecodeLength(payload, position)
+    local colon = payload:find(":", position, true)
+    if not colon then
+        return nil
+    end
+    local length = tonumber(payload:sub(position, colon - 1))
+    if not length or length < 0 or length ~= math.floor(length) then
+        return nil
+    end
+    return length, colon + 1
+end
+
+local function DecodeValue(payload, position, depth, budget)
+    depth = depth or 0
+    if depth > 8 or budget.count > 2000 then
+        return nil
+    end
+    local tag = payload:sub(position, position)
+    if tag == "z" then
+        return nil, position + 1, true
+    elseif tag == "b" then
+        local flag = payload:sub(position + 1, position + 1)
+        if flag ~= "0" and flag ~= "1" then
+            return nil
+        end
+        return flag == "1", position + 2, true
+    elseif tag == "s" or tag == "n" then
+        local length, valueStart = DecodeLength(payload, position + 1)
+        if not length then
+            return nil
+        end
+        local valueEnd = valueStart + length - 1
+        if valueEnd > #payload then
+            return nil
+        end
+        local value = payload:sub(valueStart, valueEnd)
+        if tag == "n" then
+            value = tonumber(value)
+            if value == nil or value ~= value or value == math.huge or value == -math.huge then
+                return nil
+            end
+        end
+        return value, valueEnd + 1, true
+    elseif tag ~= "t" then
+        return nil
+    end
+    local count, entryStart = DecodeLength(payload, position + 1)
+    if not count or count > 500 or count ~= math.floor(count) then
+        return nil
+    end
+    local result = {}
+    local cursor = entryStart
+    for _ = 1, count do
+        budget.count = budget.count + 1
+        local key, nextCursor, keyOk = DecodeValue(payload, cursor, depth + 1, budget)
+        if not keyOk or (type(key) ~= "string" and type(key) ~= "number") then
+            return nil
+        end
+        local decoded, afterValue, valueOk = DecodeValue(payload, nextCursor, depth + 1, budget)
+        if not valueOk then
+            return nil
+        end
+        result[key] = decoded
+        cursor = afterValue
+    end
+    return result, cursor, true
+end
+
+local function CopyTable(source, depth)
+    if type(source) ~= "table" then
+        return source
+    end
+    depth = depth or 0
+    if depth > 6 then
+        return nil
+    end
+    local copy = {}
+    for key, value in pairs(source) do
+        if type(key) == "string" or type(key) == "number" then
+            local valueType = type(value)
+            if valueType == "table" then
+                copy[key] = CopyTable(value, depth + 1)
+            elseif valueType == "string" or valueType == "number" or valueType == "boolean" then
+                copy[key] = value
+            end
+        end
+    end
+    return copy
+end
 
 local function IsInInstanceGroup()
     return LE_PARTY_CATEGORY_INSTANCE ~= nil and IsInGroup(LE_PARTY_CATEGORY_INSTANCE)
@@ -36,6 +172,29 @@ function CrossGambling:ResolveChatChannel(method)
     return method
 end
 
+function CrossGambling:NewSessionId()
+    return string.format("%x%x", time(), math.random(1, 1073741823))
+end
+
+function CrossGambling:GetCommProtocolVersion()
+    return PROTOCOL_VERSION
+end
+
+function CrossGambling:SendProtocolMessage(event, payload, sessionId, method)
+    self.outgoingProtocolSequence = (self.outgoingProtocolSequence or 0) + 1
+    local message = table.concat({
+        "V" .. PROTOCOL_VERSION,
+        sessionId or "-",
+        tostring(self.outgoingProtocolSequence),
+        event,
+        payload or "",
+    }, "|")
+    local channel = self:ResolveChatChannel(method or (self.game and self.game.chatMethod))
+    if channel then
+        pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, "NORMAL", ADDON_PREFIX, message, channel)
+    end
+end
+
 function CrossGambling:SendMsg(event, arg1)
     local msg = event
     if arg1 ~= nil then
@@ -44,7 +203,226 @@ function CrossGambling:SendMsg(event, arg1)
 
     local method = self.game and self.game.chatMethod
     if method then
-        pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, "NORMAL", ADDON_PREFIX, msg, self:ResolveChatChannel(method))
+        if self.game.sessionId then
+            self:SendProtocolMessage(event, arg1 ~= nil and tostring(arg1) or "", self.game.sessionId, method)
+        end
+        if event ~= "STATE_CHUNK" then
+            pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, "NORMAL", ADDON_PREFIX, msg, self:ResolveChatChannel(method))
+        end
+    end
+end
+
+function CrossGambling:BuildPublicGameState()
+    local game = self.game or {}
+    local snapshot = {
+        mode = game.mode,
+        state = game.state,
+        chatMethod = game.chatMethod,
+        wager = game.wager,
+        houseCut = game.houseCut,
+        house = game.house == true,
+        hostName = game.hostName,
+        doubleOrNothingEnabled = game.doubleOrNothingEnabled == true,
+        players = CopyTable(game.players or {}),
+        highlow = CopyTable(game.highlow),
+        deathroll = CopyTable(game.deathroll),
+        elimination = CopyTable(game.elimination),
+        overunder = CopyTable(game.overunder),
+        doubleOrNothing = CopyTable(game.doubleOrNothing),
+        completedDoubleOrNothing = CopyTable(game.completedDoubleOrNothing),
+    }
+    if game.hotpotato then
+        snapshot.hotpotato = {
+            round = game.hotpotato.round,
+            holder = game.hotpotato.holder,
+            pending = CopyTable(game.hotpotato.pending),
+            exploded = game.hotpotato.exploded == true,
+        }
+    end
+    return snapshot
+end
+
+function CrossGambling:SendStateSnapshot()
+    local game = self.game
+    if not game or not game.host or not game.sessionId or game.state == "START" then
+        return
+    end
+    local payload = EncodeValue(self:BuildPublicGameState())
+    if #payload > MAX_SNAPSHOT_SIZE then
+        return
+    end
+    self.snapshotSequence = (self.snapshotSequence or 0) + 1
+    local snapshotId = tostring(self.snapshotSequence)
+    local total = math.max(1, math.ceil(#payload / SNAPSHOT_CHUNK_SIZE))
+    for index = 1, total do
+        local startAt = ((index - 1) * SNAPSHOT_CHUNK_SIZE) + 1
+        local chunk = payload:sub(startAt, startAt + SNAPSHOT_CHUNK_SIZE - 1)
+        self:SendMsg("STATE_CHUNK", table.concat({ snapshotId, index, total, chunk }, "|"))
+    end
+end
+
+function CrossGambling:QueueStateBroadcast(delay)
+    local game = self.game
+    if not game or not game.host or not game.sessionId or self.stateBroadcastSession == game.sessionId then
+        return
+    end
+    local sessionId = game.sessionId
+    self.stateBroadcastSession = sessionId
+    C_Timer.After(delay or 0.2, function()
+        if self.stateBroadcastSession == sessionId then
+            self.stateBroadcastSession = nil
+        end
+        if self.game and self.game.host and self.game.sessionId == sessionId then
+            self:SendStateSnapshot()
+        end
+    end)
+end
+
+function CrossGambling:RequestStateSync()
+    if not self.game or self.game.host or self.game.state ~= "START" then
+        return
+    end
+    local sent = {}
+    if IsInGroup() then
+        local channel = self:ResolveChatChannel(IsInRaid() and "RAID" or "PARTY")
+        sent[channel] = true
+        self:SendProtocolMessage("SYNC_REQUEST", "", "-", channel)
+    end
+    if IsInGuild() and not sent.GUILD then
+        self:SendProtocolMessage("SYNC_REQUEST", "", "-", "GUILD")
+    end
+end
+
+function CrossGambling:ApplyStateSnapshot(snapshot, sender, sessionId)
+    if type(snapshot) ~= "table" or type(snapshot.players) ~= "table" then
+        return
+    end
+    if not self.modeRegistry[snapshot.mode] then
+        return
+    end
+    local validStates = {
+        REGISTER = true,
+        ROLL = true,
+        DOUBLE_OR_NOTHING_OFFER = true,
+        DOUBLE_OR_NOTHING_ROLL = true,
+    }
+    if not validStates[snapshot.state] then
+        return
+    end
+    local tableFields = {
+        "highlow",
+        "deathroll",
+        "elimination",
+        "hotpotato",
+        "overunder",
+        "doubleOrNothing",
+        "completedDoubleOrNothing",
+    }
+    for _, field in ipairs(tableFields) do
+        if snapshot[field] ~= nil and type(snapshot[field]) ~= "table" then
+            return
+        end
+    end
+    if #snapshot.players > 80 then
+        return
+    end
+    local players = {}
+    local seenPlayers = {}
+    for index = 1, #snapshot.players do
+        local player = snapshot.players[index]
+        local name = type(player) == "table" and player.name or nil
+        if type(name) ~= "string" or name == "" or #name > 64 or seenPlayers[name] then
+            return
+        end
+        local roll = player.roll
+        if roll ~= nil and type(roll) ~= "string" and type(roll) ~= "number" then
+            return
+        end
+        if type(roll) == "string" and #roll > 32 then
+            return
+        end
+        if type(roll) == "number" and (roll ~= roll or roll == math.huge or roll == -math.huge) then
+            return
+        end
+        seenPlayers[name] = true
+        players[index] = { name = name, roll = roll }
+    end
+    local game = self.game
+    if game.state ~= "START" and (game.hostName ~= sender or game.sessionId ~= sessionId) then
+        return
+    end
+    game.sessionId = sessionId
+    game.protocolVersion = PROTOCOL_VERSION
+    game.host = false
+    game.hostName = sender
+    game.mode = snapshot.mode
+    game.state = snapshot.state
+    game.chatMethod = snapshot.chatMethod == "GUILD" and "GUILD" or snapshot.chatMethod == "RAID" and "RAID" or "PARTY"
+    game.wager = self:ValidateWager(snapshot.wager) or self:GetWager()
+    game.houseCut = self:NormalizeHouseCutValue(snapshot.houseCut) or self:GetHouseCut()
+    game.house = snapshot.house == true
+    game.doubleOrNothingEnabled = snapshot.doubleOrNothingEnabled == true
+    game.players = players
+    game.playerIndexByName = nil
+    game.highlow = snapshot.highlow
+    game.deathroll = snapshot.deathroll
+    game.elimination = snapshot.elimination
+    game.hotpotato = snapshot.hotpotato
+    game.overunder = snapshot.overunder
+    game.doubleOrNothing = snapshot.doubleOrNothing
+    game.completedDoubleOrNothing = snapshot.completedDoubleOrNothing
+    self.syncCandidate = nil
+    if self.ClearCompletedGameBoard then
+        self:ClearCompletedGameBoard()
+    end
+    if CGCall["DisableClient"] then
+        CGCall["DisableClient"]()
+    end
+    if self.QueueGameBoardRefresh then
+        self:QueueGameBoardRefresh()
+    end
+end
+
+function CrossGambling:ReceiveStateChunk(payload, sender, sessionId)
+    local snapshotId, indexText, totalText, chunk = strmatch(payload or "", "^([^|]+)|(%d+)|(%d+)|(.*)$")
+    local index = tonumber(indexText)
+    local total = tonumber(totalText)
+    if not snapshotId or not index or not total or total < 1 or total > 256 or index < 1 or index > total then
+        return
+    end
+    local now = GetTime()
+    self.snapshotBuffers = self.snapshotBuffers or {}
+    for key, buffer in pairs(self.snapshotBuffers) do
+        if now - buffer.createdAt > 15 then
+            self.snapshotBuffers[key] = nil
+        end
+    end
+    local key = sender .. "\031" .. sessionId .. "\031" .. snapshotId
+    local buffer = self.snapshotBuffers[key]
+    if not buffer then
+        buffer = { chunks = {}, received = 0, total = total, size = 0, createdAt = now }
+        self.snapshotBuffers[key] = buffer
+    elseif buffer.total ~= total then
+        self.snapshotBuffers[key] = nil
+        return
+    end
+    if not buffer.chunks[index] then
+        buffer.chunks[index] = chunk
+        buffer.received = buffer.received + 1
+        buffer.size = buffer.size + #chunk
+    end
+    if buffer.size > MAX_SNAPSHOT_SIZE then
+        self.snapshotBuffers[key] = nil
+        return
+    end
+    if buffer.received ~= buffer.total then
+        return
+    end
+    local serialized = table.concat(buffer.chunks)
+    self.snapshotBuffers[key] = nil
+    local snapshot, position, ok = DecodeValue(serialized, 1, 0, { count = 0 })
+    if ok and position == #serialized + 1 then
+        self:ApplyStateSnapshot(snapshot, sender, sessionId)
     end
 end
 
@@ -110,12 +488,81 @@ function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
         return
     end
 
+    local shortSender = self:ShortPlayerName(sender)
+    local protocol, sessionId, sequenceText, protocolEvent, protocolPayload = strmatch(msg, "^V(%d+)|([^|]+)|(%d+)|([^|]+)|(.*)$")
+    if protocol then
+        if tonumber(protocol) ~= PROTOCOL_VERSION then
+            return
+        end
+        self.protocolPeers = self.protocolPeers or {}
+        self.protocolPeers[shortSender] = PROTOCOL_VERSION
+        self.protocolSequences = self.protocolSequences or {}
+        local sequenceKey = shortSender .. "\031" .. sessionId
+        local sequence = tonumber(sequenceText)
+        if sequence <= (self.protocolSequences[sequenceKey] or 0) then
+            return
+        end
+        self.protocolSequences[sequenceKey] = sequence
+
+        if protocolEvent == "SYNC_REQUEST" then
+            local hostChannel = self.game and self:ResolveChatChannel(self.game.chatMethod)
+            if self.game.host and self.game.state ~= "START" and hostChannel == channel then
+                self:QueueStateBroadcast(0.1)
+            end
+            return
+        end
+
+        local isStart = protocolEvent == "R_NewGame" or protocolEvent == "New_Game"
+        if protocolEvent == "CHAT_MSG" then
+            if self.game.state == "START" or self.game.sessionId ~= sessionId then
+                return
+            end
+        elseif self.game.host then
+            if shortSender ~= self.game.hostName or sessionId ~= self.game.sessionId then
+                return
+            end
+        elseif self.game.sessionId ~= sessionId or self.game.hostName ~= shortSender then
+            if isStart and (self.game.state == "START" or self.game.hostName == shortSender) then
+                if self.game.sessionId ~= sessionId then
+                    self:ResetGameState()
+                end
+                self.game.sessionId = sessionId
+                self.game.protocolVersion = PROTOCOL_VERSION
+                self.game.hostName = shortSender
+            elseif protocolEvent == "STATE_CHUNK" and self.game.state == "START" then
+                local candidate = self.syncCandidate
+                if candidate and GetTime() - candidate.createdAt > 15 then
+                    candidate = nil
+                    self.syncCandidate = nil
+                end
+                if candidate and (candidate.sender ~= shortSender or candidate.sessionId ~= sessionId) then
+                    return
+                end
+                self.syncCandidate = candidate or { sender = shortSender, sessionId = sessionId, createdAt = GetTime() }
+            else
+                return
+            end
+        end
+
+        if protocolEvent == "STATE_CHUNK" then
+            if self.game.host then
+                return
+            end
+            self:ReceiveStateChunk(protocolPayload, shortSender, sessionId)
+            return
+        end
+        msg = protocolEvent
+        if protocolPayload ~= "" then
+            msg = msg .. ":" .. protocolPayload
+        end
+    elseif self.protocolPeers and self.protocolPeers[shortSender] == PROTOCOL_VERSION then
+        return
+    end
+
     local eventType, rest = strmatch(msg, "^([^:]+):?(.*)$")
     if not eventType then
         return
     end
-
-    local shortSender = self:ShortPlayerName(sender)
 
     if eventType == "CHAT_MSG" then
         local name, class, message = strmatch(rest, "^([^:]+):([^:]+):(.+)$")
@@ -142,6 +589,10 @@ function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
 
     if CGCall[eventType] then
         CGCall[eventType](arg1, arg2, shortSender)
+    end
+
+    if self.game.host and eventType ~= "GAME_OVER" then
+        self:QueueStateBroadcast()
     end
 end
 
@@ -214,7 +665,7 @@ CGCall["New_Game"] = function(_, _, sender)
         return
     end
 
-    self:ResetGameState()
+    self:ResetGameState(self.game.sessionId ~= nil)
     self.game.hostName = sender
     self.game.state = "REGISTER"
 

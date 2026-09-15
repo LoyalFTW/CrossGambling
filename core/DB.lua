@@ -83,6 +83,8 @@ function CrossGambling:NewGameState()
         house = false,
         host = false,
         hostName = nil,
+        sessionId = nil,
+        protocolVersion = nil,
         wager = nil,
         houseCut = nil,
         players = {},
