@@ -23,6 +23,12 @@ local hostOnlyMessages = {
     STATE_CHUNK = true,
 }
 
+local skipStateBroadcast = {
+    GAME_OVER = true,
+    ADD_PLAYER = true,
+    Remove_Player = true,
+}
+
 local function EncodeLengthValue(tag, value)
     value = tostring(value)
     return tag .. #value .. ":" .. value
@@ -591,7 +597,7 @@ function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
         CGCall[eventType](arg1, arg2, shortSender)
     end
 
-    if self.game.host and eventType ~= "GAME_OVER" then
+    if self.game.host and not skipStateBroadcast[eventType] then
         self:QueueStateBroadcast()
     end
 end

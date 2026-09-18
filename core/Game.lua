@@ -125,10 +125,15 @@ function CrossGambling:RegisterGame(text, playerName)
         end
 
         self:SendMsg("ADD_PLAYER", playerName)
+        if self:registerPlayer(playerName) then
+            self:AddPlayer(playerName)
+        end
 
     elseif lowered == leaveWord:lower() then
         if self:getPlayerByName(playerName) then
             self:SendMsg("Remove_Player", playerName)
+            self:RemovePlayer(playerName)
+            self:unregisterPlayer(playerName)
         end
     end
 end
