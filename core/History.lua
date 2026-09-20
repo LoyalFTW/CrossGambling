@@ -97,6 +97,9 @@ function CrossGambling:AddAuditEntry(entry)
     if not self.db or not self.db.global or type(entry) ~= "table" then return end
 
     self.db.global.auditLog = self.db.global.auditLog or {}
+    if not entry.profile and type(self.GetActiveStatProfile) == "function" then
+        entry.profile = self:GetActiveStatProfile()
+    end
     entry.timestamp = tonumber(entry.timestamp) or time()
     table.insert(self.db.global.auditLog, entry)
     self:TrimAuditLog()
@@ -199,6 +202,9 @@ function CrossGambling:FormatAuditEntry(entry)
     end
 
     local ts = self:FormatAuditTimestamp(entry.timestamp, true)
+    if entry.profile then
+        ts = ts .. " · " .. tostring(entry.profile)
+    end
     local dim = "|cff888888"
     local gold = "|cffffd100"
     local name = "|cffffff00"

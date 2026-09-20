@@ -433,6 +433,9 @@ function CrossGambling:ApplyHouseCut(amount)
     if houseAmount > 0 then
         self:updatePlayerStat("guild", houseAmount)
         self.db.global.housestats = (self.db.global.housestats or 0) + houseAmount
+        local _, profile = self:GetActiveStatProfile()
+        profile.housestats = (profile.housestats or 0) + houseAmount
+        profile.updatedAt = time()
     end
 
     return amount - houseAmount, houseAmount

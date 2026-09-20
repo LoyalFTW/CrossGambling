@@ -26,6 +26,9 @@ local defaults = {
         deathrollStats = {},
         modeStats = {},
         playerCardStats = {},
+        statProfiles = {},
+        activeStatProfile = "General",
+        statProfilesInitialized = false,
         housestats = 0,
         joinstats = {},
         altStats = {},
@@ -110,6 +113,7 @@ function CrossGambling:InitDB()
         defaultProfile = true,
     })
     self.game = self:NewGameState()
+    self:EnsureStatProfiles()
     self:RebuildBanCache()
 end
 

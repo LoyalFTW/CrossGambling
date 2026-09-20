@@ -534,7 +534,7 @@ function CGOptions:Build(isSlick)
     _buildCount = _buildCount + 1
     local frameName = "CGOptionsFrame" .. _buildCount
     local win = CreateFrame("Frame", frameName, UIParent, isSlick and "BackdropTemplate" or "BasicFrameTemplateWithInset")
-    win:SetSize(isSlick and 380 or 340, 445)
+    win:SetSize(isSlick and 380 or 340, 477)
     StyleFrameChrome(win, isSlick)
     AnchorToMainFrame(win)
     win:SetMovable(true)
@@ -750,9 +750,25 @@ function CGOptions:Build(isSlick)
     end)
     AttachTooltip(leaveEB, "Leave Word", "The exact chat message joined players type during registration to withdraw. Press Enter or click away to save it.")
 
-    Divider(gamePanel, START_Y - ROW_H*7 - 4)
+    RowLabel(gamePanel, START_Y - ROW_H*7, "History Profile:")
+    local profileBtn = MakeButton(gamePanel, "General", 115, 22)
+    profileBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*7 + 4)
+    profileBtn:SetScript("OnClick", function() GetAddon():ShowStatProfilesFrame() end)
+    profileBtn:HookScript("OnEnter", function(self)
+        local a = GetAddon()
+        local profileName = a and a.db and a.db.global and a.db.global.activeStatProfile or "General"
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Active History Profile", 1, 0.82, 0)
+        GameTooltip:AddLine(profileName, 1, 1, 1)
+        GameTooltip:AddLine("New results are saved here in addition to Session and All-Time Stats. Click to manage profiles.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    profileBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+    self.historyProfileButton = profileBtn
 
-    local statY = START_Y - ROW_H*7 - 12
+    Divider(gamePanel, START_Y - ROW_H*8 - 4)
+
+    local statY = START_Y - ROW_H*8 - 12
     local BW, BH = 138, 26
     local statsX = isSlick and 21 or 0
 
@@ -785,7 +801,7 @@ function CGOptions:Build(isSlick)
     resetBtn:SetScript("OnClick", function()
         if not StaticPopupDialogs["CG_RESET_STATS"] then
             StaticPopupDialogs["CG_RESET_STATS"] = {
-                text         = "Reset ALL stats? This cannot be undone.",
+                text         = "Reset ALL stats and history profiles? This cannot be undone.",
                 button1      = "Yes", button2 = "No",
                 OnAccept     = function() GetAddon():resetStats(nil) end,
                 timeout      = 0, whileDead = true, hideOnEscape = true,
@@ -804,6 +820,7 @@ function CGOptions:Build(isSlick)
         houseCutEB:SetText(tostring(a.db.global.houseCut or 10))
         joinEB:SetText(a.db.global.joinWord or "1")
         leaveEB:SetText(a.db.global.leaveWord or "-1")
+        CGOptions:RefreshHistoryProfile()
     end)
 
     local themePanel = tabPanels[2]
@@ -1360,6 +1377,17 @@ function CGOptions:Rebuild(isSlick)
         self.ShowTab = nil
     end
     self:Build(isSlick)
+end
+
+function CGOptions:RefreshHistoryProfile()
+    if not self.historyProfileButton then return end
+    local a = GetAddon()
+    local profileName = a and a.db and a.db.global and a.db.global.activeStatProfile or "General"
+    if self._isSlick then
+        SetSlickButtonText(self.historyProfileButton, profileName)
+    else
+        self.historyProfileButton:SetText(profileName)
+    end
 end
 
 function CGOptions:Toggle()
