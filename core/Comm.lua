@@ -2,6 +2,7 @@
 CGCall = CGCall or {}
 
 local ADDON_PREFIX = "CrossGambling"
+local ROSTER_PREFIX = "CGRoster"
 local PROTOCOL_VERSION = 2
 local SNAPSHOT_CHUNK_SIZE = 160
 local MAX_SNAPSHOT_SIZE = 32768
@@ -27,6 +28,12 @@ local skipStateBroadcast = {
     GAME_OVER = true,
     ADD_PLAYER = true,
     Remove_Player = true,
+}
+
+local immediateMessages = {
+    R_NewGame = true,
+    New_Game = true,
+    GAME_OVER = true,
 }
 
 local function EncodeLengthValue(tag, value)
@@ -186,7 +193,7 @@ function CrossGambling:GetCommProtocolVersion()
     return PROTOCOL_VERSION
 end
 
-function CrossGambling:SendProtocolMessage(event, payload, sessionId, method)
+function CrossGambling:SendProtocolMessage(event, payload, sessionId, method, priorityOverride)
     self.outgoingProtocolSequence = (self.outgoingProtocolSequence or 0) + 1
     local message = table.concat({
         "V" .. PROTOCOL_VERSION,
@@ -197,7 +204,8 @@ function CrossGambling:SendProtocolMessage(event, payload, sessionId, method)
     }, "|")
     local channel = self:ResolveChatChannel(method or (self.game and self.game.chatMethod))
     if channel then
-        pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, "NORMAL", ADDON_PREFIX, message, channel)
+        local priority = priorityOverride or (event == "STATE_CHUNK" and "BULK" or immediateMessages[event] and "ALERT" or "NORMAL")
+        pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, priority, ADDON_PREFIX, message, channel)
     end
 end
 
@@ -213,7 +221,8 @@ function CrossGambling:SendMsg(event, arg1)
             self:SendProtocolMessage(event, arg1 ~= nil and tostring(arg1) or "", self.game.sessionId, method)
         end
         if event ~= "STATE_CHUNK" then
-            pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, "NORMAL", ADDON_PREFIX, msg, self:ResolveChatChannel(method))
+            local priority = immediateMessages[event] and "ALERT" or "NORMAL"
+            pcall(ChatThrottleLib.SendAddonMessage, ChatThrottleLib, priority, ADDON_PREFIX, msg, self:ResolveChatChannel(method))
         end
     end
 end
@@ -229,6 +238,8 @@ function CrossGambling:BuildPublicGameState()
         house = game.house == true,
         hostName = game.hostName,
         doubleOrNothingEnabled = game.doubleOrNothingEnabled == true,
+        rosterRevision = game.rosterRevision or 0,
+        liveRevision = game.liveRevision or 0,
         players = CopyTable(game.players or {}),
         highlow = CopyTable(game.highlow),
         deathroll = CopyTable(game.deathroll),
@@ -248,7 +259,7 @@ function CrossGambling:BuildPublicGameState()
     return snapshot
 end
 
-function CrossGambling:SendStateSnapshot()
+function CrossGambling:SendStateSnapshot(priority)
     local game = self.game
     if not game or not game.host or not game.sessionId or game.state == "START" then
         return
@@ -263,7 +274,7 @@ function CrossGambling:SendStateSnapshot()
     for index = 1, total do
         local startAt = ((index - 1) * SNAPSHOT_CHUNK_SIZE) + 1
         local chunk = payload:sub(startAt, startAt + SNAPSHOT_CHUNK_SIZE - 1)
-        self:SendMsg("STATE_CHUNK", table.concat({ snapshotId, index, total, chunk }, "|"))
+        self:SendProtocolMessage("STATE_CHUNK", table.concat({ snapshotId, index, total, chunk }, "|"), game.sessionId, game.chatMethod, priority or "BULK")
     end
 end
 
@@ -300,6 +311,9 @@ function CrossGambling:RequestStateSync()
 end
 
 function CrossGambling:ApplyStateSnapshot(snapshot, sender, sessionId)
+    if self.closedSessions and self.closedSessions[sessionId] then
+        return
+    end
     if type(snapshot) ~= "table" or type(snapshot.players) ~= "table" then
         return
     end
@@ -354,6 +368,7 @@ function CrossGambling:ApplyStateSnapshot(snapshot, sender, sessionId)
         players[index] = { name = name, roll = roll }
     end
     local game = self.game
+    local previousSessionId = game.sessionId
     if game.state ~= "START" and (game.hostName ~= sender or game.sessionId ~= sessionId) then
         return
     end
@@ -368,15 +383,29 @@ function CrossGambling:ApplyStateSnapshot(snapshot, sender, sessionId)
     game.houseCut = self:NormalizeHouseCutValue(snapshot.houseCut) or self:GetHouseCut()
     game.house = snapshot.house == true
     game.doubleOrNothingEnabled = snapshot.doubleOrNothingEnabled == true
-    game.players = players
-    game.playerIndexByName = nil
-    game.highlow = snapshot.highlow
-    game.deathroll = snapshot.deathroll
-    game.elimination = snapshot.elimination
-    game.hotpotato = snapshot.hotpotato
-    game.overunder = snapshot.overunder
-    game.doubleOrNothing = snapshot.doubleOrNothing
-    game.completedDoubleOrNothing = snapshot.completedDoubleOrNothing
+    local snapshotRosterRevision = tonumber(snapshot.rosterRevision)
+    local snapshotLiveRevision = tonumber(snapshot.liveRevision)
+    local currentRosterRevision = tonumber(game.rosterRevision) or 0
+    local currentLiveRevision = tonumber(game.liveRevision) or 0
+    local rosterIsCurrent = previousSessionId ~= sessionId or currentRosterRevision == 0 or (snapshotRosterRevision and snapshotRosterRevision >= currentRosterRevision)
+    local liveStateIsCurrent = previousSessionId ~= sessionId or currentLiveRevision == 0 or (snapshotLiveRevision and snapshotLiveRevision >= currentLiveRevision)
+    local replaceRoster = rosterIsCurrent and liveStateIsCurrent
+    if replaceRoster then
+        game.players = players
+        game.playerIndexByName = nil
+        game.rosterRevision = snapshotRosterRevision or currentRosterRevision
+        game.liveRevision = snapshotLiveRevision or currentLiveRevision
+    end
+    if liveStateIsCurrent then
+        game.liveRevision = snapshotLiveRevision or currentLiveRevision
+        game.highlow = snapshot.highlow
+        game.deathroll = snapshot.deathroll
+        game.elimination = snapshot.elimination
+        game.hotpotato = snapshot.hotpotato
+        game.overunder = snapshot.overunder
+        game.doubleOrNothing = snapshot.doubleOrNothing
+        game.completedDoubleOrNothing = snapshot.completedDoubleOrNothing
+    end
     self.syncCandidate = nil
     if self.ClearCompletedGameBoard then
         self:ClearCompletedGameBoard()
@@ -389,7 +418,7 @@ function CrossGambling:ApplyStateSnapshot(snapshot, sender, sessionId)
     end
 end
 
-function CrossGambling:ReceiveStateChunk(payload, sender, sessionId)
+function CrossGambling:ReceiveStateChunk(payload, sender, sessionId, sequence)
     local snapshotId, indexText, totalText, chunk = strmatch(payload or "", "^([^|]+)|(%d+)|(%d+)|(.*)$")
     local index = tonumber(indexText)
     local total = tonumber(totalText)
@@ -406,7 +435,7 @@ function CrossGambling:ReceiveStateChunk(payload, sender, sessionId)
     local key = sender .. "\031" .. sessionId .. "\031" .. snapshotId
     local buffer = self.snapshotBuffers[key]
     if not buffer then
-        buffer = { chunks = {}, received = 0, total = total, size = 0, createdAt = now }
+        buffer = { chunks = {}, received = 0, total = total, size = 0, createdAt = now, maxSequence = sequence or 0 }
         self.snapshotBuffers[key] = buffer
     elseif buffer.total ~= total then
         self.snapshotBuffers[key] = nil
@@ -416,6 +445,7 @@ function CrossGambling:ReceiveStateChunk(payload, sender, sessionId)
         buffer.chunks[index] = chunk
         buffer.received = buffer.received + 1
         buffer.size = buffer.size + #chunk
+        buffer.maxSequence = math.max(buffer.maxSequence or 0, sequence or 0)
     end
     if buffer.size > MAX_SNAPSHOT_SIZE then
         self.snapshotBuffers[key] = nil
@@ -426,9 +456,15 @@ function CrossGambling:ReceiveStateChunk(payload, sender, sessionId)
     end
     local serialized = table.concat(buffer.chunks)
     self.snapshotBuffers[key] = nil
+    local stateSequenceKey = sender .. "\031" .. sessionId
+    if buffer.maxSequence < ((self.lastAppliedStateSequences and self.lastAppliedStateSequences[stateSequenceKey]) or 0) then
+        return
+    end
     local snapshot, position, ok = DecodeValue(serialized, 1, 0, { count = 0 })
     if ok and position == #serialized + 1 then
         self:ApplyStateSnapshot(snapshot, sender, sessionId)
+        self.lastAppliedStateSequences = self.lastAppliedStateSequences or {}
+        self.lastAppliedStateSequences[stateSequenceKey] = math.max(self.lastAppliedStateSequences[stateSequenceKey] or 0, buffer.maxSequence)
     end
 end
 
@@ -488,14 +524,138 @@ function CrossGambling:Announce(message)
     end
 end
 
+function CrossGambling:SendLiveRosterMessage(operation, playerName)
+    local game = self.game
+    if not game or not game.host or not game.sessionId then
+        return
+    end
+
+    if operation == "N" then
+        game.rosterRevision = 0
+    else
+        game.rosterRevision = (game.rosterRevision or 0) + 1
+    end
+
+    local channel = self:ResolveChatChannel(game.chatMethod)
+    if channel then
+        local message = table.concat({ game.sessionId, tostring(game.rosterRevision), operation, playerName or "" }, "|")
+        pcall(C_ChatInfo.SendAddonMessage, ROSTER_PREFIX, message, channel)
+    end
+end
+
+function CrossGambling:SendLiveRollMessage(playerName, value)
+    local game = self.game
+    if not game or not game.host or not game.sessionId then
+        return
+    end
+
+    game.liveRevision = (game.liveRevision or 0) + 1
+    local channel = self:ResolveChatChannel(game.chatMethod)
+    if channel then
+        local message = table.concat({ game.sessionId, tostring(game.liveRevision), "L", playerName, tostring(value) }, "|")
+        pcall(C_ChatInfo.SendAddonMessage, ROSTER_PREFIX, message, channel)
+    end
+end
+
+function CrossGambling:OnLiveRosterMessage(msg, channel, sender)
+    local sessionId, revisionText, operation, playerName = strmatch(msg or "", "^([^|]+)|(%d+)|([NARL])|(.*)$")
+    local revision = tonumber(revisionText)
+    local shortSender = self:ShortPlayerName(sender)
+    local game = self.game
+    if not sessionId or not revision or not shortSender or self:NormalizePlayerName(shortSender) == self:NormalizePlayerName(game.PlayerName) or game.host or (self.closedSessions and self.closedSessions[sessionId]) then
+        return
+    end
+
+    if operation == "L" then
+        if game.sessionId ~= sessionId or game.hostName ~= shortSender or revision <= (game.liveRevision or 0) then
+            return
+        end
+        local rollPlayer, rollValue = strmatch(playerName, "^([^|]+)|(.*)$")
+        local player = rollPlayer and self:getPlayerByName(self:ShortPlayerName(rollPlayer)) or nil
+        if not player or rollValue == nil or #rollValue > 32 then
+            return
+        end
+        player.roll = tonumber(rollValue) or rollValue
+        game.liveRevision = revision
+        self:DispatchModeHook("OnRemoteRoll", player.name, rollValue)
+        self:QueueGameBoardRefresh()
+        return
+    end
+
+    if operation == "N" then
+        if game.sessionId == sessionId and (game.rosterRevision or 0) > revision then
+            return
+        end
+        if game.state ~= "START" and (game.sessionId ~= sessionId or game.hostName ~= shortSender) then
+            return
+        end
+        if game.sessionId ~= sessionId then
+            self:ResetGameState()
+        end
+        game.sessionId = sessionId
+        game.protocolVersion = PROTOCOL_VERSION
+        game.host = false
+        game.hostName = shortSender
+        game.state = "REGISTER"
+        game.rosterRevision = revision
+        self:ResetPlayers()
+        if CGCall["DisableClient"] then
+            CGCall["DisableClient"]()
+        end
+        self:QueueGameBoardRefresh()
+        return
+    end
+
+    if game.sessionId ~= sessionId then
+        if game.state ~= "START" then
+            return
+        end
+        self:ResetGameState()
+        game.sessionId = sessionId
+        game.protocolVersion = PROTOCOL_VERSION
+        game.hostName = shortSender
+        game.state = "REGISTER"
+        if CGCall["DisableClient"] then
+            CGCall["DisableClient"]()
+        end
+    elseif game.hostName ~= shortSender then
+        return
+    end
+
+    if revision <= (game.rosterRevision or 0) or playerName == "" or #playerName > 64 then
+        return
+    end
+
+    playerName = self:ShortPlayerName(playerName)
+    game.rosterRevision = revision
+    if operation == "A" then
+        self:registerPlayer(playerName)
+    else
+        self:unregisterPlayer(playerName)
+    end
+    self:QueueGameBoardRefresh()
+end
+
 
 function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
+    if prefix == ROSTER_PREFIX then
+        self:OnLiveRosterMessage(msg, channel, sender)
+        return
+    end
     if prefix ~= ADDON_PREFIX or type(msg) ~= "string" then
         return
     end
 
     local shortSender = self:ShortPlayerName(sender)
+    if self:NormalizePlayerName(shortSender) == self:NormalizePlayerName(self.game and self.game.PlayerName) then
+        local isPanelChat = strmatch(msg, "^CHAT_MSG:") or strmatch(msg, "^V%d+|[^|]+|%d+|CHAT_MSG|")
+        if not isPanelChat then
+            return
+        end
+    end
     local protocol, sessionId, sequenceText, protocolEvent, protocolPayload = strmatch(msg, "^V(%d+)|([^|]+)|(%d+)|([^|]+)|(.*)$")
+    local receivedProtocolSequence
+    local receivedSessionId
     if protocol then
         if tonumber(protocol) ~= PROTOCOL_VERSION then
             return
@@ -503,12 +663,31 @@ function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
         self.protocolPeers = self.protocolPeers or {}
         self.protocolPeers[shortSender] = PROTOCOL_VERSION
         self.protocolSequences = self.protocolSequences or {}
+        self.protocolSeenSequences = self.protocolSeenSequences or {}
         local sequenceKey = shortSender .. "\031" .. sessionId
         local sequence = tonumber(sequenceText)
-        if sequence <= (self.protocolSequences[sequenceKey] or 0) then
+        local highestSequence = self.protocolSequences[sequenceKey] or 0
+        local seenSequences = self.protocolSeenSequences[sequenceKey]
+        if sequence < highestSequence - 512 then
             return
         end
-        self.protocolSequences[sequenceKey] = sequence
+        if not seenSequences then
+            seenSequences = {}
+            self.protocolSeenSequences[sequenceKey] = seenSequences
+        elseif seenSequences[sequence] then
+            return
+        end
+        seenSequences[sequence] = true
+        highestSequence = math.max(highestSequence, sequence)
+        self.protocolSequences[sequenceKey] = highestSequence
+        local sequenceFloor = highestSequence - 512
+        for seenSequence in pairs(seenSequences) do
+            if seenSequence < sequenceFloor then
+                seenSequences[seenSequence] = nil
+            end
+        end
+        receivedProtocolSequence = sequence
+        receivedSessionId = sessionId
 
         if protocolEvent == "SYNC_REQUEST" then
             local hostChannel = self.game and self:ResolveChatChannel(self.game.chatMethod)
@@ -536,6 +715,9 @@ function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
                 self.game.protocolVersion = PROTOCOL_VERSION
                 self.game.hostName = shortSender
             elseif protocolEvent == "STATE_CHUNK" and self.game.state == "START" then
+                if self.closedSessions and self.closedSessions[sessionId] then
+                    return
+                end
                 local candidate = self.syncCandidate
                 if candidate and GetTime() - candidate.createdAt > 15 then
                     candidate = nil
@@ -554,7 +736,7 @@ function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
             if self.game.host then
                 return
             end
-            self:ReceiveStateChunk(protocolPayload, shortSender, sessionId)
+            self:ReceiveStateChunk(protocolPayload, shortSender, sessionId, sequence)
             return
         end
         msg = protocolEvent
@@ -597,6 +779,12 @@ function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
         CGCall[eventType](arg1, arg2, shortSender)
     end
 
+    if receivedProtocolSequence then
+        self.lastAppliedStateSequences = self.lastAppliedStateSequences or {}
+        local stateSequenceKey = shortSender .. "\031" .. receivedSessionId
+        self.lastAppliedStateSequences[stateSequenceKey] = math.max(self.lastAppliedStateSequences[stateSequenceKey] or 0, receivedProtocolSequence)
+    end
+
     if self.game.host and not skipStateBroadcast[eventType] then
         self:QueueStateBroadcast()
     end
@@ -606,7 +794,7 @@ function CrossGambling:OnGameMessage(eventType, arg1, arg2, sender)
     local game = self.game
 
     if eventType == "R_NewGame" then
-        if not game.host then
+        if not game.host and (game.rosterRevision or 0) == 0 then
             self:ResetPlayers()
         end
     elseif eventType == "Disable_Join" then
@@ -623,6 +811,10 @@ function CrossGambling:OnGameMessage(eventType, arg1, arg2, sender)
         end
     elseif eventType == "GAME_OVER" then
         if not game.host then
+            self.closedSessions = self.closedSessions or {}
+            if game.sessionId then
+                self.closedSessions[game.sessionId] = true
+            end
             self:CaptureCompletedGameBoard()
             self:ResetGameState()
         end
@@ -671,7 +863,9 @@ CGCall["New_Game"] = function(_, _, sender)
         return
     end
 
-    self:ResetGameState(self.game.sessionId ~= nil)
+    if (self.game.rosterRevision or 0) == 0 then
+        self:ResetGameState(self.game.sessionId ~= nil)
+    end
     self.game.hostName = sender
     self.game.state = "REGISTER"
 
@@ -734,3 +928,4 @@ CGCall["LastCall"] = function()
 end
 
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)
+C_ChatInfo.RegisterAddonMessagePrefix(ROSTER_PREFIX)

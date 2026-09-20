@@ -13,6 +13,8 @@ function CrossGambling:ResetGameState(preserveSession)
     game.hostName = nil
     game.sessionId = sessionId
     game.protocolVersion = protocolVersion
+    game.rosterRevision = 0
+    game.liveRevision = 0
     game.wager = nil
     game.houseCut = nil
     game.result = nil
@@ -58,6 +60,8 @@ function CrossGambling:HostNewGame()
     game.wager = global.wager
     game.houseCut = global.houseCut
     game.doubleOrNothingEnabled = global.doubleOrNothingEnabled == true
+    game.rosterRevision = 0
+    game.liveRevision = 0
     self:ResetPlayers()
     self:ClearCompletedGameBoard()
 
@@ -82,6 +86,7 @@ function CrossGambling:HostNewGame()
     self:SendMsg("Chat_Method", game.chatMethod)
     self:SendMsg("SET_HOUSE", game.houseCut)
     self:SendMsg("HOST_NAME", game.PlayerName)
+    self:SendLiveRosterMessage("N")
     self:QueueStateBroadcast()
     return true
 end
@@ -124,16 +129,19 @@ function CrossGambling:RegisterGame(text, playerName)
             return
         end
 
-        self:SendMsg("ADD_PLAYER", playerName)
         if self:registerPlayer(playerName) then
             self:AddPlayer(playerName)
+            self:SendLiveRosterMessage("A", playerName)
+            self:QueueStateBroadcast()
         end
 
     elseif lowered == leaveWord:lower() then
         if self:getPlayerByName(playerName) then
-            self:SendMsg("Remove_Player", playerName)
             self:RemovePlayer(playerName)
-            self:unregisterPlayer(playerName)
+            if self:unregisterPlayer(playerName) then
+                self:SendLiveRosterMessage("R", playerName)
+                self:QueueStateBroadcast()
+            end
         end
     end
 end
@@ -457,7 +465,7 @@ function CrossGambling:CloseGame()
 
     self:CaptureCompletedGameBoard()
     if self.game.host then
-        self:SendStateSnapshot()
+        self:SendStateSnapshot("ALERT")
     end
     self:DispatchModeHook("OnEnd")
 

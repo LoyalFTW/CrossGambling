@@ -96,7 +96,7 @@ function CrossGambling:RecordRoll(playerName, value)
     end
 
     if self.game.host then
-        self:SendMsg("PLAYER_ROLL", playerName .. ":" .. tostring(value))
+        self:SendLiveRollMessage(playerName, value)
         self:QueueStateBroadcast()
     end
 

@@ -88,6 +88,8 @@ function CrossGambling:NewGameState()
         hostName = nil,
         sessionId = nil,
         protocolVersion = nil,
+        rosterRevision = 0,
+        liveRevision = 0,
         wager = nil,
         houseCut = nil,
         players = {},
@@ -253,7 +255,11 @@ function CrossGambling:banPlayer(info, playerName)
 
     local shortName = self:ShortPlayerName(playerName)
     if self.game and self.game.host then
-        self:SendMsg("Remove_Player", shortName)
+        self:RemovePlayer(shortName)
+        if self:unregisterPlayer(shortName) then
+            self:SendLiveRosterMessage("R", shortName)
+            self:QueueStateBroadcast()
+        end
     else
         self:RemovePlayer(shortName)
         self:unregisterPlayer(shortName)
