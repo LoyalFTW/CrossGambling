@@ -249,7 +249,7 @@ CGLastCall:SetPoint("TOPLEFT", CGAcceptOnes, "BOTTOMLEFT", -0, -3)
 CGLastCall:SetText("Last Call!")
 CGLastCall:SetNormalFontObject("GameFontNormal")
 CGLastCall:SetScript("OnClick", function()
-self:SendMsg("LastCall")
+self:Announce("Last Call to Enter!")
 end)
 
 CGStartRoll = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")

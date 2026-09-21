@@ -34,6 +34,7 @@ local immediateMessages = {
     R_NewGame = true,
     New_Game = true,
     GAME_OVER = true,
+    CHAT_MSG = true,
 }
 
 local function EncodeLengthValue(tag, value)

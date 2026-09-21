@@ -429,7 +429,7 @@ if isSlick then
     end)
 end
 CGLastCall:SetScript("OnClick", function()
-    self:SendMsg("LastCall")
+    self:Announce("Last Call to Enter!")
 end)
 
 CGStartRoll = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
