@@ -752,7 +752,7 @@ function CGOptions:Build(isSlick)
 
     RowLabel(gamePanel, START_Y - ROW_H*7, "History Profile:")
     local profileBtn = MakeButton(gamePanel, "General", 115, 22)
-    profileBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*7 + 4)
+    profileBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X - 20, START_Y - ROW_H*7 + 4)
     profileBtn:SetScript("OnClick", function() GetAddon():ShowStatProfilesFrame() end)
     profileBtn:HookScript("OnEnter", function(self)
         local a = GetAddon()
@@ -879,7 +879,6 @@ function CGOptions:Build(isSlick)
             DEFAULT_CHAT_FRAME:AddMessage("|cffFFD100CrossGambling|r: Already using " .. selectedTheme .. " theme.")
             return
         end
-        CGOptions:Toggle()
         CGTheme:Switch(selectedTheme)
     end)
 

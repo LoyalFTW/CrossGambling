@@ -1169,6 +1169,8 @@ function CrossGambling:ShowStatProfilesFrame()
         local frame = CreateFrame("Frame", "CrossGamblingStatProfilesFrame", UIParent, slick and "BackdropTemplate" or "BasicFrameTemplateWithInset")
         frame:SetSize(430, 430)
         frame:SetPoint("CENTER")
+        frame:SetFrameStrata("DIALOG")
+        frame:SetToplevel(true)
         frame:SetMovable(true)
         frame:EnableMouse(true)
         frame:SetUserPlaced(true)
@@ -1189,10 +1191,22 @@ function CrossGambling:ShowStatProfilesFrame()
             if CGTheme and CGTheme.RegisterFrame then CGTheme:RegisterFrame(frame) end
         end
 
-        local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        title:SetPoint("TOP", frame, "TOP", 0, -12)
+        local title = frame:CreateFontString(nil, "OVERLAY", slick and "GameFontNormal" or "GameFontNormalLarge")
+        title:SetPoint("TOP", frame, "TOP", 0, slick and 4 or -2)
         title:SetText("History Profiles")
         if slick then styleTransferFont(title) end
+
+        if slick then
+            local closeButton = createTransferButton(frame, "X", 22, 20, true, true)
+            closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
+            closeButton:SetScript("OnClick", function() frame:Hide() end)
+
+            local headerLine = frame:CreateTexture(nil, "ARTWORK")
+            headerLine:SetHeight(2)
+            headerLine:SetPoint("TOPLEFT", frame, "TOPLEFT", 9, -24)
+            headerLine:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -9, -24)
+            headerLine:SetColorTexture(1, 0.82, 0, 0.62)
+        end
 
         local activeLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         activeLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -42)

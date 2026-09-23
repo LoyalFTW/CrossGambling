@@ -142,7 +142,7 @@ end
 function CGTheme:Init()
     local theme = self:GetTheme()
     self.isSlick = (theme == "Slick")
-    CGOptions:Build(self.isSlick) 
+    CGOptions:Rebuild(self.isSlick)
 end
 
 function CGTheme:Switch(name)
@@ -170,6 +170,8 @@ function CGTheme:Switch(name)
         a.auditFrame = nil
     end
 
+    if a.statProfilesFrame then a.statProfilesFrame:Hide() end
+
     self:ClearRegistry()
     a.uiBuilt = false
 
@@ -181,9 +183,10 @@ function CGTheme:Switch(name)
 
     a.uiBuilt = true
 
-    CGOptions:Rebuild(name == "Slick")
-
     self:LoadColors()
+
+    local activeFrame = _G[name == "Slick" and "CrossGamblingSlick" or "CrossGamblingClassic"]
+    if activeFrame then activeFrame:Show() end
 
     DEFAULT_CHAT_FRAME:AddMessage("|cffFFD100CrossGambling|r: Switched to " .. name .. " theme.")
 end
