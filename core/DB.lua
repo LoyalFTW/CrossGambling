@@ -113,6 +113,7 @@ function CrossGambling:InitDB()
         sv = "CrossGamblingDB",
         defaults = defaults,
         defaultProfile = true,
+        realmKey = self:GetForeverRuleset(),
     })
     self.game = self:NewGameState()
     self:EnsureStatProfiles()

@@ -48,7 +48,9 @@ function CrossGambling:IsEventRegistered(event)
 end
 
 local lifecycle = F.Lifecycle:New(CrossGambling, ADDON_NAME)
-lifecycle:OnAddonLoaded(function() CrossGambling:OnInitialize() end)
+lifecycle:OnAddonLoaded(function()
+    lifecycle:OnLogin(function() CrossGambling:OnInitialize() end)
+end)
 
 local uiThemes = {
     "Classic",

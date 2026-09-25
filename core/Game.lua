@@ -147,6 +147,9 @@ function CrossGambling:RegisterGame(text, playerName)
 end
 
 function CrossGambling:CheckRealm(playerName)
+    if self:IsForeverClient() then
+        return 1
+    end
     local realmRelationship = UnitRealmRelationship(playerName)
     return (realmRelationship == 2) and 0 or 1
 end

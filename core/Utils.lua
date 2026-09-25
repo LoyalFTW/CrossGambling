@@ -7,6 +7,29 @@ function CrossGambling:TrimInput(text)
     return (tostring(text):gsub("^%s+", ""):gsub("%s+$", ""))
 end
 
+function CrossGambling:IsForeverClient()
+    local interfaceVersion = select(4, GetBuildInfo())
+    return WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+        and interfaceVersion >= 16000
+        and interfaceVersion < 20000
+end
+
+function CrossGambling:GetForeverRuleset()
+    if not self:IsForeverClient() then
+        return nil
+    end
+
+    if C_GameRules.IsGameRuleActive(Enum.GameRule.HardcoreRuleset) then
+        return "Hardcore"
+    elseif C_GameRules.IsGameRuleActive(Enum.GameRule.RPRuleset) then
+        return "RP"
+    elseif C_GameRules.IsGameRuleActive(Enum.GameRule.PvPRuleset) then
+        return "PvP"
+    end
+
+    return "PvE"
+end
+
 function CrossGambling:ShortPlayerName(name)
     if not name then
         return nil
