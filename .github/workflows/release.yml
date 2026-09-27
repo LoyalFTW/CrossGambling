@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
 
       - name: Package and Upload
-        uses: BigWigsMods/packager@6d50adb6e8517eefef63f4afb16a6518166a6b28
+        uses: BigWigsMods/packager@master # v2
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
