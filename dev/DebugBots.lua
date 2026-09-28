@@ -114,6 +114,7 @@ function CrossGambling:StartBotTest(info, args)
     botLog(string.format("Starting a %d-bot test game in %s mode.", botCount, mode.name))
 
     self.game.host     = true
+    self.game.botTest  = true
     self.game.hostName = self.game.PlayerName
     self.game.wager    = self.db.global.wager
     self.game.houseCut = self.db.global.houseCut

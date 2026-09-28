@@ -66,9 +66,56 @@ local function createMetric(parent, label, width)
     return panel
 end
 
+local function styleLedgerButton(button, slick)
+    if not button.themeTextures then
+        button.themeTextures = {}
+        for _, region in ipairs({ button:GetRegions() }) do
+            if region:GetObjectType() == "Texture" then
+                table.insert(button.themeTextures, { region, region:IsShown() })
+            end
+        end
+        button.classicHighlight = button:GetHighlightTexture()
+        button.slickHighlight = button:CreateTexture(nil, "HIGHLIGHT")
+        button.slickHighlight:SetTexture("Interface\\Buttons\\ButtonHilight-Square")
+        button.slickHighlight:SetBlendMode("ADD")
+        button.slickHighlight:SetAllPoints()
+    end
+    for _, texture in ipairs(button.themeTextures) do
+        texture[1]:SetShown(not slick and texture[2])
+    end
+    if button.NineSlice then button.NineSlice:SetShown(not slick) end
+    button.slickHighlight:SetShown(slick)
+    button:SetHighlightTexture(slick and button.slickHighlight or button.classicHighlight)
+    button:SetBackdrop(slick and CARD_BACKDROP or nil)
+    if slick then
+        button:SetBackdropBorderColor(0, 0, 0)
+        local color = CGTheme and CGTheme._buttonColor or { r = 0.30, g = 0.30, b = 0.30 }
+        button:SetBackdropColor(color.r, color.g, color.b)
+        if CGTheme and CGTheme.RegisterBtn and button.themeRegistry ~= CGTheme._btnFrames then
+            CGTheme:RegisterBtn(button)
+            button.themeRegistry = CGTheme._btnFrames
+        end
+        if CGTheme and CGTheme.GetFontPath then
+            button:GetFontString():SetFont(CGTheme:GetFontPath(), math.min(14, CGTheme:GetFontSize()), CGTheme:GetFontFlags())
+        end
+    else
+        button:GetFontString():SetFontObject("GameFontNormal")
+    end
+end
+
+function CrossGambling:RestylePlayerCard()
+    if PlayerCard.frame then
+        local slick = CGTheme and CGTheme:GetTheme() == "Slick"
+        styleLedgerButton(PlayerCard.frame.ledgerButton, slick)
+    end
+end
+
 function PlayerCard:Ensure(addon)
-    if self.frame then return self.frame end
-    local slick = addon.db and addon.db.global and addon.db.global.theme == "Slick"
+    local slick = CGTheme and CGTheme:GetTheme() == "Slick"
+    if self.frame then
+        styleLedgerButton(self.frame.ledgerButton, slick)
+        return self.frame
+    end
     local frame = CreateFrame("Frame", "CrossGamblingPlayerCardFrame", UIParent, slick and "BackdropTemplate" or "BasicFrameTemplateWithInset")
     frame:SetSize(420, 470)
     frame:SetFrameStrata("DIALOG")
@@ -104,10 +151,27 @@ function PlayerCard:Ensure(addon)
     styleFont(frame.title)
 
     frame.subtitle = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    frame.subtitle:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -31)
-    frame.subtitle:SetPoint("RIGHT", frame, "RIGHT", -18, 0)
+    frame.subtitle:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -36)
+    frame.subtitle:SetHeight(24)
     frame.subtitle:SetJustifyH("LEFT")
     styleFont(frame.subtitle, true)
+
+    frame.ledgerButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate,BackdropTemplate")
+    frame.ledgerButton:SetSize(100, 24)
+    frame.ledgerButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -18, -36)
+    frame.ledgerButton:SetText("View Ledger")
+    styleLedgerButton(frame.ledgerButton, slick)
+    frame.subtitle:SetPoint("RIGHT", frame.ledgerButton, "LEFT", -8, 0)
+    frame.ledgerButton:SetScript("OnClick", function()
+        if self.playerName then addon:ShowPaymentLedger(self.playerName) end
+    end)
+    frame.ledgerButton:SetScript("OnEnter", function(button)
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Player Payment Ledger")
+        GameTooltip:AddLine("View outstanding payments involving " .. (self.playerName or "this player") .. ".", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    frame.ledgerButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     frame.session = createMetric(frame, "SESSION RESULT", 184)
     frame.session:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -67)

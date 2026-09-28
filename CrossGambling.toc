@@ -40,6 +40,7 @@ core/Game.lua
 core/Stats.lua
 core/PlayerCardStats.lua
 core/History.lua
+core/Ledger.lua
 modes/ClassicMode.lua
 modes/BigTwoMode.lua
 modes/DeathRollMode.lua
@@ -52,6 +53,7 @@ chat/CGOptions.lua
 chat/CGChat.lua
 ui/GameBoard.lua
 ui/PlayerCard.lua
+ui/Ledger.lua
 ui/GUI.lua
 ui/ClassicGUI.lua
 dev/DebugBots.lua

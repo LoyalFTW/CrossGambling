@@ -60,7 +60,7 @@ local uiThemes = {
 local commandOrder = {
     "show", "hide", "minimap", "allstats", "stats", "joinstats", "unjoinstats", "listalts",
     "updatestat", "deletestat", "resetstats", "exportstats", "importstats", "ban", "unban",
-    "listbans", "audit", "profiles", "profile", "testing", "testbots", "stoptest",
+    "listbans", "audit", "ledger", "profiles", "profile", "testing", "testbots", "stoptest",
 }
 
 function CrossGambling:PrintCommandHelp()
@@ -172,6 +172,8 @@ function CrossGambling:OnInitialize()
         handler = function() CrossGambling:listBans() end })
     commands:Register({ name = "audit", help = "See all merged players or changes",
         handler = function() CrossGambling:auditMerges() end })
+    commands:Register({ name = "ledger", help = "Open payment ledger and outstanding balances",
+        handler = function() CrossGambling:ShowPaymentLedger() end })
     commands:Register({ name = "profiles", help = "Open named history profiles",
         handler = function() CrossGambling:ShowStatProfilesFrame() end })
     commands:Register({ name = "profile", args = "[name]",

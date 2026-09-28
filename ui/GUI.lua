@@ -229,10 +229,11 @@ local CGMainMenu = CreateFrame("Button", nil, MainHeader, isSlick and "BackdropT
 CGMainMenu:SetSize(isSlick and 63 or 100, 21)
 CGMainMenu:SetPoint("TOPLEFT", MainHeader, "TOPLEFT", 30, 0)
 CGMainMenu:SetFrameStrata("MEDIUM")
-CGMainMenu:SetText("Main")
+CGMainMenu:SetText("Ledger")
 CGMainMenu:SetNormalFontObject("GameFontNormal")
 if isSlick then ButtonColors(CGMainMenu) end
 CGMainMenu:SetScript("OnMouseUp", function(self)
+    CrossGambling:ShowPaymentLedger()
 end)
 
 local MainFooter = CreateFrame("Button", nil, CrossGamblingUI, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")

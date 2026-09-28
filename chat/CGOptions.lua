@@ -946,6 +946,14 @@ function CGOptions:Build(isSlick)
         GetAddon():ConfirmPurgeAuditLog()
     end)
 
+    local ledgerBtn = MakeButton(histPanel, "Open Payment Ledger", 280, 28)
+    ledgerBtn:SetPoint("TOP", histPanel, "TOP", 0, -157)
+    ledgerBtn:SetScript("OnClick", function() GetAddon():ShowPaymentLedger() end)
+    local ledgerNote = histPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    ledgerNote:SetPoint("TOP", ledgerBtn, "BOTTOM", 0, -8)
+    ledgerNote:SetWidth(280)
+    ledgerNote:SetText("Track unpaid balances and partial payments.\nLedger records are kept when History is purged.")
+
     histPanel:SetScript("OnShow", function()
         local a = GetAddon()
         if not a or not a.db then return end

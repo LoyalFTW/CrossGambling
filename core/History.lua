@@ -153,7 +153,7 @@ end
 
 function CrossGambling:GetAuditSummary()
     local log = self.db and self.db.global and self.db.global.auditLog or {}
-    local counts = { total = 0, debt = 0, doubleOrNothing = 0, updateStat = 0, joinStats = 0, unjoinStats = 0, deleteStat = 0, resetStats = 0, unknown = 0 }
+    local counts = { total = 0, debt = 0, payment = 0, paymentUndo = 0, doubleOrNothing = 0, updateStat = 0, joinStats = 0, unjoinStats = 0, deleteStat = 0, resetStats = 0, unknown = 0 }
 
     for _, entry in ipairs(log) do
         if type(entry) == "table" then
@@ -234,11 +234,20 @@ function CrossGambling:FormatAuditEntry(entry)
             dim, reset, self:addCommas(entry.pointsRemoved or 0), dim, reset, self:addCommas(entry.deathrollStatsRemoved or 0)
         )
     elseif entry.action == "debt" then
-        return string.format(
+        local text = string.format(
             "%s[%s]%s %sRound Result%s  %s%s%s owes %s%s%s %s%sg%s",
             dim, ts, reset, gold, reset, name, entry.loser or "?", reset, name, entry.winner or "?", reset,
-            red, self:addCommas(entry.amount or 0), reset
+            red, self:addCommas(entry.winnerAmount or entry.amount or 0), reset
         )
+        if (tonumber(entry.guildAmount) or 0) > 0 then
+            text = text .. "  Plus " .. self:addCommas(entry.guildAmount) .. "g to the guild."
+        end
+        if entry.ledgerId then text = text .. "  " .. dim .. "[Debt #" .. entry.ledgerId .. "]" .. reset end
+        return text
+    elseif entry.action == "payment" or entry.action == "paymentUndo" then
+        return string.format("%s[%s]%s %s%s%s  %s -> %s: %sg  [Debt #%s]", dim, ts, reset,
+            entry.action == "payment" and green or orange, entry.action == "payment" and "Payment Recorded" or "Payment Undone", reset,
+            entry.player or "?", entry.recipient or "?", self:addCommas(entry.amount or 0), tostring(entry.ledgerId or "?"))
     elseif entry.action == "doubleOrNothing" then
         local outcome = entry.outcome or "unknown"
         local outcomeText
@@ -398,8 +407,15 @@ function CrossGambling:auditMerges()
         elseif entry.action == "debt" then
             self:AnnounceOrPrint(string.format(
                 "%d. [%s] %s owes %s %dg",
-                i, entry.timestamp, entry.loser or "?", entry.winner or "?", entry.amount or 0
+                i, entry.timestamp, entry.loser or "?", entry.winner or "?", entry.winnerAmount or entry.amount or 0
             ))
+            if (tonumber(entry.guildAmount) or 0) > 0 then
+                self:AnnounceOrPrint(string.format("   Plus %dg to the guild.", entry.guildAmount))
+            end
+        elseif entry.action == "payment" or entry.action == "paymentUndo" then
+            self:AnnounceOrPrint(string.format("%d. [%s] %s: %s -> %s, %dg (debt #%s)", i, entry.timestamp,
+                entry.action == "payment" and "Payment recorded" or "Payment undone", entry.player or "?", entry.recipient or "?",
+                entry.amount or 0, tostring(entry.ledgerId or "?")))
         elseif entry.action == "doubleOrNothing" then
             self:AnnounceOrPrint(string.format(
                 "%d. [%s] Double or Nothing: %s vs %s, original=%dg, outcome=%s, final=%dg%s",

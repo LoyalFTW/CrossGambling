@@ -23,6 +23,7 @@ function CrossGambling:ResetGameState(preserveSession)
     game.completedDoubleOrNothing = nil
     game.playerCardOutcome = nil
     game.playerCardCommitted = false
+    game.botTest = nil
     game.highlow = nil
     game.deathroll = nil
     game.elimination = nil
@@ -420,6 +421,7 @@ end
 
 function CrossGambling:SettleDebt(loserName, winnerName, amount, modeName, winnerAmount)
     winnerAmount = winnerAmount or amount
+    local ledgerId = self:RecordLedgerDebt(loserName, winnerName, amount, winnerAmount, modeName)
     self:TrackPlayerCardDebt(loserName, winnerName, amount, winnerAmount)
     self:updatePlayerStat(loserName, -amount, modeName)
     self:updatePlayerStat(winnerName, winnerAmount, modeName)
@@ -430,6 +432,10 @@ function CrossGambling:SettleDebt(loserName, winnerName, amount, modeName, winne
         loser     = loserName,
         winner    = winnerName,
         amount    = amount,
+        winnerAmount = winnerAmount,
+        guildAmount = amount - winnerAmount,
+        ledgerId = ledgerId,
+        mode = modeName,
     })
 
     return string.format("%s owes %s %sg!", loserName, winnerName, self:addCommas(winnerAmount))

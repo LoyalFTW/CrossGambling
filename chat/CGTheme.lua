@@ -185,6 +185,9 @@ function CGTheme:Switch(name)
 
     self:LoadColors()
 
+    if a.RestylePaymentLedger then a:RestylePaymentLedger() end
+    if a.RestylePlayerCard then a:RestylePlayerCard() end
+
     local activeFrame = _G[name == "Slick" and "CrossGamblingSlick" or "CrossGamblingClassic"]
     if activeFrame then activeFrame:Show() end
 
@@ -216,6 +219,8 @@ function CGTheme:ApplyColors()
             fs:SetTextColor(self._BUTTON_LABEL_COLOR.r, self._BUTTON_LABEL_COLOR.g, self._BUTTON_LABEL_COLOR.b)
         end
     end
+    if addonObject.RestylePaymentLedger then addonObject:RestylePaymentLedger() end
+    if addonObject.RestylePlayerCard then addonObject:RestylePlayerCard() end
 end
 
 function CGTheme:LoadColors()
@@ -277,6 +282,8 @@ function CGTheme:ApplyFont()
             fs:SetTextColor(self._BUTTON_LABEL_COLOR.r, self._BUTTON_LABEL_COLOR.g, self._BUTTON_LABEL_COLOR.b)
         end
     end
+    if addonObject.RestylePaymentLedger then addonObject:RestylePaymentLedger() end
+    if addonObject.RestylePlayerCard then addonObject:RestylePlayerCard() end
 end
 
 function CGTheme:GetFontColor()

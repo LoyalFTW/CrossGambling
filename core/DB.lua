@@ -39,6 +39,7 @@ local defaults = {
         auditLog = {},
         auditRetention = 30,
         auditMaxEntries = 500,
+        paymentLedger = { version = 1, nextId = 1, entries = {} },
         suspendChatEventsInCombat = true,
         doubleOrNothingEnabled = false,
     },
@@ -117,6 +118,7 @@ function CrossGambling:InitDB()
     })
     self.game = self:NewGameState()
     self:EnsureStatProfiles()
+    self:EnsurePaymentLedger()
     self:RebuildBanCache()
 end
 

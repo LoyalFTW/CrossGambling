@@ -120,9 +120,10 @@ local CGMainMenu = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTemplate
 CGMainMenu:SetSize(100, 21)
 CGMainMenu:SetPoint("TOPLEFT", MainHeader, "TOPLEFT", 30, 0)
 CGMainMenu:SetFrameStrata("MEDIUM")
-CGMainMenu:SetText("Main")
+CGMainMenu:SetText("Ledger")
 CGMainMenu:SetNormalFontObject("GameFontNormal")
 CGMainMenu:SetScript("OnMouseUp", function(self)
+    CrossGambling:ShowPaymentLedger()
 	if OptionsButton:IsShown() then
 		OptionsButton:Hide()
 		MainMenu:Show()
