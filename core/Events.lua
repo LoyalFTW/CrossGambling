@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 local function normalizePlayerNameLocal(addon, name, preserveRealm)
     if addon and type(addon.NormalizePlayerName) == "function" then
         return addon:NormalizePlayerName(name, preserveRealm)

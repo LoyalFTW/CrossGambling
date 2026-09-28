@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 local LDB = LibStub("LibDataBroker-1.1")
 local LDBIcon = LibStub("LibDBIcon-1.0")
 

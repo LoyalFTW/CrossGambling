@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 local function goldAmount(value)
     local amount = tonumber(value)
     if not amount or amount ~= amount or amount == math.huge or amount == -math.huge or amount < 0 or amount ~= math.floor(amount) or amount > 2000000000 then

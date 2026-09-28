@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 
 function CrossGambling:ResetGameState(preserveSession)
     local game = self.game

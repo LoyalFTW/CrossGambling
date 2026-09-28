@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 local auditRetentionOptions = {5, 10, 30, "Never"}
 
 function CrossGambling:AnnounceOrPrint(message)

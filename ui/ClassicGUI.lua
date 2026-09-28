@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 local addonObject = CrossGambling
 local function GetAddonRef()
     return addonObject

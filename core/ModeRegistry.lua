@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 
 CrossGambling.modeRegistry  = CrossGambling.modeRegistry  or {}
 CrossGambling.modeListOrder = CrossGambling.modeListOrder or {}

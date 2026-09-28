@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 local function normalizePlayerNameLocal(addon, name, preserveRealm)
     return addon:NormalizePlayerName(name, preserveRealm)
 end

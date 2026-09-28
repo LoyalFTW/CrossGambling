@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 
 local DeathRollMode = {}
 DeathRollMode.name        = "1v1DeathRoll"

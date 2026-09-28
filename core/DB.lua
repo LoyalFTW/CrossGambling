@@ -1,5 +1,6 @@
 
-local ADDON_NAME = ...
+local ADDON_NAME, ns = ...
+local CrossGambling = ns.CG
 local addonObject = CrossGambling
 local F = _G.Foundry_1_0
 local chatMethods = { "PARTY", "RAID", "GUILD" }

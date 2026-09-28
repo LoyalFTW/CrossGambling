@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 local ledgerFrames, ledgerButtons, ledgerFonts, ledgerInputs, ledgerPanels = {}, {}, {}, {}, {}
 local LEDGER_BACKDROP = {
     bgFile = "Interface\\AddOns\\CrossGambling\\media\\CG.tga",
@@ -113,7 +116,7 @@ function CrossGambling:RestylePaymentLedger()
             field:SetFont(theme:GetFontPath(), math.min(field._ledgerTitle and 14 or 12, theme:GetFontSize()), theme:GetFontFlags())
             field:SetTextColor(theme:GetFontColor())
         else
-            field:SetFontObject(field._ledgerFontObject or "GameFontHighlightSmall")
+            field:SetFontObject(_G[field._ledgerFontObject or "GameFontHighlightSmall"])
         end
     end
     for _, panel in ipairs(ledgerPanels) do
@@ -416,7 +419,7 @@ function CrossGambling:ShowPaymentLedger(playerName)
     local history = CreateFrame("ScrollingMessageFrame", nil, historyPanel)
     history:SetPoint("TOPLEFT", 4, -4)
     history:SetSize(316, 100)
-    history:SetFontObject("GameFontHighlightSmall")
+    history:SetFontObject(GameFontHighlightSmall)
     table.insert(ledgerFonts, history)
     history:SetJustifyH("LEFT")
     history:SetInsertMode("TOP")

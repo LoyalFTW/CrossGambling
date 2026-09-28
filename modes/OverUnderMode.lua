@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 
 local OverUnderMode = {}
 OverUnderMode.name         = "OverUnder"

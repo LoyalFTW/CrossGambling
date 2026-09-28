@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 
 local BOT_STEP_DELAY = 0.35
 local BOT_MAX_STEPS  = 300

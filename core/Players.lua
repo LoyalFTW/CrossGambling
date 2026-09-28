@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 
 local function GetIndexByName(game)
     local indexByName = game.playerIndexByName

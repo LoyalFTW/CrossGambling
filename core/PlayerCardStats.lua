@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 local resolveCardName
 
 local function findStoredValue(addon, source, playerName)

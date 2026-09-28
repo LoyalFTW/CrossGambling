@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossGambling = ns.CG
+
 local addonObject = CrossGambling
 local CG = "Interface\\AddOns\\CrossGambling\\media\\CG.tga"
 local Backdrop = {
