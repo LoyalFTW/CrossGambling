@@ -100,7 +100,7 @@ function CGChat:BuildChatPanel(parentFrame, game, backdropApplyFn, sideColorAppl
     CGChatBox:SetScript("OnEnterPressed", function(self)
         local message = self:GetText()
         if message ~= "" and message ~= PLACEHOLDER then
-            local playerName     = UnitName("player")
+            local playerName     = addon:GetUnitPlayerName("player")
             local playerColor    = "|c" .. RAID_CLASS_COLORS[select(2, UnitClass("player"))].colorStr
             local r, g, b        = GetFontColor()
             local formatted      = string.format("[%s]|r: |cFF%02x%02x%02x%s", playerName, math.floor(r*255), math.floor(g*255), math.floor(b*255), message)

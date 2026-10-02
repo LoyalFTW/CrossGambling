@@ -613,9 +613,9 @@ local function ensureStatsImportDialog(addon)
 end
 
 function CrossGambling:joinStats(info, args)
-    local mainname, altname = string.match(args, "^(%S+)%s+(%S+)$")
+    local mainname, altname = self:ParsePlayerNameArguments(args, 2)
     if not mainname or not altname then
-        DEFAULT_CHAT_FRAME:AddMessage("Invalid format. Use: <mainname> <altname>")
+        DEFAULT_CHAT_FRAME:AddMessage('Invalid format. Use: /cg joinstats "Main Name" "Alt Name"')
         return
     end
 
@@ -672,6 +672,7 @@ end
 
 
 function CrossGambling:unjoinStats(info, altname)
+    altname = self:ParsePlayerNameArguments(altname, 1)
     if not altname or altname == "" then
         for alt, main in pairs(self.db.global.joinstats or {}) do
             DEFAULT_CHAT_FRAME:AddMessage(string.format("Currently joined: alt '%s' -> main '%s'", alt, main))
@@ -1440,7 +1441,8 @@ function CrossGambling:listAlts(info)
 end
 
 function CrossGambling:updateStat(info, args)
-    local player, amountStr = strsplit(" ", args)
+    local player, amountStr = self:TrimInput(args):match("^(.-)%s+(%S+)$")
+    player = self:ParsePlayerNameArguments(player, 1)
     local amount = tonumber(amountStr)
 
     if player and amount then
@@ -1466,6 +1468,11 @@ end
 
 
 function CrossGambling:deleteStat(info, player)
+    player = self:ParsePlayerNameArguments(player, 1)
+    if not player then
+        self:Print("Error: No name provided.")
+        return
+    end
     local storedStatName = getKnownPlayerName(self, player)
     local storedDeathrollName = getKnownPlayerName(self, player)
     local oldStats = self.db.global.stats[storedStatName] or 0

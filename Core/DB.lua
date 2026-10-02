@@ -96,7 +96,7 @@ function CrossGambling:NewGameState()
         houseCut = nil,
         players = {},
         playerIndexByName = nil,
-        PlayerName = UnitName("player"),
+        PlayerName = self:GetUnitPlayerName("player"),
         PlayerClass = select(2, UnitClass("player")),
         result = nil,
         doubleOrNothingEnabled = false,
@@ -243,8 +243,8 @@ function CrossGambling:IsPlayerBanned(playerName)
 end
 
 function CrossGambling:banPlayer(info, playerName)
-    playerName = self:TrimInput(playerName)
-    if playerName == "" then
+    playerName = self:ParsePlayerNameArguments(playerName, 1)
+    if not playerName then
         self:Print("Error: No name provided.")
         return
     end
@@ -273,8 +273,8 @@ function CrossGambling:banPlayer(info, playerName)
 end
 
 function CrossGambling:unbanPlayer(info, playerName)
-    playerName = self:TrimInput(playerName)
-    if playerName == "" then
+    playerName = self:ParsePlayerNameArguments(playerName, 1)
+    if not playerName then
         self:Print("Error: No name provided.")
         return
     end

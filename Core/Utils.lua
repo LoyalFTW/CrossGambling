@@ -11,10 +11,77 @@ function CrossGambling:TrimInput(text)
 end
 
 function CrossGambling:IsForeverClient()
+    if type(RegionalUniqueNamesEnabled) == "function" then
+        return RegionalUniqueNamesEnabled() == true
+    end
     local interfaceVersion = select(4, GetBuildInfo())
-    return WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+    return type(interfaceVersion) == "number"
         and interfaceVersion >= 16000
         and interfaceVersion < 20000
+end
+
+function CrossGambling:GetSurnameSeparator()
+    local separators = Constants and Constants.CharacterNameSeparatorConsts
+    return separators and separators.CHARACTERNAME_SURNAME_SEPARATOR or " "
+end
+
+function CrossGambling:GetUnitPlayerName(unit)
+    local name, surname = (UnitNameUnmodified or UnitName)(unit or "player")
+    if issecretvalue and (issecretvalue(name) or issecretvalue(surname)) then
+        return nil
+    end
+    if type(name) ~= "string" or name == "" then
+        return nil
+    end
+    if self:IsForeverClient() and type(surname) == "string" and surname ~= "" then
+        local suffix = self:GetSurnameSeparator() .. surname
+        if name:sub(-#suffix) ~= suffix then
+            name = name .. suffix
+        end
+    end
+    return name
+end
+
+function CrossGambling:ParsePlayerNameArguments(args, count)
+    args = self:TrimInput(args)
+    if count == 1 then
+        if args:sub(1, 1) == '"' then
+            args = args:match('^"([^"]+)"$')
+        end
+        args = args and self:TrimInput(args)
+        return args and args ~= "" and args or nil
+    end
+    local names = {}
+    local position = 1
+    local quoted = false
+    while position <= #args do
+        local startAt = args:find("%S", position)
+        if not startAt then break end
+        if args:sub(startAt, startAt) == '"' then
+            local endAt = args:find('"', startAt + 1, true)
+            if not endAt or (endAt < #args and not args:sub(endAt + 1, endAt + 1):match("%s")) then
+                return nil
+            end
+            local name = self:TrimInput(args:sub(startAt + 1, endAt - 1))
+            if name == "" then return nil end
+            names[#names + 1] = name
+            position = endAt + 1
+            quoted = true
+        else
+            local endAt = args:find("%s", startAt) or (#args + 1)
+            names[#names + 1] = args:sub(startAt, endAt - 1)
+            position = endAt
+        end
+    end
+    if not quoted and self:IsForeverClient() and #names == count * 2 then
+        local fullNames = {}
+        for index = 1, count do
+            fullNames[index] = names[index * 2 - 1] .. self:GetSurnameSeparator() .. names[index * 2]
+        end
+        names = fullNames
+    end
+    if #names ~= count then return nil end
+    return unpack(names)
 end
 
 function CrossGambling:GetForeverRuleset()
@@ -38,7 +105,11 @@ function CrossGambling:ShortPlayerName(name)
         return nil
     end
 
-    return (strsplit("-", tostring(name), 2))
+    name = self:TrimInput(name)
+    if self:IsForeverClient() then
+        return name
+    end
+    return (strsplit("-", name, 2))
 end
 
 function CrossGambling:NormalizePlayerName(name, preserveRealm)
@@ -52,7 +123,7 @@ function CrossGambling:NormalizePlayerName(name, preserveRealm)
     end
 
     if not preserveRealm then
-        name = strsplit("-", name, 2)
+        name = self:ShortPlayerName(name)
         if not name or name == "" then
             return nil
         end

@@ -38,11 +38,11 @@ function CrossGambling:InitCommands()
         handler = function() CrossGambling:reportStats(true) end })
     commands:Register({ name = "stats", help = "Shows Top 3 Winners/Losers(Out of Order in Guild)",
         handler = function() CrossGambling:reportStats() end })
-    commands:Register({ name = "joinstats", args = "[main] [alt]",
-        help = "[main] [alt] - Join the two character's win/loss amounts on stat tracker",
+    commands:Register({ name = "joinstats", args = '"[main]" "[alt]"',
+        help = '"[main]" "[alt]" - Join two characters\' win/loss amounts; quote names containing spaces',
         handler = function(rest)
             if rest == "" then
-                CrossGambling:Print("Usage: /cg joinstats [main] [alt] - Join the two character's win/loss amounts on stat tracker")
+                CrossGambling:Print('Usage: /cg joinstats "Main Name" "Alt Name"')
                 return
             end
             CrossGambling:joinStats(nil, rest)

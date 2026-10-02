@@ -487,7 +487,7 @@ end)
 local function OnChatSubmit(CGChatBox)
     local message = CGChatBox:GetText()
     if message ~= "" and message ~= " " then
-        local playerName = UnitName("player")
+        local playerName = self:GetUnitPlayerName("player")
 	local playerClass = select(2, UnitClass("player"))
 	local messageWithPlayerInfo = string.format("%s:%s:%s", playerName, playerClass, message)
 		self:SendMsg("CHAT_MSG", messageWithPlayerInfo)

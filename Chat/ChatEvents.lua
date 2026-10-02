@@ -20,26 +20,58 @@ local allChatEvents = {
 
 local rollResultPattern
 local rollResultTemplate
+local rollResultForever
+local rollResultCaptureOrder
 local function GetRollResultPattern()
-    if rollResultPattern and rollResultTemplate == RANDOM_ROLL_RESULT then
-        return rollResultPattern
+    local forever = CrossGambling:IsForeverClient()
+    if rollResultPattern and rollResultTemplate == RANDOM_ROLL_RESULT and rollResultForever == forever then
+        return rollResultPattern, rollResultCaptureOrder
     end
 
     local template = RANDOM_ROLL_RESULT
     rollResultTemplate = template
+    rollResultForever = forever
+    rollResultCaptureOrder = {}
     local hasNamePlaceholder = type(template) == "string" and (
         template:find("%s", 1, true) or template:find("%%%d+%$s")
     )
     if hasNamePlaceholder then
-        local pattern = template:gsub("%%(%d+)%$", "%%")
-        pattern = pattern:gsub("[%(%)%.%+%-%*%?%[%]%^%$]", "%%%0")
-        pattern = pattern:gsub("%%s", "(%%S+)"):gsub("%%d", "(%%d+)")
-        rollResultPattern = "^" .. pattern .. "%.?$"
+        local parts = { "^" }
+        local position = 1
+        local captureIndex = 0
+        while position <= #template do
+            local startAt, endAt, argumentIndex, argumentType = template:find("%%(%d*)%$?([sd])", position)
+            local literal = template:sub(position, startAt and startAt - 1 or #template)
+            parts[#parts + 1] = literal:gsub("([%(%)%.%+%-%*%?%[%]%^%$%%])", "%%%1")
+            if not startAt then break end
+            captureIndex = captureIndex + 1
+            rollResultCaptureOrder[captureIndex] = tonumber(argumentIndex) or captureIndex
+            parts[#parts + 1] = argumentType == "s" and (forever and "(.-)" or "(%S+)") or "(%d+)"
+            position = endAt + 1
+        end
+        parts[#parts + 1] = "%.?$"
+        rollResultPattern = table.concat(parts)
     else
-        rollResultPattern = "^(%S+) rolls (%d+) %((%d+)%-(%d+)%)%.?$"
+        rollResultPattern = "^" .. (forever and "(.-)" or "(%S+)") .. " rolls (%d+) %((%d+)%-(%d+)%)%.?$"
+        rollResultCaptureOrder = { 1, 2, 3, 4 }
     end
 
-    return rollResultPattern
+    return rollResultPattern, rollResultCaptureOrder
+end
+
+function CrossGambling:ParseRollResult(text)
+    local pattern, captureOrder = GetRollResultPattern()
+    local captures = { strmatch(text, pattern) }
+    local values = {}
+    for index, value in ipairs(captures) do
+        values[captureOrder[index]] = value
+    end
+    if not values[1] or not values[2] or not values[3] or not values[4] then
+        return nil
+    end
+    local playerName = self:ShortPlayerName(values[1])
+    if not playerName or playerName == "" then return nil end
+    return playerName, tonumber(values[2]), tonumber(values[3]), tonumber(values[4])
 end
 
 
@@ -182,13 +214,11 @@ function CrossGambling:handleSystemMessage(_, text)
         return
     end
 
-    local playerName, actualRoll, minRoll, maxRoll = strmatch(text, GetRollResultPattern())
+    local playerName, actualRoll, minRoll, maxRoll = self:ParseRollResult(text)
     if not playerName or not actualRoll or not minRoll or not maxRoll then
         return
     end
 
-    playerName = self:ShortPlayerName(playerName)
-    actualRoll, minRoll, maxRoll = tonumber(actualRoll), tonumber(minRoll), tonumber(maxRoll)
     if self.game.state == "DOUBLE_OR_NOTHING_ROLL" then
         self:HandleDoubleOrNothingRoll(playerName, actualRoll, minRoll, maxRoll)
     else
