@@ -112,7 +112,7 @@ end
 function CrossGambling:CommitPlayerCardGame()
     local game = self.game
     local global = self.db and self.db.global
-    if not game or not global or game.playerCardCommitted then return end
+    if not game or not global or game.botTest or game.playerCardCommitted then return end
     game.playerCardCommitted = true
 
     local participants = {}

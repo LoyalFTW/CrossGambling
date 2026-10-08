@@ -97,6 +97,7 @@ function CrossGambling:SetAuditRetention(retention)
 end
 
 function CrossGambling:AddAuditEntry(entry)
+    if self:IsBotTest() then return end
     if not self.db or not self.db.global or type(entry) ~= "table" then return end
 
     self.db.global.auditLog = self.db.global.auditLog or {}

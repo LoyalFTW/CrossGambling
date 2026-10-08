@@ -33,6 +33,7 @@ end
 
 function CrossGambling:StepBots(token)
     if token ~= self.botTestToken then return end
+    if not self:IsBotTest() then return end
     if self.game.state ~= "ROLL" then
         botLog("Test game finished.")
         return
@@ -98,9 +99,7 @@ function CrossGambling:StartBotTest(info, args)
 
     self:BuildUI()
 
-    if self.wagerInput then
-        self:SetWager(self.wagerInput:GetText())
-    end
+    local wager = self.wagerInput and self:ValidateWager(self.wagerInput:GetText()) or self.db.global.wager
 
     if mode.minPlayers and botCount < mode.minPlayers then
         botCount = mode.minPlayers
@@ -116,10 +115,12 @@ function CrossGambling:StartBotTest(info, args)
 
     botLog(string.format("Starting a %d-bot test game in %s mode.", botCount, mode.name))
 
+    self:ResetGameState()
+    self:ClearCompletedGameBoard()
     self.game.host     = true
     self.game.botTest  = true
     self.game.hostName = self.game.PlayerName
-    self.game.wager    = self.db.global.wager
+    self.game.wager    = wager
     self.game.houseCut = self.db.global.houseCut
     self.game.state    = "REGISTER"
     self:ResetPlayers()
@@ -142,6 +143,10 @@ function CrossGambling:StartBotTest(info, args)
 end
 
 function CrossGambling:StopBotTest()
+    if not self:IsBotTest() then
+        self:Print("No bot test is running.")
+        return
+    end
     self.botTestToken = (self.botTestToken or 0) + 1
     if self.game.state ~= "START" then
         self:CloseGame()

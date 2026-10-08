@@ -1,6 +1,10 @@
 local _, ns = ...
 local CrossGambling = ns.CG
 
+function CrossGambling:IsBotTest()
+    return self.game and self.game.botTest == true
+end
+
 
 function CrossGambling:TrimInput(text)
     if not text then

@@ -198,6 +198,7 @@ function CrossGambling:GetCommProtocolVersion()
 end
 
 function CrossGambling:SendProtocolMessage(event, payload, sessionId, method, priorityOverride)
+    if self:IsBotTest() then return end
     self.outgoingProtocolSequence = (self.outgoingProtocolSequence or 0) + 1
     local message = table.concat({
         "V" .. PROTOCOL_VERSION,
@@ -214,6 +215,7 @@ function CrossGambling:SendProtocolMessage(event, payload, sessionId, method, pr
 end
 
 function CrossGambling:SendMsg(event, arg1)
+    if self:IsBotTest() then return end
     local msg = event
     if arg1 ~= nil then
         msg = msg .. ":" .. tostring(arg1)
@@ -264,6 +266,7 @@ function CrossGambling:BuildPublicGameState()
 end
 
 function CrossGambling:SendStateSnapshot(priority)
+    if self:IsBotTest() then return end
     local game = self.game
     if not game or not game.host or not game.sessionId or game.state == "START" then
         return
@@ -283,6 +286,7 @@ function CrossGambling:SendStateSnapshot(priority)
 end
 
 function CrossGambling:QueueStateBroadcast(delay)
+    if self:IsBotTest() then return end
     local game = self.game
     if not game or not game.host or not game.sessionId or self.stateBroadcastSession == game.sessionId then
         return
@@ -477,6 +481,10 @@ function CrossGambling:SendPanelChat(message)
 end
 
 function CrossGambling:SendChat(msg, method)
+    if self:IsBotTest() then
+        self:Print("|cff888888[CG Bot Test]|r " .. msg)
+        return
+    end
     method = method or self.game.chatMethod
     if self:IsTestingMode() then
         self:Print("|cff888888[" .. (method or "Chat") .. "]|r " .. msg)
@@ -511,7 +519,7 @@ end
 
 function CrossGambling:Announce(message)
     local game = self.game
-    if not game or not game.host then
+    if not game or not game.host or game.botTest then
         self:Print(message)
         return
     end
@@ -529,6 +537,7 @@ function CrossGambling:Announce(message)
 end
 
 function CrossGambling:SendLiveRosterMessage(operation, playerName)
+    if self:IsBotTest() then return end
     local game = self.game
     if not game or not game.host or not game.sessionId then
         return
@@ -548,6 +557,7 @@ function CrossGambling:SendLiveRosterMessage(operation, playerName)
 end
 
 function CrossGambling:SendLiveRollMessage(playerName, value)
+    if self:IsBotTest() then return end
     local game = self.game
     if not game or not game.host or not game.sessionId then
         return
@@ -562,6 +572,7 @@ function CrossGambling:SendLiveRollMessage(playerName, value)
 end
 
 function CrossGambling:OnLiveRosterMessage(msg, channel, sender)
+    if self:IsBotTest() then return end
     local sessionId, revisionText, operation, playerName = strmatch(msg or "", "^([^|]+)|(%d+)|([NARL])|(.*)$")
     local revision = tonumber(revisionText)
     local shortSender = self:ShortPlayerName(sender)
@@ -642,6 +653,7 @@ end
 
 
 function CrossGambling:OnAddonMessage(event, prefix, msg, channel, sender)
+    if self:IsBotTest() then return end
     if prefix == ROSTER_PREFIX then
         self:OnLiveRosterMessage(msg, channel, sender)
         return

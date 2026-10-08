@@ -1400,6 +1400,7 @@ function CrossGambling:sortStats(stats)
 end
 
 function CrossGambling:updatePlayerStat(playerName, amount, modeName)
+    if self:IsBotTest() then return end
     local storedPlayerName = getKnownPlayerName(self, playerName)
     self.game.sessionStats[storedPlayerName] = (self.game.sessionStats[storedPlayerName] or 0) + amount
     self.db.global.stats[storedPlayerName] = (self.db.global.stats[storedPlayerName] or 0) + amount

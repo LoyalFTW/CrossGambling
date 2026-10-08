@@ -76,7 +76,7 @@ end
 
 
 function CrossGambling:RegisterChatEvents()
-    if not self.game.host then
+    if not self.game.host or self:IsBotTest() then
         return
     end
 
@@ -189,6 +189,7 @@ end
 
 
 function CrossGambling:handleChatMsg(_, text, playerName)
+    if self:IsBotTest() then return end
     if self:ShouldSuspendChatEventsInCombat() then
         self:SuspendRegistrationChatEvents()
         return
@@ -210,6 +211,7 @@ function CrossGambling:handleChatMsg(_, text, playerName)
 end
 
 function CrossGambling:handleSystemMessage(_, text)
+    if self:IsBotTest() then return end
     if (self.game.state ~= "ROLL" and self.game.state ~= "DOUBLE_OR_NOTHING_ROLL") or not self.game.host then
         return
     end

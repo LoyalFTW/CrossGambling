@@ -174,7 +174,9 @@ function CrossGambling:CGRolls()
         if not (mode and mode.usesChatPick) then
             self:UnRegisterChatEvents()
         end
-        self:RegisterEvent("CHAT_MSG_SYSTEM", "handleSystemMessage")
+        if not game.botTest then
+            self:RegisterEvent("CHAT_MSG_SYSTEM", "handleSystemMessage")
+        end
 
         self:SendMsg("Disable_Join")
         if CGCall["Disable_Join"] then
@@ -450,7 +452,7 @@ function CrossGambling:ApplyHouseCut(amount)
     end
 
     local houseAmount = math.floor(amount * (self:GetHouseCut() / 100))
-    if houseAmount > 0 then
+    if houseAmount > 0 and not self:IsBotTest() then
         self:updatePlayerStat("guild", houseAmount)
         self.db.global.housestats = (self.db.global.housestats or 0) + houseAmount
         local _, profile = self:GetActiveStatProfile()
