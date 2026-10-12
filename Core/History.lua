@@ -295,9 +295,27 @@ function CrossGambling:FormatAuditEntry(entry)
     return string.format("%s[%s]%s %sUnknown%s\n%s", dim, ts, reset, orange, reset, table.concat(extra, ", "))
 end
 
+function CrossGambling:QueueAuditSearchRefresh(searchBox, userInput)
+    searchBox.auditSearchRevision = (searchBox.auditSearchRevision or 0) + 1
+    if not userInput then return end
+
+    local revision = searchBox.auditSearchRevision
+    C_Timer.After(0.15, function()
+        if searchBox.auditSearchRevision ~= revision then return end
+        local frame = self.auditFrame
+        if not frame or frame.searchBox ~= searchBox or not frame:IsShown() then return end
+        self:RefreshAuditFrame(searchBox:GetText())
+    end)
+end
+
 function CrossGambling:RefreshAuditFrame(filter)
     if not self.auditFrame or not self.auditFrame.scrollFrame then
         return
+    end
+
+    local searchBox = self.auditFrame.searchBox
+    if searchBox then
+        searchBox.auditSearchRevision = (searchBox.auditSearchRevision or 0) + 1
     end
 
     local scrollFrame = self.auditFrame.scrollFrame

@@ -682,9 +682,7 @@ end
 auditFrame:SetScript("OnSizeChanged", auditFrame.UpdateLayout)
 
 searchBox:SetScript("OnTextChanged", function(self, userInput)
-    if userInput then
-        RefreshAuditLogLocal(self:GetText())
-    end
+    GetAddonRef():QueueAuditSearchRefresh(self, userInput)
 end)
 
 local CGHistoryLog = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
