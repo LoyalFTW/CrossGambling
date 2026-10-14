@@ -319,6 +319,19 @@ function CrossGambling:RefreshAuditFrame(filter)
     end
 
     local scrollFrame = self.auditFrame.scrollFrame
+    filter = filter and tostring(filter) or ""
+    local scrollPosition = scrollFrame:GetVerticalScroll() or 0
+    local searchChanged = self.auditFrame.auditSearchFilter ~= filter
+    local anchorEntry, anchorOffset
+    if not searchChanged and scrollPosition > 0 then
+        for _, row in ipairs(self.auditFrame.auditScrollEntries or {}) do
+            if row.offset > scrollPosition then break end
+            anchorEntry = row.entry
+            anchorOffset = scrollPosition - row.offset
+        end
+    end
+    local scrollEntries = {}
+    local restoredPosition = searchChanged and 0 or scrollPosition
     local content = self.auditFrame.content
     if not content then
         content = CreateFrame("Frame", nil, scrollFrame)
@@ -342,7 +355,6 @@ function CrossGambling:RefreshAuditFrame(filter)
             summary.total, summary.debt, summary.doubleOrNothing, summary.updateStat + summary.deleteStat + summary.resetStats, summary.joinStats + summary.unjoinStats))
     end
 
-    filter = filter and tostring(filter) or ""
     local loweredFilter = strtrim(filter) ~= "" and filter or nil
     local width = math.max(180, (scrollFrame:GetWidth() or 260) - 14)
     local yOffset = -8
@@ -354,6 +366,11 @@ function CrossGambling:RefreshAuditFrame(filter)
         local entry = log[i]
         local textLine = self:FormatAuditEntry(entry)
         if textLine and self:AuditEntryMatches(entry, textLine, loweredFilter) then
+            local offset = -yOffset
+            scrollEntries[#scrollEntries + 1] = { entry = entry, offset = offset }
+            if entry == anchorEntry then
+                restoredPosition = offset + anchorOffset
+            end
             matched = matched + 1
             poolIdx = poolIdx + 1
             local fs = pool[poolIdx]
@@ -392,7 +409,10 @@ function CrossGambling:RefreshAuditFrame(filter)
     content._fontUsed = poolIdx
     content:SetWidth(width)
     content:SetHeight(math.max(30, -yOffset + spacing))
-    scrollFrame:SetVerticalScroll(0)
+    self.auditFrame.auditSearchFilter = filter
+    self.auditFrame.auditScrollEntries = scrollEntries
+    local maxScroll = math.max(0, content:GetHeight() - scrollFrame:GetHeight())
+    scrollFrame:SetVerticalScroll(math.max(0, math.min(restoredPosition, maxScroll)))
 end
 
 function CrossGambling:PurgeOldAuditEntries()
