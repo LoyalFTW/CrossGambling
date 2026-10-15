@@ -320,6 +320,7 @@ auditFrame:SetScript("OnDragStop", auditFrame.StopMovingOrSizing)
 auditFrame:Hide()
 
 local function AnchorAuditFrame()
+    if auditFrame.auditRestoreLayout then return end
     auditFrame:ClearAllPoints()
     auditFrame:SetPoint("TOP", CrossGamblingUI, "BOTTOM", 0, -12)
 end
@@ -398,6 +399,7 @@ auditFrame.searchBox = searchBox
 auditFrame.scrollFrame = scrollFrame
 auditFrame.content = content
 auditFrame.summaryText = summaryText
+CrossGambling:CreateAuditExpandButton(auditFrame)
 
 function auditFrame:UpdateLayout()
     local width, height = self:GetSize()

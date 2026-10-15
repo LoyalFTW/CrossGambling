@@ -3,6 +3,62 @@ local CrossGambling = ns.CG
 
 local auditRetentionOptions = {5, 10, 30, "Never"}
 
+function CrossGambling:CreateAuditExpandButton(frame, slick)
+    local button = CreateFrame("Button", nil, frame, slick and "BackdropTemplate" or "UIPanelButtonTemplate")
+    button:SetSize(20, 18)
+    button:SetPoint("TOPLEFT", 8, -7)
+    button:SetNormalFontObject("GameFontNormalSmall")
+    button:SetText("+")
+    local function restoreLayout()
+        local restore = frame.auditRestoreLayout
+        if not restore then return end
+        frame:StopMovingOrSizing()
+        frame.isSizing = false
+        frame.auditRestoreLayout = nil
+        frame:SetFrameStrata(restore.strata)
+        frame:ClearAllPoints()
+        frame:SetSize(restore.width, restore.height)
+        for _, point in ipairs(restore.points) do
+            frame:SetPoint(unpack(point))
+        end
+        button:SetText("+")
+    end
+    button:SetScript("OnClick", function()
+        frame:StopMovingOrSizing()
+        frame.isSizing = false
+        GameTooltip:Hide()
+        if frame.auditRestoreLayout then
+            restoreLayout()
+        else
+            local width, height = frame:GetSize()
+            local points = {}
+            for i = 1, frame:GetNumPoints() do
+                points[i] = { frame:GetPoint(i) }
+            end
+            frame.auditRestoreLayout = { width = width, height = height, points = points, strata = frame:GetFrameStrata() }
+            frame:SetFrameStrata("DIALOG")
+            frame:ClearAllPoints()
+            frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+            frame:SetSize(math.min(math.max(width, 800), UIParent:GetWidth() - 40),
+                math.min(math.max(height, 650), UIParent:GetHeight() - 40))
+            button:SetText("-")
+        end
+        frame:UpdateLayout()
+    end)
+    button:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText(frame.auditRestoreLayout and "Restore history window" or "Expand history window")
+        GameTooltip:Show()
+    end)
+    button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    frame:HookScript("OnHide", function()
+        restoreLayout()
+        GameTooltip:Hide()
+    end)
+    frame.expandButton = button
+    return button
+end
+
 function CrossGambling:AnnounceOrPrint(message)
     local method = self.game and self.game.chatMethod
     if self:CanSendToChannel(method) then

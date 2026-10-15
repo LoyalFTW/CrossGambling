@@ -551,7 +551,7 @@ end)
 local width, height = CrossGamblingUI:GetSize()
 local auditFrame = CreateFrame("Frame", "CrossGamblingAuditLogFrame", UIParent, "BackdropTemplate")
 auditFrame:SetSize(width, height)
-auditFrame:SetResizeBounds(width, height, 400, 400)
+auditFrame:SetResizeBounds(width, height, 800, 800)
 auditFrame:SetClampedToScreen(true)
 auditFrame:EnableMouse(true)
 auditFrame:SetMovable(true)
@@ -563,6 +563,7 @@ SideColor(auditFrame)
 auditFrame:Hide()
 
 local function AnchorAuditFrame()
+    if auditFrame.auditRestoreLayout then return end
     auditFrame:ClearAllPoints()
     auditFrame:SetPoint("TOP", CrossGamblingUI, "BOTTOM", 0, -12)
 end
@@ -670,6 +671,11 @@ auditFrame.searchBox = searchBox
 auditFrame.scrollFrame = scrollFrame
 auditFrame.content = content
 auditFrame.summaryText = summaryText
+local expandButton = CrossGambling:CreateAuditExpandButton(auditFrame, true)
+ButtonColors(expandButton)
+expandButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
+expandButton:GetHighlightTexture():SetBlendMode("ADD")
+expandButton:GetHighlightTexture():SetAllPoints()
 
 function auditFrame:UpdateLayout()
     local width, height = self:GetSize()
