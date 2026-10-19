@@ -882,18 +882,18 @@ local valuescale = function(val,valStep)
     slider.textHigh:SetTextColor(0.4,0.4,0.4)
     editbox:ClearAllPoints()
     editbox:SetPoint("LEFT", slider, "RIGHT", 10, 0)
-    editbox:SetText(slider:GetValue())
+    editbox:SetText(tostring(slider:GetValue()))
     editbox:SetAutoFocus(false)
 	
     slider:SetScript("OnValueChanged", function(self,value)
-      self.editbox:SetText(valuescale (value,valStep))
+      self.editbox:SetText(tostring(valuescale(value, valStep)))
     end)
     slider.editbox = editbox
     return slider
   end
   
  
-    local slider = CreateBasicSlider(parent, "CGSlider", "", 0, 1, 0.001)
+    local slider = CreateBasicSlider(CrossGamblingUI, "CGSlider", "", 0, 1, 0.001)
 
 	local function CrossScale()
 		self.db.global.scale = slider:GetValue()/100
@@ -901,7 +901,7 @@ local valuescale = function(val,valStep)
 	end
 
     slider:HookScript("OnMouseUp", function(self,value)
-	  CrossScale(self)
+	  CrossScale()
     end)
 	
 local CGLeftMenu = CreateFrame("Frame", "CGLeftMenu", CrossGamblingUI, "BackdropTemplate")

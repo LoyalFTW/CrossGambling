@@ -93,11 +93,20 @@ function CrossGambling:GetForeverRuleset()
         return nil
     end
 
-    if C_GameRules.IsGameRuleActive(Enum.GameRule.HardcoreRuleset) then
+    local rules = Enum and Enum.GameRule
+    if not (rules and C_GameRules and C_GameRules.IsGameRuleActive) then
+        return "PvE"
+    end
+
+    local function isActive(rule)
+        return rule ~= nil and C_GameRules.IsGameRuleActive(rule)
+    end
+
+    if isActive(rules.HardcoreRuleset) then
         return "Hardcore"
-    elseif C_GameRules.IsGameRuleActive(Enum.GameRule.RPRuleset) then
+    elseif isActive(rules.RPRuleset) then
         return "RP"
-    elseif C_GameRules.IsGameRuleActive(Enum.GameRule.PvPRuleset) then
+    elseif isActive(rules.PvPRuleset) then
         return "PvP"
     end
 

@@ -489,7 +489,8 @@ function CrossGambling:SendChat(msg, method)
     if self:IsTestingMode() then
         self:Print("|cff888888[" .. (method or "Chat") .. "]|r " .. msg)
     end
-    pcall(SendChatMessage, msg, self:ResolveChatChannel(method))
+    local sendChat = (C_ChatInfo and C_ChatInfo.SendChatMessage) or SendChatMessage
+    pcall(sendChat, msg, self:ResolveChatChannel(method))
 end
 
 function CrossGambling:CanSendToChannel(method)

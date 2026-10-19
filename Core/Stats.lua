@@ -140,7 +140,8 @@ local function sendChatLine(addon, message)
     if addon and type(addon.SendChat) == "function" then
         addon:SendChat(message)
     else
-        SendChatMessage(message, addon.game.chatMethod)
+        local sendChat = (C_ChatInfo and C_ChatInfo.SendChatMessage) or SendChatMessage
+        sendChat(message, addon.game.chatMethod)
     end
 end
 
