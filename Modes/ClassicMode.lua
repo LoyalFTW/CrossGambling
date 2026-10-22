@@ -46,7 +46,7 @@ function CrossGambling:NewHighLowMode(name, description, options)
         end
 
         local grossAmount = hl.amountOwed
-        if addon:BeginDoubleOrNothing(hl.losers[1], hl.winners[1], grossAmount, Mode.name) then
+        if addon:BeginDoubleOrNothing(hl.losers[1], hl.winners[1], grossAmount, Mode.name, options.allowHouseCut) then
             return
         end
 

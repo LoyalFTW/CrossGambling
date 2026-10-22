@@ -190,6 +190,7 @@ end
 
 function CrossGambling:handleChatMsg(_, text, playerName)
     if self:IsBotTest() then return end
+    if issecretvalue and (issecretvalue(text) or issecretvalue(playerName)) then return end
     if self:ShouldSuspendChatEventsInCombat() then
         self:SuspendRegistrationChatEvents()
         return
@@ -199,10 +200,11 @@ function CrossGambling:handleChatMsg(_, text, playerName)
         return
     end
 
+    local fullName = playerName
     playerName = self:ShortPlayerName(playerName)
 
     if self.game.state == "REGISTER" then
-        self:RegisterGame(text, playerName)
+        self:RegisterGame(text, playerName, fullName)
     elseif self.game.state == "ROLL" then
         self:DispatchModeHook("OnChatText", playerName, text)
     elseif self.game.state == "DOUBLE_OR_NOTHING_OFFER" then
@@ -212,6 +214,7 @@ end
 
 function CrossGambling:handleSystemMessage(_, text)
     if self:IsBotTest() then return end
+    if issecretvalue and issecretvalue(text) then return end
     if (self.game.state ~= "ROLL" and self.game.state ~= "DOUBLE_OR_NOTHING_ROLL") or not self.game.host then
         return
     end

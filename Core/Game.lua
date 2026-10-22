@@ -103,7 +103,7 @@ function CrossGambling:GameStart()
     end
 end
 
-function CrossGambling:RegisterGame(text, playerName)
+function CrossGambling:RegisterGame(text, playerName, fullName)
     local joinWord, leaveWord = self:GetJoinWords()
     local lowered = self:TrimInput(text):lower()
 
@@ -128,7 +128,7 @@ function CrossGambling:RegisterGame(text, playerName)
             return
         end
 
-        if self.game.realmFilter == true and self:CheckRealm(playerName) == 0 then
+        if self.game.realmFilter == true and self:CheckRealm(fullName or playerName) == 0 then
             self:Announce("CrossGambling: You are not on (" .. GetRealmName() .. "). You are not eligible to join this game. The host can turn off the Realm Filter in the options.")
             return
         end
@@ -246,7 +246,10 @@ function CrossGambling:SettleDoubleOrNothing(amount, resultLine)
     game.state = "ROLL"
 
     if amount > 0 then
-        local winnerAmount, houseAmount = self:ApplyHouseCut(amount)
+        local winnerAmount, houseAmount = amount, 0
+        if doubleOrNothing.allowHouseCut then
+            winnerAmount, houseAmount = self:ApplyHouseCut(amount)
+        end
         local debtLine = self:SettleDebt(doubleOrNothing.loser, doubleOrNothing.winner, amount, doubleOrNothing.mode, winnerAmount)
         if houseAmount > 0 then
             debtLine = debtLine .. " Plus " .. self:addCommas(houseAmount) .. "g to the guild."
@@ -393,7 +396,7 @@ function CrossGambling:HandleDoubleOrNothingRoll(playerName, actualRoll, minRoll
     self:Announce(string.format("%s, it's your turn! Type /roll %d", doubleOrNothing.turn, doubleOrNothing.max))
 end
 
-function CrossGambling:BeginDoubleOrNothing(loserName, winnerName, amount, modeName)
+function CrossGambling:BeginDoubleOrNothing(loserName, winnerName, amount, modeName, allowHouseCut)
     local game = self.game
     amount = tonumber(amount)
     if not game or not game.host or not game.doubleOrNothingEnabled or not amount or amount < 2 then
@@ -405,6 +408,7 @@ function CrossGambling:BeginDoubleOrNothing(loserName, winnerName, amount, modeN
         winner = winnerName,
         amount = amount,
         mode = modeName,
+        allowHouseCut = allowHouseCut == true,
         accepted = {},
     }
     game.doubleOrNothing = doubleOrNothing
