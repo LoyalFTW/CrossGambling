@@ -223,38 +223,11 @@ local function ColorSwatch(parent, getColorFn, setColorFn)
     swatch:SetScript("OnClick", function(self)
         local r, g, b = getColorFn()
         if not r then return end
-        local origR, origG, origB = r, g, b
-        if ColorPickerFrame.SetupColorPickerAndShow then
-            ColorPickerFrame:SetupColorPickerAndShow({
-                swatchFunc = function()
-                    local nr, ng, nb = ColorPickerFrame:GetColorRGB()
-                    swatch:SetBackdropColor(nr, ng, nb)
-                    setColorFn(nr, ng, nb)
-                end,
-                cancelFunc = function(prev)
-                    if prev then
-                        swatch:SetBackdropColor(prev.r, prev.g, prev.b)
-                        setColorFn(prev.r, prev.g, prev.b)
-                    end
-                end,
-                hasOpacity = false,
-                r = r, g = g, b = b, opacity = 1,
-            })
-        else
-            ColorPickerFrame.func = function()
-                local nr, ng, nb = ColorPickerFrame:GetColorRGB()
-                swatch:SetBackdropColor(nr, ng, nb)
-                setColorFn(nr, ng, nb)
-            end
-            ColorPickerFrame.cancelFunc = function()
-                swatch:SetBackdropColor(origR, origG, origB)
-                setColorFn(origR, origG, origB)
-            end
-            ColorPickerFrame.hasOpacity = false
-            ColorPickerFrame:SetColorRGB(r, g, b)
-            ColorPickerFrame:Hide()
-            ColorPickerFrame:Show()
+        local function applyColor(nr, ng, nb)
+            swatch:SetBackdropColor(nr, ng, nb)
+            setColorFn(nr, ng, nb)
         end
+        CGTheme:OpenColorPicker(r, g, b, applyColor, applyColor)
     end)
 
     return swatch
@@ -1073,38 +1046,11 @@ function CGOptions:Build(isSlick)
             sw:SetScript("OnClick", function(self)
                 local r, g, b = item.get()
                 if not r then return end
-                local origR, origG, origB = r, g, b
-                if ColorPickerFrame.SetupColorPickerAndShow then
-                    ColorPickerFrame:SetupColorPickerAndShow({
-                        swatchFunc = function()
-                            local nr, ng, nb = ColorPickerFrame:GetColorRGB()
-                            self:SetBackdropColor(nr, ng, nb)
-                            item.set(nr, ng, nb)
-                        end,
-                        cancelFunc = function(prev)
-                            if prev then
-                                self:SetBackdropColor(prev.r, prev.g, prev.b)
-                                item.set(prev.r, prev.g, prev.b)
-                            end
-                        end,
-                        hasOpacity = false,
-                        r = r, g = g, b = b, opacity = 1,
-                    })
-                else
-                    ColorPickerFrame.func = function()
-                        local nr, ng, nb = ColorPickerFrame:GetColorRGB()
-                        self:SetBackdropColor(nr, ng, nb)
-                        item.set(nr, ng, nb)
-                    end
-                    ColorPickerFrame.cancelFunc = function()
-                        self:SetBackdropColor(origR, origG, origB)
-                        item.set(origR, origG, origB)
-                    end
-                    ColorPickerFrame.hasOpacity = false
-                    ColorPickerFrame:SetColorRGB(r, g, b)
-                    ColorPickerFrame:Hide()
-                    ColorPickerFrame:Show()
+                local function applyColor(nr, ng, nb)
+                    self:SetBackdropColor(nr, ng, nb)
+                    item.set(nr, ng, nb)
                 end
+                CGTheme:OpenColorPicker(r, g, b, applyColor, applyColor)
             end)
 
             sw:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(1, 0.82, 0) end)
@@ -1327,7 +1273,6 @@ function CGOptions:Build(isSlick)
             local c = a and a.db and a.db.global.colors
             local color = c and (c.chatFontColor or c.fontColor)
             if not color then return end
-            local origR, origG, origB = color.r, color.g, color.b
             local function applyColor(r, g, b)
                 c.chatFontColor = c.chatFontColor or {}
                 c.chatFontColor.r, c.chatFontColor.g, c.chatFontColor.b = r, g, b
@@ -1335,31 +1280,7 @@ function CGOptions:Build(isSlick)
                 if CGChat and CGChat.RefreshFont then CGChat:RefreshFont() end
             end
 
-            if ColorPickerFrame.SetupColorPickerAndShow then
-                ColorPickerFrame:SetupColorPickerAndShow({
-                    swatchFunc = function()
-                        local r, g, b = ColorPickerFrame:GetColorRGB()
-                        applyColor(r, g, b)
-                    end,
-                    cancelFunc = function(prev)
-                        if prev then applyColor(prev.r, prev.g, prev.b) end
-                    end,
-                    hasOpacity = false,
-                    r = color.r, g = color.g, b = color.b, opacity = 1,
-                })
-            else
-                ColorPickerFrame.func = function()
-                    local r, g, b = ColorPickerFrame:GetColorRGB()
-                    applyColor(r, g, b)
-                end
-                ColorPickerFrame.cancelFunc = function()
-                    applyColor(origR, origG, origB)
-                end
-                ColorPickerFrame.hasOpacity = false
-                ColorPickerFrame:SetColorRGB(color.r, color.g, color.b)
-                ColorPickerFrame:Hide()
-                ColorPickerFrame:Show()
-            end
+            CGTheme:OpenColorPicker(color.r, color.g, color.b, applyColor, applyColor)
         end)
         chatColorSwatch:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(1, 0.82, 0) end)
         chatColorSwatch:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(0, 0, 0) end)

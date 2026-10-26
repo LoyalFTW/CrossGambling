@@ -128,7 +128,9 @@ local function createTransferButton(parent, text, width, height, slick, smallFon
             local fontString = button:GetFontString()
             if fontString then
                 local path, _, flags = fontString:GetFont()
-                fontString:SetFont(path, 10, flags)
+                if path then
+                    fontString:SetFont(path, 10, flags)
+                end
             end
         end
     end

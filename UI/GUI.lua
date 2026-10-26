@@ -99,55 +99,19 @@ local function GetAddonRef()
 end
 
 local function GetAuditRetentionOptionsLocal()
-    local addon = GetAddonRef()
-    if type(addon.GetAuditRetentionOptions) == "function" then
-        return addon:GetAuditRetentionOptions()
-    end
-    return {5, 10, 30, "Never"}
+    return GetAddonRef():GetAuditRetentionOptions()
 end
 
 local function GetAuditRetentionValueLocal()
-    local addon = GetAddonRef()
-    if type(addon.GetAuditRetentionValue) == "function" then
-        return addon:GetAuditRetentionValue()
-    end
-
-    local retention = addon.db and addon.db.global and addon.db.global.auditRetention or 30
-    if retention == -1 then
-        retention = "Never"
-    end
-    retention = tonumber(retention) or retention
-    for _, option in ipairs(GetAuditRetentionOptionsLocal()) do
-        if option == retention then
-            return option
-        end
-    end
-    return 30
+    return GetAddonRef():GetAuditRetentionValue()
 end
 
 local function SetAuditRetentionLocal(retention)
-    local addon = GetAddonRef()
-    if type(addon.SetAuditRetention) == "function" then
-        addon:SetAuditRetention(retention)
-        return
-    end
-
-    if retention == -1 then
-        retention = "Never"
-    end
-    if addon.db and addon.db.global then
-        addon.db.global.auditRetention = tonumber(retention) or retention
-        if type(addon.TrimAuditLog) == "function" then
-            addon:TrimAuditLog()
-        end
-    end
+    GetAddonRef():SetAuditRetention(retention)
 end
 
 local function RefreshAuditLogLocal(filter)
-    local addon = GetAddonRef()
-    if addon and type(addon.RefreshAuditFrame) == "function" then
-        addon:RefreshAuditFrame(filter)
-    end
+    GetAddonRef():RefreshAuditFrame(filter)
 end
 local CrossGamblingUI
 

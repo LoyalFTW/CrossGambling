@@ -293,7 +293,7 @@ function CGTheme:GetFontColor()
     return self._fontColor.r, self._fontColor.g, self._fontColor.b
 end
 
-local function OpenColorPicker(r, g, b, onAccept, onCancel)
+function CGTheme:OpenColorPicker(r, g, b, onAccept, onCancel)
     ColorPickerFrame:Hide()
     if ColorPickerFrame.SetupColorPickerAndShow then
         ColorPickerFrame:SetupColorPickerAndShow({
@@ -343,7 +343,7 @@ function CGTheme:ChangeColor(element)
     elseif element == "fontcolor" then color = self._fontColor
     else return end
 
-    OpenColorPicker(
+    self:OpenColorPicker(
         color.r, color.g, color.b,
         function(nr, ng, nb)
             color.r, color.g, color.b = nr, ng, nb
