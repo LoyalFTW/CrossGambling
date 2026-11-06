@@ -15,6 +15,7 @@
 ## X-Curse-Project-ID: 86458
 ## X-Wago-ID: WL6JgxKv
 ## X-WoWI-ID: 26975
+## Category: Gambling
 ## Category-enUS: Gambling
 ## Category-deDE: Glücksspiel
 ## Category-esES: Juegos de azar
