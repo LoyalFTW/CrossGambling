@@ -11,6 +11,7 @@ externals:
   Libs/Foundry-1.0:
     url: https://github.com/Royaleint/Foundry.git
     curse-slug: foundry
+    tag: v1.0.114
 
 ignore:
   - .github
