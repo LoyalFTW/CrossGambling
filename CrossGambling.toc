@@ -11,6 +11,7 @@
 ## Notes-ruRU: Выигрывайте крупно или проигрывайте всё — испытайте удачу!
 ## Notes-frFR: Gagnez gros ou perdez tout — testez votre chance !
 ## SavedVariables: CrossGamblingDB, CrossGambling
+## OptionalDeps: Foundry-1.0
 ## IconTexture: Interface\AddOns\CrossGambling\Media\Texture\CGIcon
 ## X-Curse-Project-ID: 86458
 ## X-Wago-ID: WL6JgxKv
