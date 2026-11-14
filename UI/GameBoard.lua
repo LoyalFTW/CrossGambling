@@ -10,6 +10,8 @@ local GameBoard = {
 local Controller = {}
 Controller.__index = Controller
 
+local COLUMN_TEXT = "#    PLAYER                                      STATUS"
+
 local ROW_BACKDROP = {
     bgFile = "Interface\\Buttons\\WHITE8X8",
     edgeFile = "Interface\\Buttons\\WHITE8X8",
@@ -549,6 +551,38 @@ function Controller:AcquireRow(index)
     return row
 end
 
+function Controller:AcquirePayoutRow(index)
+    local row = self.payoutRows[index]
+    if row then return row end
+
+    row = CreateFrame("Frame", nil, self.content, "BackdropTemplate")
+    row:SetWidth(self.width - 38)
+    row:SetBackdrop(ROW_BACKDROP)
+    row:SetBackdropColor(0.13, 0.11, 0.06, 0.92)
+    row:SetBackdropBorderColor(0, 0, 0, 0.85)
+
+    row.names = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    row.names:SetPoint("TOPLEFT", 7, -5)
+    row.names:SetPoint("TOPRIGHT", -7, -5)
+    row.names:SetJustifyH("LEFT")
+    row.names:SetWordWrap(true)
+
+    row.amounts = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.amounts:SetPoint("TOPLEFT", row.names, "BOTTOMLEFT", 0, -4)
+    row.amounts:SetJustifyH("LEFT")
+
+    row.ledgerButton = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+    row.ledgerButton:SetSize(84, 20)
+    row.ledgerButton:SetPoint("BOTTOMRIGHT", -5, 4)
+    row.ledgerButton:SetText("View debt")
+    row.ledgerButton:SetScript("OnClick", function()
+        if row.ledgerId then self.addon:ShowPaymentLedger(nil, row.ledgerId) end
+    end)
+
+    self.payoutRows[index] = row
+    return row
+end
+
 function Controller:Refresh()
     local game = self.addon.game or {}
     local view
@@ -559,13 +593,41 @@ function Controller:Refresh()
     end
     self.header:SetText("Game Board  |  " .. view.title)
     self.status:SetText(view.status)
-    if #view.rows == 0 then self.empty:Show() else self.empty:Hide() end
-    for i, frame in ipairs(self.rows) do frame:Hide() end
+    local payouts = view.payouts or {}
+    local hasPayouts = #payouts > 0
+    self.columns:SetText(hasPayouts and "PAYOUTS" or COLUMN_TEXT)
+    self.empty:SetShown(#view.rows == 0 and not hasPayouts and not view.completed)
+    self.rollColumns:SetShown(hasPayouts and #view.rows > 0)
+    for _, row in ipairs(self.payoutRows) do row:Hide() end
+    for _, frame in ipairs(self.rows) do frame:Hide() end
+
+    local offset = 0
+    for i, payout in ipairs(payouts) do
+        local row = self:AcquirePayoutRow(i)
+        row:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -offset)
+        local recipient = payout.winnerAmount > 0 and payout.winner or "the guild"
+        row.names:SetText(payout.loser .. " owes " .. recipient)
+        local amounts = "Winner " .. self.addon:addCommas(payout.winnerAmount) .. "g"
+        if payout.guildAmount > 0 then
+            amounts = amounts .. "  |  Guild " .. self.addon:addCommas(payout.guildAmount) .. "g"
+        end
+        row.amounts:SetText(amounts)
+        row.ledgerId = payout.ledgerId
+        row.ledgerButton:SetShown(row.ledgerId ~= nil)
+        local height = math.max(16, row.names:GetStringHeight()) + (row.ledgerId and 45 or 25)
+        row:SetHeight(height)
+        row:Show()
+        offset = offset + height + 2
+    end
+    if self.rollColumns:IsShown() then
+        self.rollColumns:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -offset - 5)
+        offset = offset + 24
+    end
 
     for i, data in ipairs(view.rows) do
         local frame = self:AcquireRow(i)
         frame:ClearAllPoints()
-        frame:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -(i - 1) * self.rowHeight)
+        frame:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -offset - (i - 1) * self.rowHeight)
         local color = ROLE_COLORS[data.role] or ROLE_COLORS.normal
         frame:SetBackdropColor(color[1], color[2], color[3], color[4])
         frame.rank:SetText(data.rank)
@@ -593,7 +655,11 @@ function Controller:Refresh()
     for name in pairs(self.knownPlayers) do
         if not present[name] then self.knownPlayers[name] = nil end
     end
-    self.content:SetHeight(math.max(1, #view.rows * self.rowHeight))
+    self.content:SetHeight(math.max(1, offset + #view.rows * self.rowHeight))
+    if self.completedView ~= (view.completed and view or nil) then
+        self.completedView = view.completed and view or nil
+        self.scroll:SetVerticalScroll(0)
+    end
 end
 
 function GameBoard:Create(addon, parent, options)
@@ -607,6 +673,7 @@ function GameBoard:Create(addon, parent, options)
         height = options.height or 210,
         rowHeight = options.rowHeight or 27,
         rows = {},
+        payoutRows = {},
         previousRolls = {},
         knownPlayers = {},
     }, Controller)
@@ -624,7 +691,7 @@ function GameBoard:Create(addon, parent, options)
     controller.columns:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -28)
     controller.columns:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -25, -28)
     controller.columns:SetJustifyH("LEFT")
-    controller.columns:SetText("#    PLAYER                                      STATUS")
+    controller.columns:SetText(COLUMN_TEXT)
 
     controller.scroll = CreateFrame("ScrollFrame", "CrossGamblingGameBoardScroll" .. self.serial, parent, "UIPanelScrollFrameTemplate")
     controller.scroll:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -45)
@@ -635,6 +702,8 @@ function GameBoard:Create(addon, parent, options)
     controller.content = CreateFrame("Frame", nil, controller.scroll)
     controller.content:SetSize(controller.width - 30, 1)
     controller.scroll:SetScrollChild(controller.content)
+    controller.rollColumns = controller.content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    controller.rollColumns:SetText(COLUMN_TEXT)
     controller.scroll:SetScript("OnMouseWheel", function(frame, delta)
         local maximum = math.max(0, controller.content:GetHeight() - frame:GetHeight())
         frame:SetVerticalScroll(math.max(0, math.min(frame:GetVerticalScroll() - delta * controller.rowHeight, maximum)))
@@ -662,7 +731,9 @@ end
 function GameBoard:CaptureCompleted(addon)
     local view = self:BuildView(addon)
     view.title = view.title .. "  |  Final"
-    view.status = view.completedStatus or "Round complete"
+    view.completed = true
+    view.payouts = addon.game.result
+    view.status = view.completedStatus or (view.payouts and #view.payouts == 0 and "No gold owed") or "Round complete"
     self.completedView = view
 end
 

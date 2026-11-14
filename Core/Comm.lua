@@ -262,6 +262,17 @@ function CrossGambling:BuildPublicGameState()
             exploded = game.hotpotato.exploded == true,
         }
     end
+    if game.result then
+        snapshot.result = {}
+        for index, payout in ipairs(game.result) do
+            snapshot.result[index] = {
+                loser = payout.loser,
+                winner = payout.winner,
+                winnerAmount = payout.winnerAmount,
+                guildAmount = payout.guildAmount,
+            }
+        end
+    end
     return snapshot
 end
 
@@ -316,6 +327,31 @@ function CrossGambling:RequestStateSync()
     if IsInGuild() and not sent.GUILD then
         self:SendProtocolMessage("SYNC_REQUEST", "", "-", "GUILD")
     end
+end
+
+local function ReadPublicPayouts(result)
+    if type(result) ~= "table" or #result > 80 then return nil end
+
+    local payouts = {}
+    for index, payout in ipairs(result) do
+        if type(payout) ~= "table" then return nil end
+        local loser, winner = payout.loser, payout.winner
+        local winnerAmount, guildAmount = payout.winnerAmount, payout.guildAmount
+        if type(loser) ~= "string" or loser == "" or #loser > 64
+            or type(winner) ~= "string" or winner == "" or #winner > 64
+            or type(winnerAmount) ~= "number" or winnerAmount < 0 or winnerAmount ~= math.floor(winnerAmount)
+            or type(guildAmount) ~= "number" or guildAmount < 0 or guildAmount ~= math.floor(guildAmount)
+            or winnerAmount + guildAmount < 1 or winnerAmount + guildAmount > 2000000000 then
+            return nil
+        end
+        payouts[index] = {
+            loser = loser,
+            winner = winner,
+            winnerAmount = winnerAmount,
+            guildAmount = guildAmount,
+        }
+    end
+    return payouts
 end
 
 function CrossGambling:ApplyStateSnapshot(snapshot, sender, sessionId)
@@ -391,6 +427,7 @@ function CrossGambling:ApplyStateSnapshot(snapshot, sender, sessionId)
     game.houseCut = self:NormalizeHouseCutValue(snapshot.houseCut) or self:GetHouseCut()
     game.house = snapshot.house == true
     game.doubleOrNothingEnabled = snapshot.doubleOrNothingEnabled == true
+    game.result = ReadPublicPayouts(snapshot.result)
     local snapshotRosterRevision = tonumber(snapshot.rosterRevision)
     local snapshotLiveRevision = tonumber(snapshot.liveRevision)
     local currentRosterRevision = tonumber(game.rosterRevision) or 0

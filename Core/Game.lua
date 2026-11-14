@@ -431,6 +431,16 @@ end
 function CrossGambling:SettleDebt(loserName, winnerName, amount, modeName, winnerAmount)
     winnerAmount = winnerAmount or amount
     local ledgerId = self:RecordLedgerDebt(loserName, winnerName, amount, winnerAmount, modeName)
+    if amount > 0 then
+        self.game.result = self.game.result or {}
+        table.insert(self.game.result, {
+            loser = loserName,
+            winner = winnerName,
+            winnerAmount = winnerAmount,
+            guildAmount = amount - winnerAmount,
+            ledgerId = ledgerId,
+        })
+    end
     self:TrackPlayerCardDebt(loserName, winnerName, amount, winnerAmount)
     self:updatePlayerStat(loserName, -amount, modeName)
     self:updatePlayerStat(winnerName, winnerAmount, modeName)
@@ -481,6 +491,9 @@ function CrossGambling:CloseGame()
         return
     end
 
+    if self.game.host then
+        self.game.result = self.game.result or {}
+    end
     self:CaptureCompletedGameBoard()
     if self.game.host then
         self:SendStateSnapshot("ALERT")

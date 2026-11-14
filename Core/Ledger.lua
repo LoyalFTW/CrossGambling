@@ -136,13 +136,15 @@ function CrossGambling:GetFilteredLedgerEntries(search, filter, playerName)
     local entries, summary = {}, { outstanding = 0, winner = 0, guild = 0, count = 0 }
     local ledger = self:EnsurePaymentLedger()
     local playerKey = self:NormalizePlayerName(playerName, true)
+    local debtId = search and tonumber(self:TrimInput(search):match("^#(%d+)$"))
     for i = #ledger.entries, 1, -1 do
         local entry = ledger.entries[i]
         local status = self:GetLedgerStatus(entry)
         local searchable = table.concat({ tostring(entry.id), entry.loser, entry.winner, entry.guild,
             entry.mode or "", entry.profile or "", entry.host or "", entry.realm or "", status }, " ")
         local involved = not playerKey or self:NormalizePlayerName(entry.loser, true) == playerKey or self:NormalizePlayerName(entry.winner, true) == playerKey
-        if involved and self:AuditEntryMatches(entry, searchable, search) then
+        local matches = debtId and entry.id == debtId or not debtId and self:AuditEntryMatches(entry, searchable, search)
+        if involved and matches then
             local winner = self:GetLedgerBalance(entry, "winner")
             local guild = self:GetLedgerBalance(entry, "guild")
             summary.winner = summary.winner + winner

@@ -211,18 +211,24 @@ function CrossGambling:ShowPaymentLedgerExport(text)
     frame.edit:HighlightText()
 end
 
-function CrossGambling:ShowPaymentLedger(playerName)
+function CrossGambling:ShowPaymentLedger(playerName, debtId)
     local addon = self
     local frame = self.paymentLedgerFrame
+    local debt = debtId and self:GetLedgerEntry(debtId)
+    if debtId and not debt then return end
+    local searchText = debt and ("#" .. debt.id) or playerName
+    local filter = debt and "All" or "Outstanding"
+    local historyPlayer = debt and debt.loser or playerName
     if frame then
-        if playerName then
+        if searchText then
             frame.playerFilter = playerName
-            frame.historyPlayer = playerName
-            frame.filter = "Outstanding"
-            frame.selectedId = nil
+            frame.historyPlayer = historyPlayer
+            frame.filter = filter
+            frame.selectedId = debtId
+            if debt then frame.recipient = "winner" end
             frame.amount:SetText("")
             frame.feedback:SetText("")
-            frame.search:SetText(playerName)
+            frame.search:SetText(searchText)
         end
         self:RestylePaymentLedger()
         frame:Show()
@@ -248,8 +254,9 @@ function CrossGambling:ShowPaymentLedger(playerName)
     frame.TitleText:SetText("CrossGambling - Payment Ledger")
     table.insert(UISpecialFrames, "CrossGamblingPaymentLedger")
     frame.playerFilter = playerName
-    frame.historyPlayer = playerName
-    frame.filter = "Outstanding"
+    frame.historyPlayer = historyPlayer
+    frame.filter = filter
+    frame.selectedId = debtId
     frame.recipient = "winner"
     frame.rows = {}
     frame.summary = label(frame, "", 18, -40, 278, "GameFontNormal")
@@ -265,7 +272,7 @@ function CrossGambling:ShowPaymentLedger(playerName)
     search:SetScript("OnEnterPressed", function(control) control:ClearFocus() end)
     frame.search = search
     table.insert(ledgerInputs, search)
-    search:SetText(playerName or "")
+    search:SetText(searchText or "")
     frame.filterButtons = {}
     for i, value in ipairs({ "Outstanding", "Paid", "All" }) do
         local filter = value
