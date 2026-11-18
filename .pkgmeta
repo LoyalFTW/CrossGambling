@@ -8,7 +8,10 @@ externals:
   Libs/LibDBIcon-1.0: https://repos.wowace.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0
   Libs/LibDataBroker-1.1: https://github.com/tekkub/libdatabroker-1-1.git
   Libs/LibStub: https://repos.curseforge.com/wow/libstub/trunk
-  Libs/Foundry-1.0: https://github.com/Royaleint/Foundry.git
+  Libs/Foundry-1.0:
+    url: https://github.com/Royaleint/Foundry.git
+    curse-slug: foundry
+    tag: v1.0.115
 
 ignore:
   - .github
