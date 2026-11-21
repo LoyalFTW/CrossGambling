@@ -1,10 +1,11 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
 local EliminationMode = {}
 EliminationMode.name        = "Elimination"
-EliminationMode.description = "Everyone rolls 1-wager each round; the lowest roller is eliminated. Once it's down to the final two, it switches to DeathRoll rules (shrinking range, roll a 1 and you lose) to decide the winner."
+EliminationMode.description = L["EliminationMode_EveryoneRolls1WagerEachRoundThe"]
 EliminationMode.minPlayers  = 3
 
 local LOSER_MARK = "Loser"
@@ -13,7 +14,7 @@ local function finishElimination(addon, game, winnerName)
     local elim  = game.elimination
     elim.winner = winnerName
     local wager = addon:GetWager()
-    local lines = { string.format("CrossGambling: %s wins the Elimination pot!", winnerName) }
+    local lines = { string.format(L["EliminationMode_WinsTheEliminationPot"], winnerName) }
 
     for _, entry in ipairs(elim.eliminationOrder) do
         table.insert(lines, addon:SettleDebt(entry.name, winnerName, wager, EliminationMode.name))
@@ -42,7 +43,7 @@ local function startFinale(addon, game)
     addon:ClearRolls(elim.alive)
 
     addon:Announce(string.format(
-        "CrossGambling: Final 1v1! %s vs %s - DeathRoll rules now! %s types /roll %d first!",
+        L["EliminationMode_Final1v1VsDeathRollRulesNowTypes"],
         finalists[1], finalists[2], finalists[1], wager
     ))
 end
@@ -59,7 +60,7 @@ local function startRound(addon, game)
     addon:ClearRolls(elim.pending)
 
     addon:Announce(string.format(
-        "CrossGambling: Round %d - %d players remain, type /roll %d!",
+        L["EliminationMode_RoundPlayersRemainTypeRoll"],
         elim.round, addon:CountKeys(elim.alive), wager
     ))
 end
@@ -71,7 +72,7 @@ local function resolveEliminationStep(addon, game)
 
     if #lowest > 1 then
         addon:Announce(string.format(
-            "CrossGambling: Tie at %d between %s! Type /roll %d to see who's out.",
+            L["EliminationMode_TieAtBetweenTypeRollToSee"],
             lowestVal, table.concat(lowest, ", "), addon:GetWager()
         ))
 
@@ -90,7 +91,7 @@ local function resolveEliminationStep(addon, game)
     table.insert(elim.eliminationOrder, { name = loser, round = elim.round })
     addon:RecordRoll(loser, LOSER_MARK)
 
-    addon:Announce(string.format("CrossGambling: %s rolled lowest (%d) and is out!", loser, lowestVal))
+    addon:Announce(string.format(L["EliminationMode_RolledLowestAndIsOut"], loser, lowestVal))
 
     if addon:CountKeys(elim.alive) == 2 then
         startFinale(addon, game)
@@ -110,7 +111,7 @@ function EliminationMode:OnStartRolls(addon, game)
     end
 
     addon:Announce(string.format(
-        "CrossGambling: Elimination! Everyone types /roll %d each round - lowest roll is out. The last two settle it with DeathRoll rules!",
+        L["EliminationMode_EliminationEveryoneTypesRollEachRoundLowest"],
         wager
     ))
 end
@@ -145,13 +146,13 @@ function EliminationMode:OnRollReceived(addon, game, playerName, actualRoll, min
         if actualRoll == 1 then
             local winnerName = elim.finaleOrder[3 - elim.finaleTurnIndex]
             table.insert(elim.eliminationOrder, { name = playerName, round = elim.round + 1 })
-            addon:Announce(string.format("CrossGambling: %s rolls a 1 and is eliminated!", playerName))
+            addon:Announce(string.format(L["EliminationMode_RollsA1AndIsEliminated"], playerName))
             finishElimination(addon, game, winnerName)
         else
             elim.finaleMax = actualRoll
             elim.finaleTurnIndex = 3 - elim.finaleTurnIndex
             addon:Announce(string.format(
-                "CrossGambling: %s, it's your turn! Roll 1-%d",
+                L["EliminationMode_ItSYourTurnRoll1"],
                 elim.finaleOrder[elim.finaleTurnIndex], elim.finaleMax
             ))
         end

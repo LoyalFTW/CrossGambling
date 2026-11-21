@@ -1,17 +1,18 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
 local RaffleMode = {}
 RaffleMode.name        = "Raffle"
-RaffleMode.description = "Join to buy a ticket at the wager price - the host can buy one too. Once entries close, the host rolls once to choose a ticket-holder. Every other entrant then pays the winner one wager's worth of gold."
+RaffleMode.description = L["RaffleMode_JoinToBuyATicketAtThe"]
 RaffleMode.minPlayers  = 2
 RaffleMode.hostRolls   = true
 
 function RaffleMode:OnStartRolls(addon, game)
     addon:Announce(string.format(
-        "CrossGambling: Raffle! %s types /roll %d to draw the winning ticket!",
-        game.hostName or "The host", #game.players
+        L["RaffleMode_RaffleTypesRollToDrawTheWinning"],
+        game.hostName or L["RaffleMode_TheHost"], #game.players
     ))
 end
 
@@ -28,7 +29,7 @@ function RaffleMode:OnRollReceived(addon, game, playerName, actualRoll, minRoll,
     local winner = game.players[actualRoll]
     addon:RecordRoll(winner.name, "Winner")
 
-    local lines = { string.format("CrossGambling: Winning ticket is %d! %s takes the pot!", actualRoll, winner.name) }
+    local lines = { string.format(L["RaffleMode_WinningTicketIsTakesThePot"], actualRoll, winner.name) }
 
     for i = 1, #game.players do
         local p = game.players[i]

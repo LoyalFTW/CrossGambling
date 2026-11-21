@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 local addonObject = CrossGambling
@@ -196,7 +197,7 @@ local CGMainMenu = CreateFrame("Button", nil, MainHeader, isSlick and "BackdropT
 CGMainMenu:SetSize(isSlick and 63 or 100, 21)
 CGMainMenu:SetPoint("TOPLEFT", MainHeader, "TOPLEFT", 30, 0)
 CGMainMenu:SetFrameStrata("MEDIUM")
-CGMainMenu:SetText("Ledger")
+CGMainMenu:SetText(L["MainWindow_Ledger"])
 CGMainMenu:SetNormalFontObject("GameFontNormal")
 if isSlick then ButtonColors(CGMainMenu) end
 CGMainMenu:SetScript("OnMouseUp", function(self)
@@ -214,7 +215,7 @@ local CGOptionsBtn = CreateFrame("Button", nil, MainHeader, isSlick and "Backdro
 CGOptionsBtn:SetSize(isSlick and 63 or 100, 21)
 CGOptionsBtn:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", isSlick and -30 or -25, 0)
 CGOptionsBtn:SetFrameStrata("MEDIUM")
-CGOptionsBtn:SetText("Options")
+CGOptionsBtn:SetText(L["MainWindow_Options"])
 CGOptionsBtn:SetNormalFontObject("GameFontNormal")
 if isSlick then ButtonColors(CGOptionsBtn) end
 CGOptionsBtn:SetScript("OnMouseUp", function(self)
@@ -224,7 +225,8 @@ end)
 local GCchatMethod = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
 GCchatMethod:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 GCchatMethod:SetPoint("TOPLEFT", MainHeader, "BOTTOMLEFT", 5, -2)
-GCchatMethod:SetText(self.game.chatMethod)
+GCchatMethod.channel = self.game.chatMethod
+GCchatMethod:SetText(self:GetChannelDisplayName(GCchatMethod.channel))
 GCchatMethod:SetNormalFontObject("GameFontNormal")
 if isSlick then
     ButtonColors(GCchatMethod)
@@ -241,12 +243,17 @@ if isSlick then
         highlight:Hide()
     end)
 end
-GCchatMethod:SetScript("OnClick", function() self:chatMethod() GCchatMethod:SetText(self.game.chatMethod) end)
+GCchatMethod:SetScript("OnClick", function()
+    self:chatMethod()
+    GCchatMethod.channel = self.game.chatMethod
+    GCchatMethod:SetText(self:GetChannelDisplayName(GCchatMethod.channel))
+end)
 
 local CGGameMode = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
 CGGameMode:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGGameMode:SetPoint("TOPRIGHT", MainHeader, "BOTTOMRIGHT", -4, -2)
-CGGameMode:SetText(self.game.mode)
+CGGameMode.mode = self.game.mode
+CGGameMode:SetText(self:GetModeDisplayName(CGGameMode.mode))
 CGGameMode:SetNormalFontObject("GameFontNormal")
 if isSlick then
     ButtonColors(CGGameMode)
@@ -268,7 +275,8 @@ CGGameMode:SetScript("OnClick", function()
         self:PostModeRules()
     else
         self:changeGameMode()
-        CGGameMode:SetText(self.game.mode)
+        CGGameMode.mode = self.game.mode
+        CGGameMode:SetText(self:GetModeDisplayName(CGGameMode.mode))
         self:RefreshGameModeTooltip(CGGameMode)
     end
 end)
@@ -305,7 +313,7 @@ local CGEnter
 local CGAcceptOnes = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
 CGAcceptOnes:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGAcceptOnes:SetPoint("TOPLEFT", GCchatMethod, "BOTTOMLEFT", -0, -25)
-CGAcceptOnes:SetText("New Game")
+CGAcceptOnes:SetText(L["MainWindow_NewGame"])
 CGAcceptOnes:SetNormalFontObject("GameFontNormal")
 if isSlick then
     ButtonColors(CGAcceptOnes)
@@ -350,12 +358,12 @@ CGAcceptOnes:SetScript("OnClick", function()
     CGAcceptOnes:Disable()
     local gameReady = true
 
-    if CGAcceptOnes:GetText() == "Host Game" then
-        CGAcceptOnes:SetText("New Game")
+    if CGAcceptOnes:GetText() == L["MainWindow_HostGame"] then
+        CGAcceptOnes:SetText(L["MainWindow_NewGame"])
     else
         self:SetWager(CGEditBox:GetText())
-        self.game.mode = CGGameMode:GetText()
-        self.game.chatMethod = GCchatMethod:GetText()
+        self.game.mode = CGGameMode.mode
+        self.game.chatMethod = GCchatMethod.channel
         self:SetHouseCut(CGGuildPercent:GetText())
         gameReady = self:HostNewGame()
     end
@@ -379,7 +387,7 @@ end)
 CGLastCall = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
 CGLastCall:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGLastCall:SetPoint("TOPLEFT", CGAcceptOnes, "BOTTOMLEFT", -0, -3)
-CGLastCall:SetText("Last Call!")
+CGLastCall:SetText(L["MainWindow_LastCall"])
 CGLastCall:SetNormalFontObject("GameFontNormal")
 if isSlick then
     ButtonColors(CGLastCall)
@@ -397,13 +405,13 @@ if isSlick then
     end)
 end
 CGLastCall:SetScript("OnClick", function()
-    self:Announce("Last Call to Enter!")
+    self:Announce(L["Chat_LastCallToEnter"])
 end)
 
 CGStartRoll = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
 CGStartRoll:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGStartRoll:SetPoint("TOPLEFT", CGLastCall, "BOTTOMLEFT", -0, -3)
-CGStartRoll:SetText("Start Rolling")
+CGStartRoll:SetText(L["MainWindow_StartRolling"])
 CGStartRoll:SetNormalFontObject("GameFontNormal")
 if isSlick then
     ButtonColors(CGStartRoll)
@@ -422,13 +430,13 @@ if isSlick then
 end
 CGStartRoll:SetScript("OnClick", function()
     self:CGRolls()
-    CGStartRoll:SetText("Whos Left?")
+    CGStartRoll:SetText(L["MainWindow_WhosLeft"])
 end)
 
 CGEnter = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
 CGEnter:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGEnter:SetPoint("TOPLEFT", CGGameMode, "BOTTOMLEFT", -0, -25)
-CGEnter:SetText("Join")
+CGEnter:SetText(L["MainWindow_Join"])
 CGEnter:SetNormalFontObject("GameFontNormal")
 if isSlick then
     ButtonColors(CGEnter)
@@ -447,25 +455,25 @@ if isSlick then
 end
 
 local function CGEnter_UpdateJoinText()
-    CGEnter:SetText("Join")
+    CGEnter:SetText(L["MainWindow_Join"])
 end
 
 CGEnter:SetScript("OnClick", function()
     local joinWord  = self.db.global.joinWord  or "1"
     local leaveWord = self.db.global.leaveWord or "-1"
-    if CGEnter:GetText() == "Leave" then
+    if CGEnter:GetText() == L["MainWindow_Leave"] then
         self:SendChat(leaveWord)
-        CGEnter:SetText("Join")
+        CGEnter:SetText(L["MainWindow_Join"])
     else
         self:SendChat(joinWord)
-        CGEnter:SetText("Leave")
+        CGEnter:SetText(L["MainWindow_Leave"])
     end
 end)
 
 local CGRollMe = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
 CGRollMe:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGRollMe:SetPoint("TOPLEFT", CGEnter, "BOTTOMLEFT", -0, -3)
-CGRollMe:SetText("Roll Me")
+CGRollMe:SetText(L["MainWindow_RollMe"])
 CGRollMe:SetNormalFontObject("GameFontNormal")
 if isSlick then
     ButtonColors(CGRollMe)
@@ -489,7 +497,7 @@ end)
 local CGCloseGame = CreateFrame("Button", nil, MainMenu, isSlick and "BackdropTemplate" or "UIPanelButtonTemplate")
 CGCloseGame:SetSize(isSlick and 105 or 150, isSlick and 30 or 28)
 CGCloseGame:SetPoint("TOPLEFT", CGRollMe, "BOTTOMLEFT", -0, -3)
-CGCloseGame:SetText("Close")
+CGCloseGame:SetText(L["Common_Close"])
 CGCloseGame:SetNormalFontObject("GameFontNormal")
 if isSlick then
     ButtonColors(CGCloseGame)
@@ -560,13 +568,13 @@ end)
 
 local title = auditFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 title:SetPoint("TOP", 0, -10)
-title:SetText("History Log")
+title:SetText(L["MainWindow_HistoryLog"])
 
 local summaryText = auditFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 summaryText:SetPoint("TOPLEFT", 20, -30)
 summaryText:SetPoint("TOPRIGHT", -20, -30)
 summaryText:SetJustifyH("CENTER")
-summaryText:SetText("0 entries")
+summaryText:SetText(L["MainWindow_0Entries"])
 
 local searchBox = CreateFrame("EditBox", nil, auditFrame, "InputBoxTemplate")
 searchBox:SetSize(200, 20)
@@ -586,7 +594,7 @@ end
 local purgeButton = CreateFrame("Button", nil, auditFrame, "BackdropTemplate")
 purgeButton:SetSize(80, 20) 
 purgeButton:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", 0, -10)
-purgeButton:SetText("Purge Now")
+purgeButton:SetText(L["MainWindow_PurgeNow"])
 purgeButton:SetNormalFontObject("GameFontNormalSmall") 
 ButtonColors(purgeButton)
 purgeButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
@@ -614,7 +622,7 @@ for i, val in ipairs(retentionDays) do
 
     local label = cb:CreateFontString(nil, "OVERLAY", "GameFontNormalTiny")
     label:SetPoint("BOTTOM", cb, "TOP", 0, 1)
-    label:SetText(type(val) == "number" and (val .. "d") or "Never")
+    label:SetText(type(val) == "number" and (val .. L["History_DaySuffix"]) or L["Common_Never"])
 
     cb.days = val
     cb:SetScript("OnClick", OnRetentionChanged)
@@ -658,7 +666,7 @@ end)
 local CGHistoryLog = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 CGHistoryLog:SetSize(105, 14)
 CGHistoryLog:SetPoint("TOPRIGHT", MainHeader, "BOTTOMRIGHT", -4, -2)
-CGHistoryLog:SetText("History Log")
+CGHistoryLog:SetText(L["MainWindow_HistoryLog"])
 CGHistoryLog:SetNormalFontObject("GameFontNormal")
 ButtonColors(CGHistoryLog)
 CGHistoryLog:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
@@ -700,7 +708,7 @@ end)
 local CGClassic = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 CGClassic:SetSize(105, 30)
 CGClassic:SetPoint("TOPRIGHT", CGGuildPercent, "BOTTOMRIGHT", 0, -25)
-CGClassic:SetText("Classic Theme")
+CGClassic:SetText(L["MainWindow_ClassicTheme"])
 CGClassic:SetNormalFontObject("GameFontNormal")
 ButtonColors(CGClassic)
 CGClassic:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
@@ -718,7 +726,7 @@ end)
 CGClassic:SetScript("OnClick", function()
 	local current = self.db.global.theme or "Slick"
 	if current == "Classic" then
-		DEFAULT_CHAT_FRAME:AddMessage("|cffFFD100CrossGambling|r: Already using Classic theme.")
+		DEFAULT_CHAT_FRAME:AddMessage(L["MainWindow_AlreadyUsingClassicTheme"])
 		return
 	end
 	self.uiBuilt = false
@@ -728,7 +736,7 @@ end)
 local ChangeColorButton = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 ChangeColorButton:SetSize(57.5, 30)
 ChangeColorButton:SetPoint("BOTTOMLEFT", MainFooter, "BOTTOMLEFT", 0, 15)
-ChangeColorButton:SetText("Button\nColor")
+ChangeColorButton:SetText(L["MainWindow_ButtonColor"])
 ChangeColorButton:SetNormalFontObject("GameFontNormal")
 ButtonColors(ChangeColorButton)
 ChangeColorButton:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
@@ -748,7 +756,7 @@ ChangeColorButton:SetScript("OnMouseUp", function() CGTheme:ChangeColor("buttons
 local ChangeColorSide = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 ChangeColorSide:SetSize(ChangeColorButton:GetSize()) 
 ChangeColorSide:SetPoint("BOTTOMLEFT", ChangeColorButton, "BOTTOMRIGHT", 0, 0) 
-ChangeColorSide:SetText("Side\nColor")
+ChangeColorSide:SetText(L["MainWindow_SideColor"])
 ChangeColorSide:SetNormalFontObject("GameFontNormal")
 ButtonColors(ChangeColorSide)
 ChangeColorSide:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
@@ -768,7 +776,7 @@ ChangeColorSide:SetScript("OnMouseUp", function() CGTheme:ChangeColor("sidecolor
 local ChangeColorFrame = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 ChangeColorFrame:SetSize(ChangeColorButton:GetSize()) 
 ChangeColorFrame:SetPoint("BOTTOMLEFT", ChangeColorSide, "BOTTOMRIGHT", 0, 0) 
-ChangeColorFrame:SetText("Frame\nColor")
+ChangeColorFrame:SetText(L["MainWindow_FrameColor"])
 ChangeColorFrame:SetNormalFontObject("GameFontNormal")
 ButtonColors(ChangeColorFrame)
 ChangeColorFrame:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
@@ -788,7 +796,7 @@ ChangeColorFrame:SetScript("OnMouseUp", function() CGTheme:ChangeColor("frame") 
 local ChangeColorReset = CreateFrame("Button", nil, OptionsButton, "BackdropTemplate")
 ChangeColorReset:SetSize(ChangeColorButton:GetSize())
 ChangeColorReset:SetPoint("BOTTOMLEFT", ChangeColorFrame, "BOTTOMRIGHT", 0, 0) 
-ChangeColorReset:SetText("Reset\nColors")
+ChangeColorReset:SetText(L["MainWindow_ResetColors"])
 ChangeColorReset:SetNormalFontObject("GameFontNormal")
 ButtonColors(ChangeColorReset)
 ChangeColorReset:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
@@ -910,7 +918,7 @@ local CGLeftMenuHeader = CreateFrame("Button", nil, CGLeftMenu,  "BackdropTempla
 CGLeftMenuHeader:SetSize(CGLeftMenu:GetSize(), 21) 
 CGLeftMenuHeader:SetPoint("TOPLEFT", CGLeftMenu, "TOPLEFT", 0, 20)
 CGLeftMenuHeader:SetFrameLevel(15)
-CGLeftMenuHeader:SetText("Roll Tracker")
+CGLeftMenuHeader:SetText(L["MainWindow_RollTracker"])
 CGLeftMenuHeader:SetNormalFontObject("GameFontNormal")
 ButtonColors(CGLeftMenuHeader)
 
@@ -949,7 +957,7 @@ CGCall["R_NewGame"] = function()
 	CrossGambling:ClearCompletedGameBoard()
 	CrossGambling:QueueGameBoardRefresh()
 	CGEnter_UpdateJoinText()
-	CGStartRoll:SetText("Start Rolling")
+	CGStartRoll:SetText(L["MainWindow_StartRolling"])
 	CGEnter:Enable()
 end
 
@@ -982,7 +990,7 @@ end
 CGCall["GAME_OVER"] = function()
     CrossGambling:QueueGameBoardRefresh()
     SetHostButtonsEnabled(true)
-    CGStartRoll:SetText("Start Rolling")
+    CGStartRoll:SetText(L["MainWindow_StartRolling"])
     CGEnter_UpdateJoinText()
     CGEnter:Enable()
 end

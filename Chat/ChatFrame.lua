@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 CGChat = {} 
@@ -76,7 +77,7 @@ function CGChat:BuildChatPanel(parentFrame, game, backdropApplyFn, sideColorAppl
     end)
     CGRightMenu.TextField = textField
 
-    local PLACEHOLDER = "Type Here..."
+    local PLACEHOLDER = L["Chat_TypeHere"]
 
     local CGChatBox = CreateFrame("EditBox", "CGChatBoxFrame", CGRightMenu, "InputBoxTemplate")
     CGChatBox:SetPoint("BOTTOMLEFT",  CGRightMenu, "BOTTOMLEFT",  5, 6)

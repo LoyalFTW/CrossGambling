@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 local function goldAmount(value)
@@ -84,14 +85,14 @@ function CrossGambling:RecordLedgerPayment(id, recipient, value)
     local entry = self:GetLedgerEntry(id)
     local amount = goldAmount(value)
     if not entry or (recipient ~= "winner" and recipient ~= "guild") then
-        return false, "Select a debt and a recipient first."
+        return false, L["Ledger_SelectADebtAndARecipientFirst"]
     end
     if not amount or amount == 0 then
-        return false, "Enter a positive whole-gold amount."
+        return false, L["Ledger_EnterAPositiveWholeGoldAmount"]
     end
     local remaining = self:GetLedgerBalance(entry, recipient)
     if amount > remaining then
-        return false, "Payment exceeds the remaining " .. self:addCommas(remaining) .. "g balance."
+        return false, L["Ledger_PaymentExceedsTheRemaining"] .. self:addCommas(remaining) .. L["Ledger_GBalance"]
     end
     entry.payments[#entry.payments + 1] = {
         recipient = recipient,
@@ -103,7 +104,7 @@ function CrossGambling:RecordLedgerPayment(id, recipient, value)
         recipient = recipient == "winner" and entry.winner or entry.guild,
         amount = amount, profile = entry.profile })
     self:RefreshPaymentLedger()
-    return true, "Recorded " .. self:addCommas(amount) .. "g paid."
+    return true, L["Ledger_Recorded"] .. self:addCommas(amount) .. L["Ledger_GPaid"]
 end
 
 function CrossGambling:GetLastLedgerPayment(entry)
@@ -117,11 +118,11 @@ end
 function CrossGambling:UndoLedgerPayment(id, expectedIndex)
     local entry = self:GetLedgerEntry(id)
     if not entry then
-        return false, "Debt no longer exists."
+        return false, L["Ledger_DebtNoLongerExists"]
     end
     local payment, index = self:GetLastLedgerPayment(entry)
     if not payment or (expectedIndex and index ~= expectedIndex) then
-        return false, "Payment changed. Select the debt again."
+        return false, L["Ledger_PaymentChangedSelectTheDebtAgain"]
     end
     payment.reversedAt = time()
     payment.reversedBy = self.game.PlayerName
@@ -129,7 +130,17 @@ function CrossGambling:UndoLedgerPayment(id, expectedIndex)
         recipient = payment.recipient == "winner" and entry.winner or entry.guild,
         amount = payment.amount, profile = entry.profile })
     self:RefreshPaymentLedger()
-    return true, "Payment undone; the balance has been restored."
+    return true, L["Ledger_PaymentUndoneTheBalanceHasBeenRestored"]
+end
+
+local statusLabels = {
+    Paid = L["Ledger_PaidStatus"],
+    Partial = L["Ledger_Partial"],
+    Unpaid = L["Ledger_Unpaid"],
+}
+
+function CrossGambling:GetLedgerStatusDisplayName(status)
+    return statusLabels[status] or status
 end
 
 function CrossGambling:GetFilteredLedgerEntries(search, filter, playerName)
@@ -141,7 +152,7 @@ function CrossGambling:GetFilteredLedgerEntries(search, filter, playerName)
         local entry = ledger.entries[i]
         local status = self:GetLedgerStatus(entry)
         local searchable = table.concat({ tostring(entry.id), entry.loser, entry.winner, entry.guild,
-            entry.mode or "", entry.profile or "", entry.host or "", entry.realm or "", status }, " ")
+            entry.mode or "", self:GetModeDisplayName(entry.mode) or "", entry.profile or "", entry.host or "", entry.realm or "", status, self:GetLedgerStatusDisplayName(status) }, " ")
         local involved = not playerKey or self:NormalizePlayerName(entry.loser, true) == playerKey or self:NormalizePlayerName(entry.winner, true) == playerKey
         local matches = debtId and entry.id == debtId or not debtId and self:AuditEntryMatches(entry, searchable, search)
         if involved and matches then
@@ -206,27 +217,27 @@ function CrossGambling:BuildPlayerDebtReport(playerName)
             if winnerRemaining + guildRemaining > 0 then
                 count = count + 1
                 total = total + winnerRemaining + guildRemaining
-                local reference = "[Debt #" .. entry.id .. " - " .. (entry.mode or "Game") .. "] " .. entry.loser .. " owes "
+                local reference = string.format(L["Ledger_Reference"], entry.id, self:GetModeDisplayName(entry.mode) or L["Common_Game"])
                 if winnerRemaining > 0 then
-                    lines[#lines + 1] = reference .. entry.winner .. " " .. self:addCommas(winnerRemaining) .. "g."
+                    lines[#lines + 1] = string.format(L["Ledger_ReportWinner"], reference, entry.loser, entry.winner, self:addCommas(winnerRemaining))
                 end
                 if guildRemaining > 0 then
-                    lines[#lines + 1] = reference .. entry.guild .. " (guild) " .. self:addCommas(guildRemaining) .. "g."
+                    lines[#lines + 1] = string.format(L["Ledger_ReportGuild"], reference, entry.loser, entry.guild, self:addCommas(guildRemaining))
                 end
             end
         end
     end
-    table.insert(lines, 1, count == 0 and ("CrossGambling: " .. displayName .. " has no unpaid debts.")
-        or string.format("CrossGambling: %s owes %sg across %d unpaid %s.", displayName, self:addCommas(total), count, count == 1 and "debt" or "debts"))
+    table.insert(lines, 1, count == 0 and ("CrossGambling: " .. displayName .. L["Ledger_HasNoUnpaidDebts"])
+        or string.format(count == 1 and L["Ledger_ReportOne"] or L["Ledger_ReportMany"], displayName, self:addCommas(total), count))
     return lines, total, count
 end
 
 function CrossGambling:ReportPlayerDebts(playerName)
     if self.ledgerDebtReport then
-        return false, "A debt report is already being sent."
+        return false, L["Ledger_ADebtReportIsAlreadyBeingSent"]
     end
     local lines = self:BuildPlayerDebtReport(playerName)
-    if not lines then return false, "Select a player first." end
+    if not lines then return false, L["Ledger_SelectAPlayerFirst"] end
     local method = self.game.chatMethod
     if not self:CanSendToChannel(method) then
         return false, self:GetUnavailableChannelMessage(method)
@@ -255,7 +266,7 @@ function CrossGambling:ReportPlayerDebts(playerName)
         if self.game.chatMethod ~= method or self:ResolveChatChannel(method) ~= channel or not self:CanSendToChannel(method) then
             self.ledgerDebtReport = nil
             self:RefreshPaymentLedger()
-            self:Print("Debt report stopped because the chat channel changed or became unavailable.")
+            self:Print(L["Ledger_DebtReportStoppedBecauseTheChatChannel"])
             return
         end
         self:SendChat(report.lines[report.index], method)
@@ -269,24 +280,24 @@ function CrossGambling:ReportPlayerDebts(playerName)
     end
     sendNext()
     self:RefreshPaymentLedger()
-    return true, "Sending debt report to " .. channel .. "."
+    return true, L["Ledger_SendingDebtReportTo"] .. self:GetChannelDisplayName(channel) .. "."
 end
 
 function CrossGambling:StopLedgerDebtReport()
-    if not self.ledgerDebtReport then return false, "No debt report is being sent." end
+    if not self.ledgerDebtReport then return false, L["Ledger_NoDebtReportIsBeingSent"] end
     self.ledgerDebtReport = nil
     self:RefreshPaymentLedger()
-    return true, "Debt report stopped."
+    return true, L["Ledger_DebtReportStopped"]
 end
 
 function CrossGambling:ExportPaymentLedger(search, filter, playerName)
-    local lines = { "ID\tDate\tProfile\tMode\tHost\tRealm\tPayer\tWinner\tGuild\tTotal gold\tWinner due\tWinner paid\tGuild due\tGuild paid\tStatus" }
+    local lines = { L["Ledger_IDDateProfileModeHostRealmPayer"] }
     for _, entry in ipairs(self:GetFilteredLedgerEntries(search, filter, playerName)) do
         local _, winnerPaid = self:GetLedgerBalance(entry, "winner")
         local _, guildPaid = self:GetLedgerBalance(entry, "guild")
-        local fields = { entry.id, self:FormatAuditTimestamp(entry.timestamp), entry.profile or "", entry.mode or "",
+        local fields = { entry.id, self:FormatAuditTimestamp(entry.timestamp), entry.profile or "", self:GetModeDisplayName(entry.mode) or "",
             entry.host or "", entry.realm or "", entry.loser, entry.winner, entry.guild, entry.amount,
-            entry.winnerAmount, winnerPaid, entry.guildAmount, guildPaid, self:GetLedgerStatus(entry) }
+            entry.winnerAmount, winnerPaid, entry.guildAmount, guildPaid, self:GetLedgerStatusDisplayName(self:GetLedgerStatus(entry)) }
         for i, value in ipairs(fields) do fields[i] = tostring(value):gsub("[\t\r\n]", " ") end
         lines[#lines + 1] = table.concat(fields, "\t")
     end

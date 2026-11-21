@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
@@ -519,12 +520,12 @@ end
 
 function CrossGambling:SendChat(msg, method)
     if self:IsBotTest() then
-        self:Print("|cff888888[CG Bot Test]|r " .. msg)
+        self:Print(L["Chat_CGBotTest"] .. msg)
         return
     end
     method = method or self.game.chatMethod
     if self:IsTestingMode() then
-        self:Print("|cff888888[" .. (method or "Chat") .. "]|r " .. msg)
+        self:Print("|cff888888[" .. (self:GetChannelDisplayName(method) or L["Chat_Chat"]) .. "]|r " .. msg)
     end
     local sendChat = (C_ChatInfo and C_ChatInfo.SendChatMessage) or SendChatMessage
     pcall(sendChat, msg, self:ResolveChatChannel(method))
@@ -546,13 +547,13 @@ end
 
 function CrossGambling:GetUnavailableChannelMessage(method)
     if method == "PARTY" then
-        return "You're not in a party."
+        return L["Chat_YouReNotInAParty"]
     elseif method == "RAID" then
-        return "You're not in a raid."
+        return L["Chat_YouReNotInARaid"]
     elseif method == "GUILD" then
-        return "You're not in a guild."
+        return L["Chat_YouReNotInAGuild"]
     end
-    return "The selected chat channel is not available."
+    return L["Chat_TheSelectedChatChannelIsNotAvailable"]
 end
 
 function CrossGambling:Announce(message)
@@ -978,7 +979,7 @@ CGCall["Chat_Method"] = function(value)
 end
 
 CGCall["LastCall"] = function()
-    CrossGambling:Announce("Last Call to Enter!")
+    CrossGambling:Announce(L["Chat_LastCallToEnter"])
 end
 
 C_ChatInfo.RegisterAddonMessagePrefix(ADDON_PREFIX)

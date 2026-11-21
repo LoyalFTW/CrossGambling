@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 local addonObject = CrossGambling
@@ -87,7 +88,7 @@ local CGMainMenu = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTemplate
 CGMainMenu:SetSize(100, 21)
 CGMainMenu:SetPoint("TOPLEFT", MainHeader, "TOPLEFT", 30, 0)
 CGMainMenu:SetFrameStrata("MEDIUM")
-CGMainMenu:SetText("Ledger")
+CGMainMenu:SetText(L["MainWindow_Ledger"])
 CGMainMenu:SetNormalFontObject("GameFontNormal")
 CGMainMenu:SetScript("OnMouseUp", function(self)
     CrossGambling:ShowPaymentLedger()
@@ -108,7 +109,7 @@ local CGOptionsBtn = CreateFrame("Button", nil, MainHeader, "UIPanelButtonTempla
 CGOptionsBtn:SetSize(100, 21)
 CGOptionsBtn:SetPoint("TOPRIGHT", MainHeader, "TOPRIGHT", -25, 0)
 CGOptionsBtn:SetFrameStrata("MEDIUM")
-CGOptionsBtn:SetText("Options")
+CGOptionsBtn:SetText(L["MainWindow_Options"])
 CGOptionsBtn:SetNormalFontObject("GameFontNormal")
 CGOptionsBtn:SetScript("OnMouseUp", function(self)
     CGOptions:Toggle()
@@ -117,21 +118,28 @@ end)
 local GCchatMethod = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 GCchatMethod:SetSize(150, 28)
 GCchatMethod:SetPoint("TOPLEFT", MainHeader, "BOTTOMLEFT", 5, -2)
-GCchatMethod:SetText(self.game.chatMethod)
+GCchatMethod.channel = self.game.chatMethod
+GCchatMethod:SetText(self:GetChannelDisplayName(GCchatMethod.channel))
 GCchatMethod:SetNormalFontObject("GameFontNormal")
-GCchatMethod:SetScript("OnClick", function() self:chatMethod() GCchatMethod:SetText(self.game.chatMethod) end)
+GCchatMethod:SetScript("OnClick", function()
+    self:chatMethod()
+    GCchatMethod.channel = self.game.chatMethod
+    GCchatMethod:SetText(self:GetChannelDisplayName(GCchatMethod.channel))
+end)
 
 local CGGameMode = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGGameMode:SetSize(150, 28)
 CGGameMode:SetPoint("TOPRIGHT", MainHeader, "BOTTOMRIGHT", -4, -2)
-CGGameMode:SetText(self.game.mode)
+CGGameMode.mode = self.game.mode
+CGGameMode:SetText(self:GetModeDisplayName(CGGameMode.mode))
 CGGameMode:SetNormalFontObject("GameFontNormal")
 CGGameMode:SetScript("OnClick", function()
     if IsShiftKeyDown() then
         self:PostModeRules()
     else
         self:changeGameMode()
-        CGGameMode:SetText(self.game.mode)
+        CGGameMode.mode = self.game.mode
+        CGGameMode:SetText(self:GetModeDisplayName(CGGameMode.mode))
         self:RefreshGameModeTooltip(CGGameMode)
     end
 end)
@@ -183,19 +191,19 @@ local CGEnter
 local CGAcceptOnes = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGAcceptOnes:SetSize(150, 28)
 CGAcceptOnes:SetPoint("TOPLEFT", GCchatMethod, "BOTTOMLEFT", -0, -25)
-CGAcceptOnes:SetText("New Game")
+CGAcceptOnes:SetText(L["MainWindow_NewGame"])
 CGAcceptOnes:SetNormalFontObject("GameFontNormal")
 
 CGAcceptOnes:SetScript("OnClick", function()
     CGAcceptOnes:Disable()
     local gameReady = true
 
-    if CGAcceptOnes:GetText() == "Host Game" then
-        CGAcceptOnes:SetText("New Game")
+    if CGAcceptOnes:GetText() == L["MainWindow_HostGame"] then
+        CGAcceptOnes:SetText(L["MainWindow_NewGame"])
     else
         self:SetWager(CGEditBox:GetText())
-        self.game.mode = CGGameMode:GetText()
-        self.game.chatMethod = GCchatMethod:GetText()
+        self.game.mode = CGGameMode.mode
+        self.game.chatMethod = GCchatMethod.channel
         self:SetHouseCut(CGGuildPercent:GetText())
         gameReady = self:HostNewGame()
     end
@@ -214,39 +222,39 @@ end)
 CGLastCall = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGLastCall:SetSize(150, 28)
 CGLastCall:SetPoint("TOPLEFT", CGAcceptOnes, "BOTTOMLEFT", -0, -3)
-CGLastCall:SetText("Last Call!")
+CGLastCall:SetText(L["MainWindow_LastCall"])
 CGLastCall:SetNormalFontObject("GameFontNormal")
 CGLastCall:SetScript("OnClick", function()
-self:Announce("Last Call to Enter!")
+self:Announce(L["Chat_LastCallToEnter"])
 end)
 
 CGStartRoll = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGStartRoll:SetSize(150, 28)
 CGStartRoll:SetPoint("TOPLEFT", CGLastCall, "BOTTOMLEFT", -0, -3)
-CGStartRoll:SetText("Start Rolling")
+CGStartRoll:SetText(L["MainWindow_StartRolling"])
 CGStartRoll:SetNormalFontObject("GameFontNormal")
 CGStartRoll:SetScript("OnClick", function()
 self:CGRolls()
-CGStartRoll:SetText("Whos Left?")
+CGStartRoll:SetText(L["MainWindow_WhosLeft"])
 end)
 
 CGEnter = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGEnter:SetSize(150, 28)
 CGEnter:SetPoint("TOPLEFT", CGGameMode, "BOTTOMLEFT", -0, -25)
-CGEnter:SetText("Join")
+CGEnter:SetText(L["MainWindow_Join"])
 CGEnter:SetNormalFontObject("GameFontNormal")
 local function CGEnter_UpdateJoinText()
-    CGEnter:SetText("Join")
+    CGEnter:SetText(L["MainWindow_Join"])
 end
 CGEnter:SetScript("OnClick", function()
     local joinWord  = self.db.global.joinWord  or "1"
     local leaveWord = self.db.global.leaveWord or "-1"
-    if CGEnter:GetText() == "Leave" then
+    if CGEnter:GetText() == L["MainWindow_Leave"] then
         self:SendChat(leaveWord)
-        CGEnter:SetText("Join")
+        CGEnter:SetText(L["MainWindow_Join"])
     else
         self:SendChat(joinWord)
-        CGEnter:SetText("Leave")
+        CGEnter:SetText(L["MainWindow_Leave"])
     end
 end)
 
@@ -254,7 +262,7 @@ end)
 local CGRollMe = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGRollMe:SetSize(150, 28)
 CGRollMe:SetPoint("TOPLEFT", CGEnter, "BOTTOMLEFT", -0, -3)
-CGRollMe:SetText("Roll Me")
+CGRollMe:SetText(L["MainWindow_RollMe"])
 CGRollMe:SetNormalFontObject("GameFontNormal")
 CGRollMe:SetScript("OnClick", function()
   self:rollMe()
@@ -263,7 +271,7 @@ end)
 local CGCloseGame = CreateFrame("Button", nil, MainMenu, "UIPanelButtonTemplate")
 CGCloseGame:SetSize(150, 28)
 CGCloseGame:SetPoint("TOPLEFT", CGRollMe, "BOTTOMLEFT", -0, -3)
-CGCloseGame:SetText("Close")
+CGCloseGame:SetText(L["Common_Close"])
 CGCloseGame:SetNormalFontObject("GameFontNormal")
 CGCloseGame:SetScript("OnClick", function()
   CrossGamblingUI:Hide()
@@ -291,13 +299,13 @@ end
 
 AnchorAuditFrame()
 
-auditFrame.TitleText:SetText("History Log")
+auditFrame.TitleText:SetText(L["MainWindow_HistoryLog"])
 
 local summaryText = auditFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 summaryText:SetPoint("TOPLEFT", 15, -27)
 summaryText:SetPoint("TOPRIGHT", -15, -27)
 summaryText:SetJustifyH("CENTER")
-summaryText:SetText("0 entries")
+summaryText:SetText(L["MainWindow_0Entries"])
 
 local resizeButton = CreateFrame("Button", nil, auditFrame)
 resizeButton:SetSize(16, 16)
@@ -323,7 +331,7 @@ searchBox:SetAutoFocus(false)
 local purgeButton = CreateFrame("Button", nil, auditFrame, "UIPanelButtonTemplate")
 purgeButton:SetSize(70, 24)
 purgeButton:SetPoint("TOPRIGHT", -10, -46)
-purgeButton:SetText("Purge Now")
+purgeButton:SetText(L["MainWindow_PurgeNow"])
 purgeButton:SetScript("OnClick", function()
     self:ConfirmPurgeAuditLog()
 end)
@@ -343,7 +351,7 @@ for i, val in ipairs(retentionDays) do
     local cb = CreateFrame("CheckButton", nil, auditFrame, "UICheckButtonTemplate")
     cb:SetSize(20, 20)
     cb:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", (i-1)*55, -8)
-    cb.Text:SetText(type(val) == "number" and val .. "d" or "Never")
+    cb.Text:SetText(type(val) == "number" and val .. L["History_DaySuffix"] or L["Common_Never"])
     cb.days = val
     cb:SetScript("OnClick", OnRetentionChanged)
     retentionCheckboxes[i] = cb
@@ -460,7 +468,7 @@ local function OnChatSubmit(CGChatBox)
     CGChatBox:ClearFocus()
 end
 
-local PLACEHOLDER = "Type Here..."
+local PLACEHOLDER = L["Chat_TypeHere"]
 local CGChatBox = CreateFrame("EditBox", nil, CGRightMenu, "InputBoxTemplate")
 CGChatBox:SetPoint("BOTTOMLEFT",  CGRightMenu, "BOTTOMLEFT",  5, 6)
 CGChatBox:SetPoint("BOTTOMRIGHT", CGRightMenu, "BOTTOMRIGHT", -5, 6)
@@ -584,7 +592,7 @@ local CGLeftMenuHeader = CreateFrame("Button", nil, CGLeftMenu, "UIPanelButtonTe
 CGLeftMenuHeader:SetSize(CGLeftMenu:GetSize(), 21) 
 CGLeftMenuHeader:SetPoint("TOPLEFT", CGLeftMenu, "TOPLEFT", 0, 20)
 CGLeftMenuHeader:SetFrameLevel(15)
-CGLeftMenuHeader:SetText("Roll Tracker")
+CGLeftMenuHeader:SetText(L["MainWindow_RollTracker"])
 CGLeftMenuHeader:SetNormalFontObject("GameFontNormal")
 
 local CGMenuToggle = CreateFrame("Button", nil, MainHeader,  "UIPanelButtonTemplate")
@@ -618,7 +626,7 @@ CGCall["R_NewGame"] = function()
 CrossGambling:ClearCompletedGameBoard()
 CrossGambling:QueueGameBoardRefresh()
 CGEnter_UpdateJoinText()
-CGStartRoll:SetText("Start Rolling")
+CGStartRoll:SetText(L["MainWindow_StartRolling"])
 CGEnter:Enable()
 end
 
@@ -644,7 +652,7 @@ CGCall["GAME_OVER"] = function()
     CGAcceptOnes:Enable()
     CGLastCall:Enable()
     CGStartRoll:Enable()
-    CGStartRoll:SetText("Start Rolling")
+    CGStartRoll:SetText(L["MainWindow_StartRolling"])
     CGEnter_UpdateJoinText()
     CGEnter:Enable()
 end

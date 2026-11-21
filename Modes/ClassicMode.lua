@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
@@ -34,14 +35,14 @@ function CrossGambling:NewHighLowMode(name, description, options)
         hl.stage   = (tieType == "High") and "high" or "low"
         hl.pending = SetFromList(names)
         addon:ClearRolls(hl.pending)
-        addon:Announce(tieType .. " tie breaker! " .. addon:String(names) .. " /roll " .. RollCeiling(addon) .. " now!")
+        addon:Announce(string.format(tieType == "High" and L["ClassicMode_HighTie"] or L["ClassicMode_LowTie"], addon:String(names), RollCeiling(addon)))
     end
 
     local function Settle(addon, game)
         local hl = game.highlow
 
         if not hl.winners[1] or not hl.losers[1] then
-            addon:FinishGame({ "CrossGambling: Not enough rolls to settle - the game is closed." })
+            addon:FinishGame({ L["ClassicMode_NotEnoughRollsToSettleTheGame"] })
             return
         end
 
@@ -57,7 +58,7 @@ function CrossGambling:NewHighLowMode(name, description, options)
 
         local line = addon:SettleDebt(hl.losers[1], hl.winners[1], grossAmount, Mode.name, amount)
         if houseAmount > 0 then
-            line = line .. " Plus " .. addon:addCommas(houseAmount) .. "g to the guild."
+            line = line .. L["Game_Plus"] .. addon:addCommas(houseAmount) .. L["Game_GToTheGuild"]
         end
         addon:FinishGame({ line })
     end
@@ -68,7 +69,7 @@ function CrossGambling:NewHighLowMode(name, description, options)
 
         if hl.stage == "main" then
             if highValue == lowValue then
-                addon:Announce("Everyone rolled " .. highValue .. "! No winners this round.")
+                addon:Announce(L["ClassicMode_EveryoneRolled"] .. highValue .. L["ClassicMode_NoWinnersThisRound"])
                 addon:CloseGame()
                 return
             end
@@ -96,7 +97,7 @@ function CrossGambling:NewHighLowMode(name, description, options)
             pending[game.players[i].name] = true
         end
         game.highlow = { stage = "main", pending = pending }
-        addon:Announce(string.format("CrossGambling: Entries have closed. Type /roll %d now!", RollCeiling(addon)))
+        addon:Announce(string.format(L["ClassicMode_EntriesHaveClosedTypeRollNow"], RollCeiling(addon)))
     end
 
     function Mode:GetRollRange(addon, game)
@@ -124,7 +125,7 @@ function CrossGambling:NewHighLowMode(name, description, options)
         if not hl then return end
 
         if #game.players < 2 then
-            addon:FinishGame({ string.format("CrossGambling: %s left. Not enough players remain - the game is closed.", playerName) })
+            addon:FinishGame({ string.format(L["ClassicMode_LeftNotEnoughPlayersRemainTheGame"], playerName) })
             return
         end
 
@@ -135,12 +136,12 @@ function CrossGambling:NewHighLowMode(name, description, options)
         RemoveFromList(hl.losers or {}, playerName)
 
         if hl.stage ~= "main" and (not hl.winners[1] or not hl.losers[1]) then
-            addon:FinishGame({ string.format("CrossGambling: %s left. The tie-break can no longer be settled - the game is closed.", playerName) })
+            addon:FinishGame({ string.format(L["ClassicMode_LeftTheTieBreakCanNoLonger"], playerName) })
             return
         end
 
         if next(hl.pending) == nil then
-            addon:FinishGame({ string.format("CrossGambling: %s left. Not enough players remain in this round - the game is closed.", playerName) })
+            addon:FinishGame({ string.format(L["ClassicMode_LeftNotEnoughPlayersRemainInThis"], playerName) })
             return
         end
 
@@ -158,6 +159,6 @@ end
 
 CrossGambling:RegisterMode(CrossGambling:NewHighLowMode(
     "Classic",
-    "Everyone rolls 1-wager. Highest roll wins the difference from the lowest roll. Ties at the top or bottom are settled with a re-roll between the tied players.",
+    L["ClassicMode_EveryoneRolls1WagerHighestRollWins"],
     { allowHouseCut = true }
 ))

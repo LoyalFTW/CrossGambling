@@ -30,6 +30,8 @@
 ## Category-zhTW: 賭博
 
 Libs.xml
+Libs/AceLocale-3.0/AceLocale-3.0.lua
+Locales/Localization.xml
 Core/Foundation.lua
 Core/Runtime.lua
 Core/Utils.lua

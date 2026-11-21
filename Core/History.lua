@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 local auditRetentionOptions = {5, 10, 30, "Never"}
@@ -47,7 +48,7 @@ function CrossGambling:CreateAuditExpandButton(frame, slick)
     end)
     button:SetScript("OnEnter", function()
         GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-        GameTooltip:SetText(frame.auditRestoreLayout and "Restore history window" or "Expand history window")
+        GameTooltip:SetText(frame.auditRestoreLayout and L["History_RestoreHistoryWindow"] or L["History_ExpandHistoryWindow"])
         GameTooltip:Show()
     end)
     button:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -179,15 +180,15 @@ function CrossGambling:PurgeAuditLogNow()
         self:RefreshAuditFrame(self.auditFrame.searchBox and self.auditFrame.searchBox:GetText() or "")
     end
 
-    self:Print(string.format("CrossGambling: History log purged (%d %s removed).", count, count == 1 and "entry" or "entries"))
+    self:Print(string.format(count == 1 and L["History_PurgedOne"] or L["History_PurgedMany"], count))
 end
 
 function CrossGambling:ConfirmPurgeAuditLog()
     if not StaticPopupDialogs["CG_PURGE_HISTORY"] then
         StaticPopupDialogs["CG_PURGE_HISTORY"] = {
-            text         = "Purge the entire history log? This cannot be undone.",
-            button1      = "Yes",
-            button2      = "No",
+            text         = L["History_PurgeTheEntireHistoryLogThisCannot"],
+            button1      = L["History_Yes"],
+            button2      = L["History_No"],
             OnAccept     = function() self:PurgeAuditLogNow() end,
             timeout      = 0,
             whileDead    = true,
@@ -200,7 +201,7 @@ end
 function CrossGambling:FormatAuditTimestamp(timestamp, compact)
     local ts = tonumber(timestamp) or 0
     if ts <= 0 then
-        return compact and "Unknown" or "Unknown time"
+        return compact and L["Common_Unknown"] or L["History_UnknownTime"]
     end
 
     local t = date("*t", ts)
@@ -277,67 +278,67 @@ function CrossGambling:FormatAuditEntry(entry)
         local delta = tonumber(entry.addedAmount) or 0
         local deltaColor = delta >= 0 and green or red
         return string.format(
-            "%s[%s]%s %sStats%s  %s%s%s\n%sBefore:%s %s  %sChange:%s %s%+d%s  %sAfter:%s %s",
+            L["History_StatsBeforeChangeAfter"],
             dim, ts, reset, gold, reset, name, entry.player or "?", reset,
             dim, reset, self:addCommas(entry.oldAmount or 0), dim, reset, deltaColor, delta, reset, dim, reset, self:addCommas(entry.newAmount or 0)
         )
     elseif entry.action == "joinStats" then
         return string.format(
-            "%s[%s]%s %sLinked Alt%s  %s%s%s -> %s%s%s\n%sStats:%s +%s  %sDeathroll:%s +%s",
+            L["History_LinkedAltStatsDeathroll"],
             dim, ts, reset, gold, reset, name, entry.altname or "?", reset, name, entry.mainname or "?", reset,
             dim, reset, self:addCommas(entry.statsAdded or 0), dim, reset, self:addCommas(entry.deathrollStatsAdded or 0)
         )
     elseif entry.action == "unjoinStats" then
         return string.format(
-            "%s[%s]%s %sUnlinked Alt%s  %s%s%s from %s%s%s\n%sStats:%s -%s  %sDeathroll:%s -%s",
+            L["History_UnlinkedAltFromStatsDeathroll"],
             dim, ts, reset, orange, reset, name, entry.altname or "?", reset, name, entry.mainname or "?", reset,
             dim, reset, self:addCommas(entry.pointsRemoved or 0), dim, reset, self:addCommas(entry.deathrollStatsRemoved or 0)
         )
     elseif entry.action == "debt" then
         local text = string.format(
-            "%s[%s]%s %sRound Result%s  %s%s%s owes %s%s%s %s%sg%s",
+            L["History_RoundResultOwesG"],
             dim, ts, reset, gold, reset, name, entry.loser or "?", reset, name, entry.winner or "?", reset,
             red, self:addCommas(entry.winnerAmount or entry.amount or 0), reset
         )
         if (tonumber(entry.guildAmount) or 0) > 0 then
-            text = text .. "  Plus " .. self:addCommas(entry.guildAmount) .. "g to the guild."
+            text = text .. L["History_Plus"] .. self:addCommas(entry.guildAmount) .. L["Game_GToTheGuild"]
         end
-        if entry.ledgerId then text = text .. "  " .. dim .. "[Debt #" .. entry.ledgerId .. "]" .. reset end
+        if entry.ledgerId then text = text .. "  " .. dim .. L["History_Debt"] .. entry.ledgerId .. "]" .. reset end
         return text
     elseif entry.action == "payment" or entry.action == "paymentUndo" then
-        return string.format("%s[%s]%s %s%s%s  %s -> %s: %sg  [Debt #%s]", dim, ts, reset,
-            entry.action == "payment" and green or orange, entry.action == "payment" and "Payment Recorded" or "Payment Undone", reset,
+        return string.format(L["History_GDebt"], dim, ts, reset,
+            entry.action == "payment" and green or orange, entry.action == "payment" and L["History_PaymentRecorded"] or L["History_PaymentUndone"], reset,
             entry.player or "?", entry.recipient or "?", self:addCommas(entry.amount or 0), tostring(entry.ledgerId or "?"))
     elseif entry.action == "doubleOrNothing" then
         local outcome = entry.outcome or "unknown"
         local outcomeText
         local outcomeColor = orange
         if outcome == "doubled" then
-            outcomeText = "DOUBLED to " .. self:addCommas(entry.finalAmount or 0) .. "g"
+            outcomeText = L["History_DOUBLEDTo"] .. self:addCommas(entry.finalAmount or 0) .. L["Common_GoldSuffix"]
             outcomeColor = red
         elseif outcome == "cleared" then
-            outcomeText = "CLEARED - nothing owed"
+            outcomeText = L["History_CLEAREDNothingOwed"]
             outcomeColor = green
         elseif outcome == "cancelled" then
-            outcomeText = "CANCELLED - original result kept"
+            outcomeText = L["History_CANCELLEDOriginalResultKept"]
         else
-            outcomeText = strupper(tostring(outcome))
+            outcomeText = outcome == "unknown" and L["History_UnknownOutcomeUpper"] or strupper(tostring(outcome))
         end
-        local rollText = entry.rolledOne and ("  " .. entry.rolledOne .. " rolled 1") or ""
+        local rollText = entry.rolledOne and ("  " .. entry.rolledOne .. L["History_Rolled1"]) or ""
         return string.format(
-            "%s[%s]%s %sDouble or Nothing%s  %s%s%s vs %s%s%s\n%sOriginal:%s %sg  %sOutcome:%s %s%s%s%s",
+            L["History_DoubleOrNothingVsOriginalGOutcome"],
             dim, ts, reset, gold, reset, name, entry.loser or "?", reset, name, entry.winner or "?", reset,
             dim, reset, self:addCommas(entry.originalAmount or 0), dim, reset, outcomeColor, outcomeText, reset, rollText
         )
     elseif entry.action == "deleteStat" then
         return string.format(
-            "%s[%s]%s %sDeleted Stats%s  %s%s%s\n%sStats:%s %s  %sDeathroll:%s %s",
+            L["History_DeletedStatsStatsDeathroll"],
             dim, ts, reset, red, reset, name, entry.player or "?", reset,
             dim, reset, self:addCommas(entry.oldAmount or 0), dim, reset, self:addCommas(entry.oldDeathrollAmount or 0)
         )
     elseif entry.action == "resetStats" then
         return string.format(
-            "%s[%s]%s %sReset Stats%s\n%sCleared:%s %d players, %d deathroll players, %d linked alts",
+            L["History_ResetStatsClearedPlayersDeathrollPlayersLinked"],
             dim, ts, reset, red, reset, dim, reset,
             tonumber(entry.statsCount) or 0, tonumber(entry.deathrollCount) or 0, tonumber(entry.linkedAltCount) or 0
         )
@@ -348,7 +349,7 @@ function CrossGambling:FormatAuditEntry(entry)
         extra[#extra + 1] = key .. "=" .. tostring(value)
     end
     table.sort(extra)
-    return string.format("%s[%s]%s %sUnknown%s\n%s", dim, ts, reset, orange, reset, table.concat(extra, ", "))
+    return string.format(L["History_Unknown"], dim, ts, reset, orange, reset, table.concat(extra, ", "))
 end
 
 function CrossGambling:QueueAuditSearchRefresh(searchBox, userInput)
@@ -407,7 +408,7 @@ function CrossGambling:RefreshAuditFrame(filter)
     local log = self.db and self.db.global and self.db.global.auditLog or {}
     local summary = self:GetAuditSummary()
     if self.auditFrame.summaryText then
-        self.auditFrame.summaryText:SetText(string.format("%d entries  |  %d rounds  |  %d D/N  |  %d edits  |  %d links",
+        self.auditFrame.summaryText:SetText(string.format(L["History_EntriesRoundsDNEditsLinks"],
             summary.total, summary.debt, summary.doubleOrNothing, summary.updateStat + summary.deleteStat + summary.resetStats, summary.joinStats + summary.unjoinStats))
     end
 
@@ -457,7 +458,7 @@ function CrossGambling:RefreshAuditFrame(filter)
         fs:SetWidth(width)
         fs:SetJustifyH("LEFT")
         fs:SetWordWrap(true)
-        fs:SetText(#log == 0 and "No history yet. Completed rounds and stat changes will show here." or "No history matches your search.")
+        fs:SetText(#log == 0 and L["History_NoHistoryYetCompletedRoundsAndStat"] or L["History_NoHistoryMatchesYourSearch"])
         fs:Show()
         yOffset = -36
     end
@@ -479,56 +480,63 @@ function CrossGambling:UpdateAuditLogText(filter)
     self:RefreshAuditFrame(filter)
 end
 
+local outcomeLabels = {
+    unknown = L["History_UnknownOutcome"],
+    doubled = L["History_DoubledOutcome"],
+    cleared = L["History_ClearedOutcome"],
+    cancelled = L["History_CancelledOutcome"],
+}
+
 function CrossGambling:auditMerges()
     if not self.db.global.auditLog or #self.db.global.auditLog == 0 then
-        self:AnnounceOrPrint("No audit log entries found.")
+        self:AnnounceOrPrint(L["History_NoAuditLogEntriesFound"])
         return
     end
 
-    self:AnnounceOrPrint("-- Audit Log --")
+    self:AnnounceOrPrint(L["History_AuditLog"])
     for i, entry in ipairs(self.db.global.auditLog) do
         if entry.action == "updateStat" then
             self:AnnounceOrPrint(string.format(
-                "%d. [%s] Updated stats for %s: old=%d, added=%d, new=%d",
+                L["History_UpdatedStatsForOldAddedNew"],
                 i, entry.timestamp, entry.player, entry.oldAmount, entry.addedAmount, entry.newAmount
             ))
         elseif entry.action == "joinStats" then
             self:AnnounceOrPrint(string.format(
-                "%d. [%s] Joined alt '%s' to main '%s' with %d stats and %d deathroll stats",
+                L["History_JoinedAltToMainWithStatsAnd"],
                 i, entry.timestamp, entry.altname, entry.mainname, entry.statsAdded or 0, entry.deathrollStatsAdded or 0
             ))
         elseif entry.action == "unjoinStats" then
             self:AnnounceOrPrint(string.format(
-                "%d. [%s] Unjoined alt '%s' from main '%s', points subtracted: %d, deathroll: %d",
+                L["History_UnjoinedAltFromMainPointsSubtractedDeathroll"],
                 i, entry.timestamp, entry.altname, entry.mainname, entry.pointsRemoved or 0, entry.deathrollStatsRemoved or 0
             ))
         elseif entry.action == "debt" then
             self:AnnounceOrPrint(string.format(
-                "%d. [%s] %s owes %s %dg",
+                L["History_OwesG"],
                 i, entry.timestamp, entry.loser or "?", entry.winner or "?", entry.winnerAmount or entry.amount or 0
             ))
             if (tonumber(entry.guildAmount) or 0) > 0 then
-                self:AnnounceOrPrint(string.format("   Plus %dg to the guild.", entry.guildAmount))
+                self:AnnounceOrPrint(string.format(L["History_PlusGToTheGuild"], entry.guildAmount))
             end
         elseif entry.action == "payment" or entry.action == "paymentUndo" then
-            self:AnnounceOrPrint(string.format("%d. [%s] %s: %s -> %s, %dg (debt #%s)", i, entry.timestamp,
-                entry.action == "payment" and "Payment recorded" or "Payment undone", entry.player or "?", entry.recipient or "?",
+            self:AnnounceOrPrint(string.format(L["History_GDebt2"], i, entry.timestamp,
+                entry.action == "payment" and L["History_PaymentRecorded2"] or L["History_PaymentUndone2"], entry.player or "?", entry.recipient or "?",
                 entry.amount or 0, tostring(entry.ledgerId or "?")))
         elseif entry.action == "doubleOrNothing" then
             self:AnnounceOrPrint(string.format(
-                "%d. [%s] Double or Nothing: %s vs %s, original=%dg, outcome=%s, final=%dg%s",
+                L["History_DoubleOrNothingVsOriginalGOutcome2"],
                 i, entry.timestamp, entry.loser or "?", entry.winner or "?", entry.originalAmount or 0,
-                entry.outcome or "unknown", entry.finalAmount or 0,
-                entry.rolledOne and (", " .. entry.rolledOne .. " rolled 1") or ""
+                outcomeLabels[entry.outcome or "unknown"] or entry.outcome, entry.finalAmount or 0,
+                entry.rolledOne and (", " .. entry.rolledOne .. L["History_Rolled1"]) or ""
             ))
         elseif entry.action == "deleteStat" then
             self:AnnounceOrPrint(string.format(
-                "%d. [%s] Deleted stats for %s: stats=%d, deathroll=%d",
+                L["History_DeletedStatsForStatsDeathroll"],
                 i, entry.timestamp, entry.player or "?", entry.oldAmount or 0, entry.oldDeathrollAmount or 0
             ))
         elseif entry.action == "resetStats" then
             self:AnnounceOrPrint(string.format(
-                "%d. [%s] Reset stats: cleared %d players, %d deathroll players, %d linked alts",
+                L["History_ResetStatsClearedPlayersDeathrollPlayersLinked2"],
                 i, entry.timestamp, entry.statsCount or 0, entry.deathrollCount or 0, entry.linkedAltCount or 0
             ))
         else
@@ -541,7 +549,7 @@ function CrossGambling:auditMerges()
                 "%d. [%s] %s",
                 i,
                 entry.timestamp or "?",
-                next(extra) and table.concat(extra, ", ") or "Unknown audit entry"
+                next(extra) and table.concat(extra, ", ") or L["History_UnknownAuditEntry"]
             ))
         end
     end

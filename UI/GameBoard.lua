@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 local GameBoard = {
@@ -10,7 +11,7 @@ local GameBoard = {
 local Controller = {}
 Controller.__index = Controller
 
-local COLUMN_TEXT = "#    PLAYER                                      STATUS"
+local COLUMN_TEXT = L["GameBoard_PLAYERSTATUS"]
 
 local ROW_BACKDROP = {
     bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -82,7 +83,7 @@ local function baseView(addon)
             index = i,
             group = player.roll == nil and 2 or 1,
             role = player.roll == nil and "waiting" or "normal",
-            badge = player.roll == nil and "WAITING" or tostring(player.roll),
+            badge = player.roll == nil and L["GameBoard_BadgeWaiting"] or tostring(player.roll),
             rank = "",
         }
         if player.roll ~= nil then
@@ -93,22 +94,22 @@ local function baseView(addon)
     local state = game.state or "START"
     local status
     if state == "REGISTER" then
-        status = string.format("Registration  |  %d joined", #rows)
+        status = string.format(L["GameBoard_RegistrationJoined"], #rows)
         table.sort(rows, alphabetical)
     elseif state == "ROLL" then
-        status = string.format("Rolling  |  %d / %d ready", rolled, #rows)
+        status = string.format(L["GameBoard_RollingReady"], rolled, #rows)
         table.sort(rows, ranked)
     elseif state == "DOUBLE_OR_NOTHING_OFFER" then
-        status = "Double or Nothing  |  Awaiting acceptance"
+        status = L["GameBoard_DoubleOrNothingAwaitingAcceptance"]
     elseif state == "DOUBLE_OR_NOTHING_ROLL" then
         local duel = game.doubleOrNothing
-        status = duel and string.format("Double or Nothing  |  %s's turn  |  1-%s", duel.turn or "?", duel.max or "?") or "Double or Nothing"
+        status = duel and string.format(L["GameBoard_DoubleOrNothingSTurn1"], duel.turn or "?", duel.max or "?") or L["Options_DoubleOrNothing2"]
     else
-        status = #rows > 0 and string.format("Game complete  |  %d players", #rows) or "Ready for a new game"
+        status = #rows > 0 and string.format(L["GameBoard_GameCompletePlayers"], #rows) or L["GameBoard_ReadyForANewGame"]
     end
 
     return {
-        title = game.mode or "Game",
+        title = addon:GetModeDisplayName(game.mode) or L["Common_Game"],
         status = status,
         rows = rows,
         rolled = rolled,
@@ -148,10 +149,10 @@ local function markNumericExtremes(view, eligible)
         if value and (not eligible or eligible[row.name]) then
             if value == high then
                 row.role = highCount > 1 and "tie" or "high"
-                row.badge = (highCount > 1 and "HIGH TIE " or "HIGH ") .. tostring(value)
+                row.badge = (highCount > 1 and L["GameBoard_HIGHTIE"] or L["GameBoard_HIGH"]) .. tostring(value)
             elseif value == low then
                 row.role = lowCount > 1 and "tie" or "low"
-                row.badge = (lowCount > 1 and "LOW TIE " or "LOW ") .. tostring(value)
+                row.badge = (lowCount > 1 and L["GameBoard_LOWTIE"] or L["GameBoard_LOW"]) .. tostring(value)
             end
         end
     end
@@ -183,24 +184,24 @@ GameBoard:RegisterModeAdapter("Classic", function(addon, view)
             else
                 row.group = 3
                 row.role = "out"
-                row.badge = "LOCKED"
+                row.badge = L["GameBoard_BadgeLocked"]
             end
         end
-        local phase = highlow.stage == "high" and "High tie-break" or highlow.stage == "low" and "Low tie-break" or "Rolling"
-        view.status = string.format("%s  |  %d / %d ready", phase, ready, needed)
+        local phase = highlow.stage == "high" and L["GameBoard_HighTieBreak"] or highlow.stage == "low" and L["GameBoard_LowTieBreak"] or L["GameBoard_Rolling"]
+        view.status = string.format(L["GameBoard_Ready"], phase, ready, needed)
         table.sort(view.rows, ranked)
         markNumericExtremes(view, eligible)
         for _, row in ipairs(view.rows) do
             if highlow.winners and #highlow.winners == 1 and row.name == highlow.winners[1] then
                 row.role = "winner"
-                row.badge = "WINNER " .. tostring(row.roll or "")
+                row.badge = L["GameBoard_WINNER"] .. tostring(row.roll or "")
             elseif highlow.losers and #highlow.losers == 1 and row.name == highlow.losers[1] then
                 row.role = "low"
-                row.badge = "LOSER " .. tostring(row.roll or "")
+                row.badge = L["GameBoard_LOSER"] .. tostring(row.roll or "")
             end
         end
         if highlow.winners and #highlow.winners == 1 and highlow.losers and #highlow.losers == 1 then
-            view.completedStatus = highlow.winners[1] .. " wins  |  " .. highlow.losers[1] .. " loses"
+            view.completedStatus = highlow.winners[1] .. L["GameBoard_Wins"] .. highlow.losers[1] .. L["GameBoard_Loses"]
         end
     end
 end)
@@ -212,25 +213,25 @@ GameBoard:RegisterModeAdapter("1v1DeathRoll", function(addon, view)
     local deathroll = game.deathroll
     local current = deathroll and game.players[deathroll.turn]
     if game.state == "ROLL" and deathroll then
-        view.status = deathroll.winner and "Death Roll complete" or string.format("Death Roll  |  %s's turn  |  Roll 1-%s", current and current.name or "?", deathroll.max or "?")
+        view.status = deathroll.winner and L["GameBoard_DeathRollComplete"] or string.format(L["GameBoard_DeathRollSTurnRoll1"], current and current.name or "?", deathroll.max or "?")
         for _, row in ipairs(view.rows) do
             if row.name == deathroll.winner then
                 row.group = 1
                 row.role = "winner"
-                row.badge = "WINNER"
+                row.badge = L["GameBoard_BadgeWinner"]
             elseif row.name == deathroll.loser then
                 row.group = 2
                 row.role = "low"
-                row.badge = "LOSER 1"
+                row.badge = L["GameBoard_LOSER1"]
             else
                 row.group = current and row.name == current.name and 1 or 2
                 row.role = current and row.name == current.name and "active" or "normal"
-                row.badge = current and row.name == current.name and "TURN" or (row.roll and "LAST " .. tostring(row.roll) or "READY")
+                row.badge = current and row.name == current.name and L["GameBoard_BadgeTurn"] or (row.roll and L["GameBoard_LAST"] .. tostring(row.roll) or L["GameBoard_BadgeReady"])
             end
         end
         table.sort(view.rows, ranked)
         if deathroll.winner then
-            view.completedStatus = deathroll.winner .. " wins  |  " .. deathroll.loser .. " loses"
+            view.completedStatus = deathroll.winner .. L["GameBoard_Wins"] .. deathroll.loser .. L["GameBoard_Loses"]
         end
     end
 end)
@@ -244,7 +245,7 @@ GameBoard:RegisterModeAdapter("Elimination", function(addon, view)
             if row.roll == "Loser" then
                 row.group = 4
                 row.role = "out"
-                row.badge = "OUT"
+                row.badge = L["GameBoard_BadgeOut"]
             end
         end
         table.sort(view.rows, ranked)
@@ -254,14 +255,14 @@ GameBoard:RegisterModeAdapter("Elimination", function(addon, view)
     local alive = countSet(elimination.alive)
     if elimination.finale then
         local current = elimination.finaleOrder[elimination.finaleTurnIndex]
-        view.status = string.format("Final duel  |  %s's turn  |  Roll 1-%s", current or "?", elimination.finaleMax or "?")
+        view.status = string.format(L["GameBoard_FinalDuelSTurnRoll1"], current or "?", elimination.finaleMax or "?")
     else
         local ready = 0
         local needed = countSet(elimination.pending)
         for _, row in ipairs(view.rows) do
             if elimination.pending and elimination.pending[row.name] and row.roll ~= nil then ready = ready + 1 end
         end
-        view.status = string.format("Round %d  |  %d alive  |  %d / %d ready", elimination.round or 1, alive, ready, needed)
+        view.status = string.format(L["GameBoard_RoundAliveReady"], elimination.round or 1, alive, ready, needed)
     end
     local outByName = {}
     for i, entry in ipairs(elimination.eliminationOrder or {}) do
@@ -273,23 +274,23 @@ GameBoard:RegisterModeAdapter("Elimination", function(addon, view)
         if row.name == elimination.winner then
             row.group = 1
             row.role = "winner"
-            row.badge = "WINNER"
+            row.badge = L["GameBoard_BadgeWinner"]
         elseif out then
             row.group = 4
             row.outOrder = out.order
             row.role = "out"
-            row.badge = "OUT R" .. tostring(out.round)
+            row.badge = L["GameBoard_OUTR"] .. tostring(out.round)
         elseif current == row.name then
             row.group = 1
             row.role = "active"
-            row.badge = "TURN"
+            row.badge = L["GameBoard_BadgeTurn"]
         elseif elimination.pending and elimination.pending[row.name] then
             row.group = row.roll == nil and 3 or 2
             row.role = row.roll == nil and "waiting" or "normal"
-            row.badge = row.roll == nil and "WAITING" or tostring(row.roll)
+            row.badge = row.roll == nil and L["GameBoard_BadgeWaiting"] or tostring(row.roll)
         else
             row.group = 2
-            row.badge = row.roll and tostring(row.roll) or "ALIVE"
+            row.badge = row.roll and tostring(row.roll) or L["GameBoard_BadgeAlive"]
         end
     end
     table.sort(view.rows, function(a, b)
@@ -298,7 +299,7 @@ GameBoard:RegisterModeAdapter("Elimination", function(addon, view)
         return ranked(a, b)
     end)
     if not elimination.finale then markNumericExtremes(view, elimination.pending) end
-    if elimination.winner then view.completedStatus = elimination.winner .. " wins Elimination" end
+    if elimination.winner then view.completedStatus = elimination.winner .. L["GameBoard_WinsElimination"] end
 end)
 
 GameBoard:RegisterModeAdapter("HotPotato", function(addon, view)
@@ -315,19 +316,19 @@ GameBoard:RegisterModeAdapter("HotPotato", function(addon, view)
         if hotpotato.pending and hotpotato.pending[row.name] and row.roll ~= nil then ready = ready + 1 end
         if row.name == hotpotato.holder then
             row.role = "holder"
-            row.badge = "POTATO"
+            row.badge = L["GameBoard_BadgePotato"]
         end
     end
-    view.status = hotpotato.exploded and "BOOM!  |  Round complete" or string.format("Round %d  |  Fuse burning  |  %d / %d ready", hotpotato.round or 1, ready, needed)
+    view.status = hotpotato.exploded and L["GameBoard_BOOMRoundComplete"] or string.format(L["GameBoard_RoundFuseBurningReady"], hotpotato.round or 1, ready, needed)
     table.sort(view.rows, ranked)
     markNumericExtremes(view, hotpotato.pending)
     for _, row in ipairs(view.rows) do
         if row.name == hotpotato.holder then
             row.role = hotpotato.exploded and "low" or "holder"
-            row.badge = hotpotato.exploded and "BOOM!" or "POTATO"
+            row.badge = hotpotato.exploded and L["GameBoard_BOOM"] or L["GameBoard_BadgePotato"]
         end
     end
-    if hotpotato.exploded then view.completedStatus = "BOOM!  |  " .. tostring(hotpotato.holder) .. " loses" end
+    if hotpotato.exploded then view.completedStatus = L["GameBoard_BOOM2"] .. tostring(hotpotato.holder) .. L["GameBoard_Loses"] end
 end)
 
 GameBoard:RegisterModeAdapter("OverUnder", function(addon, view)
@@ -347,33 +348,33 @@ GameBoard:RegisterModeAdapter("OverUnder", function(addon, view)
         end
     end
     if overunder and overunder.resolved then
-        view.status = string.format("Result: %s  |  Round complete", overunder.result or "?")
-        view.completedStatus = "Result: " .. tostring(overunder.result or "?")
+        view.status = string.format(L["GameBoard_ResultRoundComplete"], overunder.result or "?")
+        view.completedStatus = L["GameBoard_Result"] .. tostring(overunder.result or "?")
     elseif game.state == "ROLL" then
-        view.status = string.format("Pick Over or Under 50  |  %d / %d picked", picked, eligible)
+        view.status = string.format(L["GameBoard_PickOverOrUnder50Picked"], picked, eligible)
     end
     for _, row in ipairs(view.rows) do
         local pick = picks[row.name] or (row.roll and strlower(tostring(row.roll)))
         if row.name == game.hostName then
             row.group = 1
             row.role = "active"
-            row.badge = "HOUSE"
+            row.badge = L["GameBoard_BadgeHouse"]
         elseif pick == "over" then
             row.group = 2
             row.role = "over"
-            row.badge = "OVER"
+            row.badge = L["GameBoard_BadgeOver"]
         elseif pick == "under" then
             row.group = 3
             row.role = "under"
-            row.badge = "UNDER"
+            row.badge = L["GameBoard_BadgeUnder"]
         else
             row.group = 4
             row.role = "waiting"
-            row.badge = "WAITING"
+            row.badge = L["GameBoard_BadgeWaiting"]
         end
         if overunder and overunder.outcomes and overunder.outcomes[row.name] ~= nil then
             row.role = overunder.outcomes[row.name] and "winner" or "low"
-            row.badge = overunder.outcomes[row.name] and "WON" or "LOST"
+            row.badge = overunder.outcomes[row.name] and L["GameBoard_BadgeWon"] or L["GameBoard_BadgeLost"]
         end
     end
     table.sort(view.rows, ranked)
@@ -382,18 +383,18 @@ end)
 GameBoard:RegisterModeAdapter("Raffle", function(addon, view)
     local game = addon.game
     if game.state == "ROLL" then
-        view.status = string.format("Raffle draw  |  %s rolls 1-%d", game.hostName or "Host", #view.rows)
+        view.status = string.format(L["GameBoard_RaffleDrawRolls1"], game.hostName or L["GameBoard_Host"], #view.rows)
     end
     for _, row in ipairs(view.rows) do
         row.group = row.index
         row.rank = "#" .. row.index
         if row.roll == "Winner" then
             row.role = "winner"
-            row.badge = "WINNER"
-            view.completedStatus = row.name .. " wins ticket #" .. row.index
+            row.badge = L["GameBoard_BadgeWinner"]
+            view.completedStatus = row.name .. L["GameBoard_WinsTicket"] .. row.index
         else
             row.role = "normal"
-            row.badge = "TICKET " .. row.index
+            row.badge = L["GameBoard_TICKET"] .. row.index
         end
     end
     table.sort(view.rows, function(a, b) return a.index < b.index end)
@@ -410,22 +411,22 @@ local function applyDoubleOrNothing(addon, view)
         if key and accepted[key] then acceptedCount = acceptedCount + 1 end
     end
     if game.state == "DOUBLE_OR_NOTHING_OFFER" then
-        view.status = string.format("Double or Nothing  |  %d / 2 accepted", acceptedCount)
+        view.status = string.format(L["GameBoard_DoubleOrNothing2Accepted"], acceptedCount)
     end
     for _, row in ipairs(view.rows) do
         if row.name == duel.turn then
             row.group = 1
             row.role = "active"
-            row.badge = "TURN"
+            row.badge = L["GameBoard_BadgeTurn"]
         elseif row.name == duel.loser or row.name == duel.winner then
             row.group = 2
             row.role = "normal"
             local key = addon:NormalizePlayerName(row.name)
-            row.badge = game.state == "DOUBLE_OR_NOTHING_OFFER" and (accepted[key] and "ACCEPTED" or "DECIDING") or (row.roll and "LAST " .. tostring(row.roll) or "READY")
+            row.badge = game.state == "DOUBLE_OR_NOTHING_OFFER" and (accepted[key] and L["GameBoard_BadgeAccepted"] or L["GameBoard_BadgeDeciding"]) or (row.roll and L["GameBoard_LAST"] .. tostring(row.roll) or L["GameBoard_BadgeReady"])
         else
             row.group = 3
             row.role = "out"
-            row.badge = "SPECTATING"
+            row.badge = L["GameBoard_BadgeSpectating"]
         end
     end
     table.sort(view.rows, ranked)
@@ -435,20 +436,20 @@ local function applyCompletedDoubleOrNothing(addon, view)
     local duel = addon.game and addon.game.completedDoubleOrNothing
     if not duel then return end
     local finalAmount = tonumber(duel.finalAmount) or 0
-    view.completedStatus = finalAmount == 0 and "Double or Nothing  |  Debt cleared" or "Double or Nothing  |  Final debt " .. addon:addCommas(finalAmount) .. "g"
+    view.completedStatus = finalAmount == 0 and L["GameBoard_DoubleOrNothingDebtCleared"] or L["GameBoard_DoubleOrNothingFinalDebt"] .. addon:addCommas(finalAmount) .. L["Common_GoldSuffix"]
     for _, row in ipairs(view.rows) do
         if row.name == duel.winner then
             row.group = 1
             row.role = finalAmount > 0 and "winner" or "normal"
-            row.badge = finalAmount > 0 and "WINNER" or "CLEARED"
+            row.badge = finalAmount > 0 and L["GameBoard_BadgeWinner"] or L["GameBoard_BadgeCleared"]
         elseif row.name == duel.loser then
             row.group = 2
             row.role = finalAmount > 0 and "low" or "normal"
-            row.badge = finalAmount > 0 and "OWES" or "CLEARED"
+            row.badge = finalAmount > 0 and L["GameBoard_BadgeOwes"] or L["GameBoard_BadgeCleared"]
         else
             row.group = 3
             row.role = "out"
-            row.badge = "SPECTATING"
+            row.badge = L["GameBoard_BadgeSpectating"]
         end
     end
     table.sort(view.rows, ranked)
@@ -523,8 +524,8 @@ function Controller:AcquireRow(index)
     row:SetScript("OnEnter", function(frame)
         frame.hover:Show()
         GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
-        GameTooltip:SetText(frame.playerName or "Player", 1, 1, 1)
-        GameTooltip:AddLine("Click to open Player Card", 0.65, 0.85, 1)
+        GameTooltip:SetText(frame.playerName or L["GameBoard_Player"], 1, 1, 1)
+        GameTooltip:AddLine(L["GameBoard_ClickToOpenPlayerCard"], 0.65, 0.85, 1)
         GameTooltip:Show()
     end)
     row:SetScript("OnLeave", function(frame)
@@ -574,7 +575,7 @@ function Controller:AcquirePayoutRow(index)
     row.ledgerButton = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
     row.ledgerButton:SetSize(84, 20)
     row.ledgerButton:SetPoint("BOTTOMRIGHT", -5, 4)
-    row.ledgerButton:SetText("View debt")
+    row.ledgerButton:SetText(L["GameBoard_ViewDebt"])
     row.ledgerButton:SetScript("OnClick", function()
         if row.ledgerId then self.addon:ShowPaymentLedger(nil, row.ledgerId) end
     end)
@@ -591,11 +592,11 @@ function Controller:Refresh()
     else
         view = GameBoard:BuildView(self.addon)
     end
-    self.header:SetText("Game Board  |  " .. view.title)
+    self.header:SetText(L["GameBoard_GameBoard"] .. view.title)
     self.status:SetText(view.status)
     local payouts = view.payouts or {}
     local hasPayouts = #payouts > 0
-    self.columns:SetText(hasPayouts and "PAYOUTS" or COLUMN_TEXT)
+    self.columns:SetText(hasPayouts and L["GameBoard_BadgePayouts"] or COLUMN_TEXT)
     self.empty:SetShown(#view.rows == 0 and not hasPayouts and not view.completed)
     self.rollColumns:SetShown(hasPayouts and #view.rows > 0)
     for _, row in ipairs(self.payoutRows) do row:Hide() end
@@ -605,11 +606,11 @@ function Controller:Refresh()
     for i, payout in ipairs(payouts) do
         local row = self:AcquirePayoutRow(i)
         row:SetPoint("TOPLEFT", self.content, "TOPLEFT", 0, -offset)
-        local recipient = payout.winnerAmount > 0 and payout.winner or "the guild"
-        row.names:SetText(payout.loser .. " owes " .. recipient)
-        local amounts = "Winner " .. self.addon:addCommas(payout.winnerAmount) .. "g"
+        local recipient = payout.winnerAmount > 0 and payout.winner or L["GameBoard_TheGuild"]
+        row.names:SetText(payout.loser .. L["Common_Owes"] .. recipient)
+        local amounts = L["GameBoard_Winner"] .. self.addon:addCommas(payout.winnerAmount) .. L["Common_GoldSuffix"]
         if payout.guildAmount > 0 then
-            amounts = amounts .. "  |  Guild " .. self.addon:addCommas(payout.guildAmount) .. "g"
+            amounts = amounts .. L["GameBoard_Guild"] .. self.addon:addCommas(payout.guildAmount) .. L["Common_GoldSuffix"]
         end
         row.amounts:SetText(amounts)
         row.ledgerId = payout.ledgerId
@@ -680,7 +681,7 @@ function GameBoard:Create(addon, parent, options)
 
     parent:SetSize(controller.width, controller.height)
     controller.header = options.header
-    controller.header:SetText("Game Board")
+    controller.header:SetText(L["GameBoard_GameBoard2"])
 
     controller.status = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     controller.status:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -8)
@@ -711,7 +712,7 @@ function GameBoard:Create(addon, parent, options)
 
     controller.empty = parent:CreateFontString(nil, "OVERLAY", "GameFontDisable")
     controller.empty:SetPoint("CENTER", controller.scroll, "CENTER", 0, 0)
-    controller.empty:SetText("Players will appear here when they join.")
+    controller.empty:SetText(L["GameBoard_PlayersWillAppearHereWhenTheyJoin"])
 
     self.active = controller
     addon.gameBoard = controller
@@ -730,10 +731,10 @@ end
 
 function GameBoard:CaptureCompleted(addon)
     local view = self:BuildView(addon)
-    view.title = view.title .. "  |  Final"
+    view.title = view.title .. L["GameBoard_Final"]
     view.completed = true
     view.payouts = addon.game.result
-    view.status = view.completedStatus or (view.payouts and #view.payouts == 0 and "No gold owed") or "Round complete"
+    view.status = view.completedStatus or (view.payouts and #view.payouts == 0 and L["GameBoard_NoGoldOwed"]) or L["GameBoard_RoundComplete"]
     self.completedView = view
 end
 

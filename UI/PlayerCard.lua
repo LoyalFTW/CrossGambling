@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 local PlayerCard = {
@@ -37,14 +38,14 @@ local function signedGold(addon, amount)
     amount = tonumber(amount) or 0
     local color = amount > 0 and "|cff45d66b" or amount < 0 and "|cffff6262" or "|cffb7b7b7"
     local sign = amount > 0 and "+" or amount < 0 and "-" or ""
-    return color .. sign .. addon:addCommas(math.abs(amount)) .. "g|r"
+    return color .. sign .. addon:addCommas(math.abs(amount)) .. L["PlayerCard_G"]
 end
 
 local function streakText(streak)
     streak = tonumber(streak) or 0
-    if streak > 0 then return "|cff45d66bW" .. streak .. "|r" end
-    if streak < 0 then return "|cffff6262L" .. math.abs(streak) .. "|r" end
-    return "|cffb7b7b7None|r"
+    if streak > 0 then return L["PlayerCard_W"] .. streak .. "|r" end
+    if streak < 0 then return L["PlayerCard_L"] .. math.abs(streak) .. "|r" end
+    return L["PlayerCard_None"]
 end
 
 local function setPanelColor(panel, r, g, b, a)
@@ -162,7 +163,7 @@ function PlayerCard:Ensure(addon)
     frame.ledgerButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate,BackdropTemplate")
     frame.ledgerButton:SetSize(100, 24)
     frame.ledgerButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -18, -36)
-    frame.ledgerButton:SetText("View Ledger")
+    frame.ledgerButton:SetText(L["PlayerCard_ViewLedger"])
     styleLedgerButton(frame.ledgerButton, slick)
     frame.subtitle:SetPoint("RIGHT", frame.ledgerButton, "LEFT", -8, 0)
     frame.ledgerButton:SetScript("OnClick", function()
@@ -170,32 +171,32 @@ function PlayerCard:Ensure(addon)
     end)
     frame.ledgerButton:SetScript("OnEnter", function(button)
         GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Player Payment Ledger")
-        GameTooltip:AddLine("View outstanding payments involving " .. (self.playerName or "this player") .. ".", 1, 1, 1, true)
+        GameTooltip:SetText(L["PlayerCard_PlayerPaymentLedger"])
+        GameTooltip:AddLine(L["PlayerCard_ViewOutstandingPaymentsInvolving"] .. (self.playerName or L["PlayerCard_ThisPlayer"]) .. ".", 1, 1, 1, true)
         GameTooltip:Show()
     end)
     frame.ledgerButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    frame.session = createMetric(frame, "SESSION RESULT", 184)
+    frame.session = createMetric(frame, L["PlayerCard_SESSIONRESULT"], 184)
     frame.session:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -67)
-    frame.lifetime = createMetric(frame, "LIFETIME RESULT", 184)
+    frame.lifetime = createMetric(frame, L["PlayerCard_LIFETIMERESULT"], 184)
     frame.lifetime:SetPoint("LEFT", frame.session, "RIGHT", 16, 0)
 
-    frame.games = createMetric(frame, "TRACKED GAMES", 117)
+    frame.games = createMetric(frame, L["PlayerCard_TRACKEDGAMES"], 117)
     frame.games:SetPoint("TOPLEFT", frame.session, "BOTTOMLEFT", 0, -10)
-    frame.record = createMetric(frame, "RECORD", 117)
+    frame.record = createMetric(frame, L["PlayerCard_Record"], 117)
     frame.record:SetPoint("LEFT", frame.games, "RIGHT", 10, 0)
-    frame.streak = createMetric(frame, "CURRENT STREAK", 130)
+    frame.streak = createMetric(frame, L["PlayerCard_CURRENTSTREAK"], 130)
     frame.streak:SetPoint("LEFT", frame.record, "RIGHT", 10, 0)
 
     frame.modeTitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     frame.modeTitle:SetPoint("TOPLEFT", frame.games, "BOTTOMLEFT", 0, -18)
-    frame.modeTitle:SetText("Mode Performance")
+    frame.modeTitle:SetText(L["PlayerCard_ModePerformance"])
     styleFont(frame.modeTitle)
 
     frame.modeHint = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     frame.modeHint:SetPoint("LEFT", frame.modeTitle, "RIGHT", 8, 0)
-    frame.modeHint:SetText("Lifetime gold  |  Tracked record")
+    frame.modeHint:SetText(L["PlayerCard_LifetimeGoldTrackedRecord"])
     styleFont(frame.modeHint, true)
 
     frame.scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
@@ -254,17 +255,17 @@ end
 function PlayerCard:Refresh()
     if not self.frame or not self.frame:IsShown() or not self.playerName then return end
     local data = self.addon:GetPlayerCardData(self.playerName)
-    self.frame.title:SetText(coloredName(data.name) .. "  |  Player Card")
+    self.frame.title:SetText(coloredName(data.name) .. L["PlayerCard_PlayerCard"])
     if data.requestedName ~= data.name then
-        self.frame.subtitle:SetText(data.requestedName .. " is linked to this main profile")
+        self.frame.subtitle:SetText(data.requestedName .. L["PlayerCard_IsLinkedToThisMainProfile"])
     else
-        self.frame.subtitle:SetText("CrossGambling performance overview")
+        self.frame.subtitle:SetText(L["PlayerCard_PerformanceOverview"])
     end
     self.frame.session.value:SetText(signedGold(self.addon, data.session))
     self.frame.lifetime.value:SetText(signedGold(self.addon, data.lifetime))
     self.frame.games.value:SetText(tostring(data.games))
-    local record = string.format("%dW - %dL", data.wins, data.losses)
-    if data.pushes > 0 then record = record .. " - " .. data.pushes .. "P" end
+    local record = string.format(L["PlayerCard_WL"], data.wins, data.losses)
+    if data.pushes > 0 then record = record .. string.format(L["PlayerCard_Pushes"], data.pushes) end
     self.frame.record.value:SetText(record)
     self.frame.streak.value:SetText(streakText(data.streak))
 
@@ -281,19 +282,19 @@ function PlayerCard:Refresh()
         local row = self:AcquireModeRow(i)
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", self.frame.content, "TOPLEFT", 0, -(i - 1) * 32)
-        row.mode:SetText(mode.name)
+        row.mode:SetText(self.addon:GetModeDisplayName(mode.name))
         row.gold:SetText(signedGold(self.addon, mode.amount))
-        local modeRecord = string.format("%dW-%dL  |  %d", mode.wins, mode.losses, mode.games)
-        if mode.pushes > 0 then modeRecord = string.format("%dW-%dL-%dP  |  %d", mode.wins, mode.losses, mode.pushes, mode.games) end
+        local modeRecord = string.format(L["PlayerCard_WL2"], mode.wins, mode.losses, mode.games)
+        if mode.pushes > 0 then modeRecord = string.format(L["PlayerCard_WLP"], mode.wins, mode.losses, mode.pushes, mode.games) end
         row.record:SetText(modeRecord)
         row:Show()
     end
     self.frame.content:SetHeight(math.max(1, #data.modes * 32))
 
     if data.lastPlayed then
-        self.frame.footer:SetText("Last tracked: " .. date("%Y-%m-%d %H:%M", data.lastPlayed) .. "  |  Best: W" .. data.bestWinStreak .. " / L" .. data.bestLossStreak)
+        self.frame.footer:SetText(L["PlayerCard_LastTracked"] .. date("%Y-%m-%d %H:%M", data.lastPlayed) .. L["PlayerCard_BestW"] .. data.bestWinStreak .. L["PlayerCard_L2"] .. data.bestLossStreak)
     else
-        self.frame.footer:SetText("Game records and streaks begin tracking with Player Cards; existing gold totals are preserved.")
+        self.frame.footer:SetText(L["PlayerCard_GameRecordsAndStreaksBeginTrackingWith"])
     end
 end
 

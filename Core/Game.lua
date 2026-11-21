@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
@@ -49,7 +50,7 @@ function CrossGambling:HostNewGame()
     if game.doubleOrNothing then
         local requestedMode = game.mode
         game.mode = game.doubleOrNothing.mode or game.mode
-        self:SettleDoubleOrNothing(game.doubleOrNothing.amount, "Double or Nothing ended by the host.")
+        self:SettleDoubleOrNothing(game.doubleOrNothing.amount, L["Game_DoubleOrNothingEndedByTheHost"])
         game.mode = requestedMode
     end
 
@@ -77,9 +78,9 @@ function CrossGambling:HostNewGame()
     self:RegisterChatEvents()
     self:GameStart()
 
-    local summary = "Game Mode - " .. game.mode .. " - Wager - " .. self:addCommas(game.wager) .. "g"
+    local summary = string.format(L["Game_ModeAndWager"], self:GetModeDisplayName(game.mode), self:addCommas(game.wager))
     if game.house then
-        summary = summary .. " - House Cut - " .. game.houseCut .. "%"
+        summary = summary .. string.format(L["Game_HouseCut"], game.houseCut)
     end
     self:Announce(summary)
 
@@ -99,7 +100,7 @@ function CrossGambling:GameStart()
     local handled = self:DispatchModeHook("OnStart")
     if not handled then
         local joinWord, leaveWord = self:GetJoinWords()
-        self:Announce("CrossGambling: A new game has been started! Type " .. joinWord .. " to join! (" .. leaveWord .. " to withdraw)")
+        self:Announce(string.format(L["Game_RegistrationOpened"], joinWord, leaveWord))
     end
 end
 
@@ -109,7 +110,7 @@ function CrossGambling:RegisterGame(text, playerName, fullName)
 
     if lowered == joinWord:lower() then
         if self:IsPlayerBanned(playerName) then
-            self:Announce("Sorry " .. playerName .. ", you're banned.")
+            self:Announce(L["Game_Sorry"] .. playerName .. L["Game_YouReBanned"])
             return
         end
 
@@ -119,7 +120,7 @@ function CrossGambling:RegisterGame(text, playerName, fullName)
 
         local mode = self:GetCurrentMode()
         if mode and mode.maxPlayers and #self.game.players >= mode.maxPlayers then
-            self:Announce("CrossGambling: This game mode is full (" .. mode.maxPlayers .. " max).")
+            self:Announce(L["Game_ThisGameModeIsFull"] .. mode.maxPlayers .. L["Game_Max"])
             return
         end
 
@@ -129,7 +130,7 @@ function CrossGambling:RegisterGame(text, playerName, fullName)
         end
 
         if self.game.realmFilter == true and self:CheckRealm(fullName or playerName) == 0 then
-            self:Announce("CrossGambling: You are not on (" .. GetRealmName() .. "). You are not eligible to join this game. The host can turn off the Realm Filter in the options.")
+            self:Announce(L["Game_YouAreNotOn"] .. GetRealmName() .. L["Game_YouAreNotEligibleToJoinThis"])
             return
         end
 
@@ -166,7 +167,7 @@ function CrossGambling:CGRolls()
         local minPlayers = (mode and mode.minPlayers) or 2
 
         if #game.players < minPlayers then
-            self:Announce("Not enough Players! This mode needs at least " .. minPlayers .. ".")
+            self:Announce(L["Game_NotEnoughPlayersThisModeNeedsAt"] .. minPlayers .. ".")
             return
         end
 
@@ -190,13 +191,13 @@ function CrossGambling:CGRolls()
         local turn = self:GetCurrentTurn()
         if turn then
             local _, maxRoll = self:GetRollRange()
-            self:Announce(format("%s, it's your turn! Type /roll %d", turn, maxRoll))
+            self:Announce(format(L["Game_ItSYourTurnTypeRoll"], turn, maxRoll))
             return
         end
 
         local playersRoll = self:CheckRolls()
         if #playersRoll > 0 then
-            self:Announce(table.concat(playersRoll, ", ") .. " still needs to roll!")
+            self:Announce(table.concat(playersRoll, ", ") .. L["Game_StillNeedsToRoll"])
         end
     end
 end
@@ -252,7 +253,7 @@ function CrossGambling:SettleDoubleOrNothing(amount, resultLine)
         end
         local debtLine = self:SettleDebt(doubleOrNothing.loser, doubleOrNothing.winner, amount, doubleOrNothing.mode, winnerAmount)
         if houseAmount > 0 then
-            debtLine = debtLine .. " Plus " .. self:addCommas(houseAmount) .. "g to the guild."
+            debtLine = debtLine .. L["Game_Plus"] .. self:addCommas(houseAmount) .. L["Game_GToTheGuild"]
         end
         if doubleOrNothing.started then
             self:AddAuditEntry({
@@ -282,7 +283,7 @@ function CrossGambling:SettleDoubleOrNothing(amount, resultLine)
                 mode = doubleOrNothing.mode,
             })
         end
-        self:FinishGame({ resultLine .. " Nothing is owed!" })
+        self:FinishGame({ resultLine .. L["Game_NothingIsOwed"] })
     end
 end
 
@@ -292,7 +293,7 @@ function CrossGambling:DeclineDoubleOrNothing(reason)
         return
     end
 
-    self:SettleDoubleOrNothing(doubleOrNothing.amount, reason or "Double or Nothing declined.")
+    self:SettleDoubleOrNothing(doubleOrNothing.amount, reason or L["Game_DoubleOrNothingDeclined"])
 end
 
 function CrossGambling:SyncDoubleOrNothingRoll()
@@ -323,7 +324,7 @@ function CrossGambling:StartDoubleOrNothingRoll()
     self:UnRegisterChatEvents()
     self:SyncDoubleOrNothingRoll()
     self:QueueGameBoardRefresh()
-    self:Announce(string.format("Double or Nothing! %s starts: type /roll %d.", doubleOrNothing.turn, doubleOrNothing.max))
+    self:Announce(string.format(L["Game_DoubleOrNothingStartsTypeRoll"], doubleOrNothing.turn, doubleOrNothing.max))
 end
 
 function CrossGambling:HandleDoubleOrNothingChat(playerName, text)
@@ -341,7 +342,7 @@ function CrossGambling:HandleDoubleOrNothingChat(playerName, text)
 
     local response = self:TrimInput(text):lower()
     if response == "pass" then
-        self:DeclineDoubleOrNothing(playerName .. " passed.")
+        self:DeclineDoubleOrNothing(playerName .. L["Game_Passed"])
         return
     end
     if response ~= "1" or doubleOrNothing.accepted[normalizedName] then
@@ -355,7 +356,7 @@ function CrossGambling:HandleDoubleOrNothingChat(playerName, text)
         self:StartDoubleOrNothingRoll()
     else
         local waitingFor = normalizedName == loserKey and doubleOrNothing.winner or doubleOrNothing.loser
-        self:Announce(playerName .. " accepted Double or Nothing. Waiting for " .. waitingFor .. ".")
+        self:Announce(playerName .. L["Game_AcceptedDoubleOrNothingWaitingFor"] .. waitingFor .. ".")
     end
 end
 
@@ -367,13 +368,13 @@ function CrossGambling:HandleDoubleOrNothingRoll(playerName, actualRoll, minRoll
 
     if playerName ~= doubleOrNothing.turn then
         if playerName == doubleOrNothing.loser or playerName == doubleOrNothing.winner then
-            self:Announce(string.format("%s, it's not your turn! It's %s's turn.", playerName, doubleOrNothing.turn))
+            self:Announce(string.format(L["Game_ItSNotYourTurnItS"], playerName, doubleOrNothing.turn))
         end
         return
     end
 
     if minRoll ~= 1 or maxRoll ~= doubleOrNothing.max then
-        self:Announce("CrossGambling: Roll does not match the expected range (1-" .. doubleOrNothing.max .. ").")
+        self:Announce(L["Game_RollDoesNotMatchTheExpectedRange"] .. doubleOrNothing.max .. ").")
         return
     end
 
@@ -382,10 +383,10 @@ function CrossGambling:HandleDoubleOrNothingRoll(playerName, actualRoll, minRoll
         doubleOrNothing.rolledOne = playerName
         if playerName == doubleOrNothing.loser then
             doubleOrNothing.outcome = "doubled"
-            self:SettleDoubleOrNothing(doubleOrNothing.amount * 2, playerName .. " rolled a 1. The debt is doubled!")
+            self:SettleDoubleOrNothing(doubleOrNothing.amount * 2, playerName .. L["Game_RolledA1TheDebtIsDoubled"])
         else
             doubleOrNothing.outcome = "cleared"
-            self:SettleDoubleOrNothing(0, playerName .. " rolled a 1. The debt is cleared!")
+            self:SettleDoubleOrNothing(0, playerName .. L["Game_RolledA1TheDebtIsCleared"])
         end
         return
     end
@@ -393,7 +394,7 @@ function CrossGambling:HandleDoubleOrNothingRoll(playerName, actualRoll, minRoll
     doubleOrNothing.max = actualRoll
     doubleOrNothing.turn = playerName == doubleOrNothing.loser and doubleOrNothing.winner or doubleOrNothing.loser
     self:SyncDoubleOrNothingRoll()
-    self:Announce(string.format("%s, it's your turn! Type /roll %d", doubleOrNothing.turn, doubleOrNothing.max))
+    self:Announce(string.format(L["Game_ItSYourTurnTypeRoll"], doubleOrNothing.turn, doubleOrNothing.max))
 end
 
 function CrossGambling:BeginDoubleOrNothing(loserName, winnerName, amount, modeName, allowHouseCut)
@@ -417,11 +418,11 @@ function CrossGambling:BeginDoubleOrNothing(loserName, winnerName, amount, modeN
     self:SendMsg("DOUBLE_OR_NOTHING_OFFER", table.concat({ loserName, winnerName, tostring(amount) }, "|"))
     self:QueueGameBoardRefresh()
     self:QueueStateBroadcast()
-    self:Announce(string.format("%s owes %s %sg. %s and %s: type 1 within 30 seconds for Double or Nothing, or type pass to settle now.", loserName, winnerName, self:addCommas(amount), loserName, winnerName))
+    self:Announce(string.format(L["Game_OwesGAndType1Within30"], loserName, winnerName, self:addCommas(amount), loserName, winnerName))
 
     C_Timer.After(30, function()
         if self.game and self.game.doubleOrNothing == doubleOrNothing and self.game.state == "DOUBLE_OR_NOTHING_OFFER" then
-            self:DeclineDoubleOrNothing("Double or Nothing timed out.")
+            self:DeclineDoubleOrNothing(L["Game_DoubleOrNothingTimedOut"])
         end
     end)
     return true
@@ -457,7 +458,7 @@ function CrossGambling:SettleDebt(loserName, winnerName, amount, modeName, winne
         mode = modeName,
     })
 
-    return string.format("%s owes %s %sg!", loserName, winnerName, self:addCommas(winnerAmount))
+    return string.format(L["Game_OwesG"], loserName, winnerName, self:addCommas(winnerAmount))
 end
 
 function CrossGambling:ApplyHouseCut(amount)
@@ -487,7 +488,7 @@ end
 
 function CrossGambling:CloseGame()
     if self.game.doubleOrNothing then
-        self:SettleDoubleOrNothing(self.game.doubleOrNothing.amount, "Double or Nothing ended.")
+        self:SettleDoubleOrNothing(self.game.doubleOrNothing.amount, L["Game_DoubleOrNothingEnded"])
         return
     end
 

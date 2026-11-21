@@ -1,10 +1,11 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
 local HotPotatoMode = {}
 HotPotatoMode.name        = "HotPotato"
-HotPotatoMode.description = "Everyone rolls 1-100 each round; the lowest roller catches the potato. Its hidden fuse explodes after a random round from 1 to 4, and whoever is holding it pays everyone else the wager."
+HotPotatoMode.description = L["HotPotatoMode_EveryoneRolls1100EachRoundThe"]
 HotPotatoMode.minPlayers  = 3
 
 local MIN_EXPLOSION_ROUND = 1
@@ -23,7 +24,7 @@ local function payOut(addon, game, lowVal)
     local hp    = game.hotpotato
     hp.exploded = true
     local wager = addon:GetWager()
-    local lines = { string.format("CrossGambling: %s rolled lowest (%d)... BOOM! The potato explodes! They pay everyone!", hp.holder, lowVal) }
+    local lines = { string.format(L["HotPotatoMode_RolledLowestBOOMThePotatoExplodesThey"], hp.holder, lowVal) }
 
     for i = 1, #game.players do
         local p = game.players[i]
@@ -41,13 +42,13 @@ local function resolveRound(addon, game)
     table.sort(lowest)
 
     if #lowest == 0 then
-        addon:FinishGame({ "CrossGambling: Not enough rolls to settle - the game is closed." })
+        addon:FinishGame({ L["ClassicMode_NotEnoughRollsToSettleTheGame"] })
         return
     end
 
     if #lowest > 1 then
         addon:Announce(string.format(
-            "CrossGambling: Tie at %d between %s! Type /roll %d to see who takes the potato.",
+            L["HotPotatoMode_TieAtBetweenTypeRollToSee"],
             lowVal, table.concat(lowest, ", "), ROLL_MAX
         ))
         hp.pending = {}
@@ -66,14 +67,14 @@ local function resolveRound(addon, game)
     end
 
     addon:Announce(string.format(
-        "CrossGambling: %s rolled lowest (%d) and catches the potato... the fuse is still burning!",
+        L["HotPotatoMode_RolledLowestAndCatchesThePotatoThe"],
         hp.holder, lowVal
     ))
 
     hp.round   = hp.round + 1
     hp.pending = everyoneSet(game)
     addon:ClearRolls()
-    addon:Announce(string.format("CrossGambling: Pass it fast! Round %d - everyone type /roll %d!", hp.round, ROLL_MAX))
+    addon:Announce(string.format(L["HotPotatoMode_PassItFastRoundEveryoneTypeRoll"], hp.round, ROLL_MAX))
 end
 
 function HotPotatoMode:OnStartRolls(addon, game)
@@ -84,7 +85,7 @@ function HotPotatoMode:OnStartRolls(addon, game)
         pending = everyoneSet(game),
     }
     addon:Announce(string.format(
-        "CrossGambling: HOT POTATO! The hidden fuse will blow sometime in rounds 1-4. Everyone type /roll %d - lowest catches it!",
+        L["HotPotatoMode_HOTPOTATOTheHiddenFuseWillBlow"],
         ROLL_MAX
     ))
 end
@@ -114,7 +115,7 @@ function HotPotatoMode:OnPlayerLeave(addon, game, playerName)
     if not hp then return end
 
     if #game.players < 2 then
-        addon:FinishGame({ string.format("CrossGambling: %s left. Not enough players remain - the game is closed.", playerName) })
+        addon:FinishGame({ string.format(L["ClassicMode_LeftNotEnoughPlayersRemainTheGame"], playerName) })
         return
     end
 
@@ -123,7 +124,7 @@ function HotPotatoMode:OnPlayerLeave(addon, game, playerName)
     hp.pending[playerName] = nil
 
     if next(hp.pending) == nil then
-        addon:FinishGame({ string.format("CrossGambling: %s left. Not enough players remain in this round - the game is closed.", playerName) })
+        addon:FinishGame({ string.format(L["ClassicMode_LeftNotEnoughPlayersRemainInThis"], playerName) })
         return
     end
 

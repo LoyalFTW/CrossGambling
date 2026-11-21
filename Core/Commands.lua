@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 local F = _G.Foundry_1_0
 
@@ -9,8 +10,8 @@ local commandOrder = {
 }
 
 function CrossGambling:PrintCommandHelp()
-    self:Print("Commands: " .. table.concat(commandOrder, ", "))
-    self:Print("Usage: /cg <command> [value]")
+    self:Print(L["Commands_Commands"] .. table.concat(commandOrder, ", "))
+    self:Print(L["Commands_UsageCgCommandValue"])
 end
 
 function CrossGambling:InitCommands()
@@ -21,122 +22,122 @@ function CrossGambling:InitCommands()
         defaultHandler = function() CrossGambling:PrintCommandHelp() end,
         unknownMessage = function(input)
             local token = input:match("^(%S+)") or input
-            CrossGambling:Print(("Unknown command: %s"):format(token:lower()))
+            CrossGambling:Print((L["Commands_UnknownCommand"]):format(token:lower()))
             CrossGambling:PrintCommandHelp()
             return ""
         end,
     })
     self.commands = commands
 
-    commands:Register({ name = "show", help = "Show Game",
+    commands:Register({ name = "show", help = L["Commands_ShowGame"],
         handler = function() CrossGambling:ToggleGUI(nil, true) end })
-    commands:Register({ name = "hide", help = "Hide Game",
+    commands:Register({ name = "hide", help = L["Commands_HideGame"],
         handler = function() CrossGambling:ToggleGUI(nil, false) end })
-    commands:Register({ name = "minimap", help = "Show/Hide Minimap Icon",
+    commands:Register({ name = "minimap", help = L["Commands_ShowHideMinimapIcon"],
         handler = function() CrossGambling:ToggleMinimap() end })
-    commands:Register({ name = "allstats", help = "Shows all Stats(Out of Order in Guild)",
+    commands:Register({ name = "allstats", help = L["Commands_ShowsAllStatsOutOfOrderIn"],
         handler = function() CrossGambling:reportStats(true) end })
-    commands:Register({ name = "stats", help = "Shows Top 3 Winners/Losers(Out of Order in Guild)",
+    commands:Register({ name = "stats", help = L["Commands_ShowsTop3WinnersLosersOutOf"],
         handler = function() CrossGambling:reportStats() end })
-    commands:Register({ name = "joinstats", args = '"[main]" "[alt]"',
-        help = '"[main]" "[alt]" - Join two characters\' win/loss amounts; quote names containing spaces',
+    commands:Register({ name = "joinstats", args = L["Commands_MainAlt"],
+        help = L["Commands_MainAltJoinTwoCharactersWinLoss"],
         handler = function(rest)
             if rest == "" then
-                CrossGambling:Print('Usage: /cg joinstats "Main Name" "Alt Name"')
+                CrossGambling:Print(L["Commands_UsageCgJoinstatsMainNameAltName"])
                 return
             end
             CrossGambling:joinStats(nil, rest)
         end })
-    commands:Register({ name = "unjoinstats", args = "[alt]",
-        help = "[alt] - Unjoins the Alt from whomever it's attached to",
+    commands:Register({ name = "unjoinstats", args = L["Commands_Alt"],
+        help = L["Commands_AltUnjoinsTheAltFromWhomeverIt"],
         handler = function(rest)
             if rest == "" then
-                CrossGambling:Print("Usage: /cg unjoinstats [alt] - Unjoins the Alt from whomever it's attached to")
+                CrossGambling:Print(L["Commands_UsageCgUnjoinstatsAltUnjoinsTheAlt"])
                 return
             end
             CrossGambling:unjoinStats(nil, rest)
         end })
-    commands:Register({ name = "listalts", help = "See everyone whos used joinstats",
+    commands:Register({ name = "listalts", help = L["Commands_SeeEveryoneWhosUsedJoinstats"],
         handler = function() CrossGambling:listAlts() end })
-    commands:Register({ name = "updatestat", args = "[player] [amount]",
-        help = "[player] [amount] - Add [amount] to [player]'s stats (use negative numbers to subtract)",
+    commands:Register({ name = "updatestat", args = L["Commands_PlayerAmount"],
+        help = L["Commands_PlayerAmountAddAmountToPlayerS"],
         handler = function(rest)
             if rest == "" then
-                CrossGambling:Print("Usage: /cg updatestat [player] [amount] - Add [amount] to [player]'s stats (use negative numbers to subtract)")
+                CrossGambling:Print(L["Commands_UsageCgUpdatestatPlayerAmountAddAmount"])
                 return
             end
             CrossGambling:updateStat(nil, rest)
         end })
-    commands:Register({ name = "deletestat", args = "[player]",
-        help = "[player] - Permanently delete stats",
+    commands:Register({ name = "deletestat", args = L["Commands_Player"],
+        help = L["Commands_PlayerPermanentlyDeleteStats"],
         handler = function(rest)
             if rest == "" then
-                CrossGambling:Print("Usage: /cg deletestat [player] - Permanently delete stats")
+                CrossGambling:Print(L["Commands_UsageCgDeletestatPlayerPermanentlyDeleteStats"])
                 return
             end
             CrossGambling:deleteStat(nil, rest)
         end })
-    commands:Register({ name = "resetstats", help = "Deletes All Stats",
+    commands:Register({ name = "resetstats", help = L["Commands_DeletesAllStats"],
         handler = function() CrossGambling:resetStats() end })
-    commands:Register({ name = "exportstats", help = "Open the stats export window",
+    commands:Register({ name = "exportstats", help = L["Commands_OpenTheStatsExportWindow"],
         handler = function() CrossGambling:ShowStatsTransferFrame("export") end })
-    commands:Register({ name = "importstats", help = "Open the stats import window",
+    commands:Register({ name = "importstats", help = L["Commands_OpenTheStatsImportWindow"],
         handler = function() CrossGambling:ShowStatsTransferFrame("import") end })
-    commands:Register({ name = "ban", args = "[player]",
-        help = "[player] -  Ban players from joining",
+    commands:Register({ name = "ban", args = L["Commands_Player"],
+        help = L["Commands_PlayerBanPlayersFromJoining"],
         handler = function(rest)
             if rest == "" then
-                CrossGambling:Print("Usage: /cg ban [player] -  Ban players from joining")
+                CrossGambling:Print(L["Commands_UsageCgBanPlayerBanPlayersFrom"])
                 return
             end
             CrossGambling:banPlayer(nil, rest)
         end })
-    commands:Register({ name = "unban", args = "[player]",
-        help = "[player] - Unbans a previously banned player",
+    commands:Register({ name = "unban", args = L["Commands_Player"],
+        help = L["Commands_PlayerUnbansAPreviouslyBannedPlayer"],
         handler = function(rest)
             if rest == "" then
-                CrossGambling:Print("Usage: /cg unban [player] - Unbans a previously banned player")
+                CrossGambling:Print(L["Commands_UsageCgUnbanPlayerUnbansAPreviously"])
                 return
             end
             CrossGambling:unbanPlayer(nil, rest)
         end })
-    commands:Register({ name = "listbans", help = "See banned players",
+    commands:Register({ name = "listbans", help = L["Commands_SeeBannedPlayers"],
         handler = function() CrossGambling:listBans() end })
-    commands:Register({ name = "audit", help = "See all merged players or changes",
+    commands:Register({ name = "audit", help = L["Commands_SeeAllMergedPlayersOrChanges"],
         handler = function() CrossGambling:auditMerges() end })
-    commands:Register({ name = "ledger", help = "Open payment ledger and outstanding balances",
+    commands:Register({ name = "ledger", help = L["Commands_OpenPaymentLedgerAndOutstandingBalances"],
         handler = function() CrossGambling:ShowPaymentLedger() end })
-    commands:Register({ name = "profiles", help = "Open named history profiles",
+    commands:Register({ name = "profiles", help = L["Commands_OpenNamedHistoryProfiles"],
         handler = function() CrossGambling:ShowStatProfilesFrame() end })
-    commands:Register({ name = "profile", args = "[name]",
-        help = "[name] - Select an existing history profile",
+    commands:Register({ name = "profile", args = L["Commands_Name"],
+        help = L["Commands_NameSelectAnExistingHistoryProfile"],
         handler = function(rest)
             if rest == "" then
                 local name = CrossGambling:GetActiveStatProfile()
-                CrossGambling:Print("Active history profile: " .. tostring(name) .. ".")
+                CrossGambling:Print(L["Commands_ActiveHistoryProfile"] .. tostring(name) .. ".")
                 return
             end
             CrossGambling:SetActiveStatProfile(rest)
         end })
     commands:Register({ name = "testing", args = "[on|off]",
-        help = "[on|off] - Enable to unlock /cg testbots and debug chat echoes. Off by default.",
+        help = L["Commands_OnOffEnableToUnlockCgTestbots"],
         handler = function(rest)
             if rest == "" then
-                CrossGambling:Print("Usage: /cg testing [on|off] - Enable to unlock /cg testbots and debug chat echoes. Off by default.")
+                CrossGambling:Print(L["Commands_UsageCgTestingOnOffEnableTo"])
                 return
             end
             CrossGambling:SetTestingMode(nil, rest)
         end })
-    commands:Register({ name = "testbots", args = "[count]",
-        help = "[count] - Start a local bot-only test game in the current mode. Requires /cg testing on first.",
+    commands:Register({ name = "testbots", args = L["Commands_Count"],
+        help = L["Commands_CountStartALocalBotOnlyTest"],
         handler = function(rest)
             if rest == "" then
-                CrossGambling:Print("Usage: /cg testbots [count] - Start a local bot-only test game in the current mode. Requires /cg testing on first.")
+                CrossGambling:Print(L["Commands_UsageCgTestbotsCountStartALocal"])
                 return
             end
             CrossGambling:StartBotTest(nil, rest)
         end })
-    commands:Register({ name = "stoptest", help = "Stops/resets an in-progress bot test game",
+    commands:Register({ name = "stoptest", help = L["Commands_StopsResetsAnInProgressBotTest"],
         handler = function() CrossGambling:StopBotTest() end })
 
 end

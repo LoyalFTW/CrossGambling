@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 CGOptions = {}
@@ -193,9 +194,9 @@ local function MakeToggleBtn(parent, w, h)
     function btn:Refresh(val)
         self._state = val
         if CGOptions._isSlick then
-            SetSlickButtonText(self, val and "ON" or "OFF")
+            SetSlickButtonText(self, val and L["Settings_ON"] or L["Settings_OFF"])
         else
-            self:SetText(val and "ON" or "OFF")
+            self:SetText(val and L["Settings_ON"] or L["Settings_OFF"])
         end
     end
     if CGOptions._isSlick then
@@ -235,7 +236,7 @@ end
 
 local function GetFontChoices()
     local choices = {
-        { label = "Default", value = nil, path = nil },
+        { label = L["Options_Default"], value = nil, path = nil },
         { label = "Friz Quadrata", value = "Friz Quadrata", path = "Fonts\\FRIZQT__.TTF" },
         { label = "Arial Narrow", value = "Arial Narrow", path = "Fonts\\ARIALN.TTF" },
         { label = "Morpheus", value = "Morpheus", path = "Fonts\\MORPHEUS.TTF" },
@@ -257,12 +258,12 @@ local function GetFontChoices()
 end
 
 local FONT_STYLE_CHOICES = {
-    { label = "None", value = "" },
-    { label = "Outline", value = "OUTLINE" },
-    { label = "Thick Outline", value = "THICKOUTLINE" },
-    { label = "Monochrome", value = "MONOCHROME" },
-    { label = "Monochrome Outline", value = "OUTLINE, MONOCHROME" },
-    { label = "Monochrome Thick", value = "THICKOUTLINE, MONOCHROME" },
+    { label = L["Options_None"], value = "" },
+    { label = L["Options_Outline"], value = "OUTLINE" },
+    { label = L["Options_ThickOutline"], value = "THICKOUTLINE" },
+    { label = L["Options_Monochrome"], value = "MONOCHROME" },
+    { label = L["Options_MonochromeOutline"], value = "OUTLINE, MONOCHROME" },
+    { label = L["Options_MonochromeThick"], value = "THICKOUTLINE, MONOCHROME" },
 }
 
 local function MakeDropdown(parent, name, choices, width, getValue, setValue)
@@ -501,8 +502,8 @@ function CGOptions:Build(isSlick)
     end
 
     local TABS = isSlick
-        and {"Game", "Theme", "Colors", "Chat", "History", "Support"}
-        or  {"Game", "Theme", "History", "Support"}
+        and {L["Common_Game"], L["Options_Theme"], L["Options_Colors"], L["Chat_Chat"], L["Options_History"], L["Options_Support"]}
+        or  {L["Common_Game"], L["Options_Theme"], L["Options_History"], L["Options_Support"]}
 
     local tabBarW = isSlick and 360 or 300
     local tabW = math.floor((tabBarW - (#TABS - 1) * 2) / #TABS)
@@ -527,7 +528,7 @@ function CGOptions:Build(isSlick)
 
     local titleText = win:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     titleText:SetPoint("TOP", win, "TOP", 0, -5)
-    titleText:SetText("CrossGambling \226\128\148 Options")
+    titleText:SetText(L["Options_Options"])
     titleText:SetTextColor(1, 0.82, 0)
     if isSlick then
         StyleSlickFont(titleText)
@@ -630,7 +631,7 @@ function CGOptions:Build(isSlick)
         return t
     end
 
-    RowLabel(gamePanel, START_Y, "Guild Cut:")
+    RowLabel(gamePanel, START_Y, L["Options_GuildCut"])
     local guildCutBtn = MakeToggleBtn(gamePanel, 85, 22)
     guildCutBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y + 4)
     guildCutBtn:SetScript("OnClick", function(self)
@@ -638,11 +639,11 @@ function CGOptions:Build(isSlick)
         self._state = not self._state
         a.game.house = self._state
         self:Refresh(self._state)
-        DEFAULT_CHAT_FRAME:AddMessage("CrossGambling: Guild cut " .. (self._state and "ON" or "OFF") .. ".")
+        DEFAULT_CHAT_FRAME:AddMessage(L["Options_GuildCut2"] .. (self._state and L["Settings_ON"] or L["Settings_OFF"]) .. ".")
     end)
-    AttachTooltip(guildCutBtn, "Guild Cut", "Deducts the House Cut percentage from the winner's payout and records that amount for the guild. The loser still owes the full debt.")
+    AttachTooltip(guildCutBtn, L["Options_GuildCut3"], L["Options_DeductsTheHouseCutPercentageFromThe"])
 
-    RowLabel(gamePanel, START_Y - ROW_H, "House Cut %:")
+    RowLabel(gamePanel, START_Y - ROW_H, L["Options_HouseCut"])
     local houseCutEB = MakeEditBox(gamePanel, 85, 22, 3)
     houseCutEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H + 4)
     houseCutEB:SetScript("OnEditFocusLost", function(self)
@@ -651,7 +652,7 @@ function CGOptions:Build(isSlick)
         if v then GetAddon():SetHouseCut(v) end
     end)
 
-    RowLabel(gamePanel, START_Y - ROW_H*2, "Realm Filter:")
+    RowLabel(gamePanel, START_Y - ROW_H*2, L["Options_RealmFilter"])
     local realmBtn = MakeToggleBtn(gamePanel, 85, 22)
     realmBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*2 + 4)
     realmBtn:SetScript("OnClick", function(self)
@@ -660,9 +661,9 @@ function CGOptions:Build(isSlick)
         a.game.realmFilter = self._state
         self:Refresh(self._state)
     end)
-    AttachTooltip(realmBtn, "Realm Filter", "Prevents players reported as being on an ineligible realm from joining games you host.")
+    AttachTooltip(realmBtn, L["Options_RealmFilter2"], L["Options_PreventsPlayersReportedAsBeingOnAn"])
 
-    RowLabel(gamePanel, START_Y - ROW_H*3, "Pause Boss/PvP:")
+    RowLabel(gamePanel, START_Y - ROW_H*3, L["Options_PauseBossPvP"])
     local combatChatBtn = MakeToggleBtn(gamePanel, 85, 22)
     combatChatBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*3 + 4)
     combatChatBtn:SetScript("OnClick", function(self)
@@ -680,9 +681,9 @@ function CGOptions:Build(isSlick)
             a:RegisterChatEvents()
         end
     end)
-    AttachTooltip(combatChatBtn, "Pause Boss/PvP", "Temporarily pauses player chat input during boss encounters and PvP combat, then resumes it when combat ends. System roll results can still be detected.")
+    AttachTooltip(combatChatBtn, L["Options_PauseBossPvP2"], L["Options_TemporarilyPausesPlayerChatInputDuringBoss"])
 
-    RowLabel(gamePanel, START_Y - ROW_H*4, "Double/Nothing:")
+    RowLabel(gamePanel, START_Y - ROW_H*4, L["Options_DoubleNothing"])
     local doubleOrNothingBtn = MakeToggleBtn(gamePanel, 85, 22)
     doubleOrNothingBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*4 + 4)
     doubleOrNothingBtn:SetScript("OnClick", function(self)
@@ -690,11 +691,11 @@ function CGOptions:Build(isSlick)
         self._state = not self._state
         a.db.global.doubleOrNothingEnabled = self._state
         self:Refresh(self._state)
-        DEFAULT_CHAT_FRAME:AddMessage("CrossGambling: Double or Nothing " .. (self._state and "ON" or "OFF") .. " for new games.")
+        DEFAULT_CHAT_FRAME:AddMessage(L["Options_DoubleOrNothing"] .. (self._state and L["Settings_ON"] or L["Settings_OFF"]) .. L["Options_ForNewGames"])
     end)
-    AttachTooltip(doubleOrNothingBtn, "Double or Nothing", "For new single-debt games, offers the winner and loser a 30-second chance to accept an alternating death roll. The debt is either doubled or cleared, and the outcome is recorded in History. Off by default.")
+    AttachTooltip(doubleOrNothingBtn, L["Options_DoubleOrNothing2"], L["Options_ForNewSingleDebtGamesOffersThe"])
 
-    RowLabel(gamePanel, START_Y - ROW_H*5, "Join Word:")
+    RowLabel(gamePanel, START_Y - ROW_H*5, L["Options_JoinWord"])
     local joinEB = MakeEditBox(gamePanel, 85, 22, 10)
     joinEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*5 + 4)
     joinEB:SetText("1")
@@ -708,9 +709,9 @@ function CGOptions:Build(isSlick)
         if v and v ~= "" then GetAddon().db.global.joinWord = v end
         self:ClearFocus()
     end)
-    AttachTooltip(joinEB, "Join Word", "The exact chat message players type during registration to join your game. Press Enter or click away to save it.")
+    AttachTooltip(joinEB, L["Options_JoinWord2"], L["Options_TheExactChatMessagePlayersTypeDuring"])
 
-    RowLabel(gamePanel, START_Y - ROW_H*6, "Leave Word:")
+    RowLabel(gamePanel, START_Y - ROW_H*6, L["Options_LeaveWord"])
     local leaveEB = MakeEditBox(gamePanel, 85, 22, 10)
     leaveEB:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X, START_Y - ROW_H*6 + 4)
     leaveEB:SetText("-1")
@@ -724,9 +725,9 @@ function CGOptions:Build(isSlick)
         if v and v ~= "" then GetAddon().db.global.leaveWord = v end
         self:ClearFocus()
     end)
-    AttachTooltip(leaveEB, "Leave Word", "The exact chat message joined players type during registration to withdraw. Press Enter or click away to save it.")
+    AttachTooltip(leaveEB, L["Options_LeaveWord2"], L["Options_TheExactChatMessageJoinedPlayersType"])
 
-    RowLabel(gamePanel, START_Y - ROW_H*7, "History Profile:")
+    RowLabel(gamePanel, START_Y - ROW_H*7, L["Options_HistoryProfile"])
     local profileBtn = MakeButton(gamePanel, "General", 115, 22)
     profileBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", VAL_X - 20, START_Y - ROW_H*7 + 4)
     profileBtn:SetScript("OnClick", function() GetAddon():ShowStatProfilesFrame() end)
@@ -734,9 +735,9 @@ function CGOptions:Build(isSlick)
         local a = GetAddon()
         local profileName = a and a.db and a.db.global and a.db.global.activeStatProfile or "General"
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Active History Profile", 1, 0.82, 0)
+        GameTooltip:SetText(L["Options_ActiveHistoryProfile"], 1, 0.82, 0)
         GameTooltip:AddLine(profileName, 1, 1, 1)
-        GameTooltip:AddLine("New results are saved here in addition to Session and All-Time Stats. Click to manage profiles.", 1, 1, 1, true)
+        GameTooltip:AddLine(L["Options_NewResultsAreSavedHereInAddition"], 1, 1, 1, true)
         GameTooltip:Show()
     end)
     profileBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
@@ -748,37 +749,37 @@ function CGOptions:Build(isSlick)
     local BW, BH = 138, 26
     local statsX = isSlick and 21 or 0
 
-    local fullStatsBtn = MakeButton(gamePanel, "Full Stats", BW, BH)
+    local fullStatsBtn = MakeButton(gamePanel, L["Options_FullStats"], BW, BH)
     fullStatsBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX, statY)
     fullStatsBtn:SetScript("OnClick", function() GetAddon():reportStats(true) end)
 
-    local deathStatsBtn = MakeButton(gamePanel, "DeathRoll Stats", BW, BH)
+    local deathStatsBtn = MakeButton(gamePanel, L["Options_DeathRollStats"], BW, BH)
     deathStatsBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX + BW + 4, statY)
     deathStatsBtn:SetScript("OnClick", function() GetAddon():reportDeathrollStats() end)
 
-    local fameBtn = MakeButton(gamePanel, "Fame / Shame", BW, BH)
+    local fameBtn = MakeButton(gamePanel, L["Options_FameShame"], BW, BH)
     fameBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX, statY - BH - 4)
     fameBtn:SetScript("OnClick", function() GetAddon():reportStats() end)
 
-    local sessionBtn = MakeButton(gamePanel, "Session Stats", BW, BH)
+    local sessionBtn = MakeButton(gamePanel, L["Stats_SessionStats"], BW, BH)
     sessionBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX + BW + 4, statY - BH - 4)
     sessionBtn:SetScript("OnClick", function() GetAddon():reportSessionStats() end)
 
-    local exportBtn = MakeButton(gamePanel, "Export Stats", BW, BH)
+    local exportBtn = MakeButton(gamePanel, L["Options_ExportStats"], BW, BH)
     exportBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX, statY - (BH+4)*2)
     exportBtn:SetScript("OnClick", function() GetAddon():ShowStatsTransferFrame("export") end)
 
-    local importBtn = MakeButton(gamePanel, "Import Stats", BW, BH)
+    local importBtn = MakeButton(gamePanel, L["Options_ImportStats"], BW, BH)
     importBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX + BW + 4, statY - (BH+4)*2)
     importBtn:SetScript("OnClick", function() GetAddon():ShowStatsTransferFrame("import") end)
 
-    local resetBtn = MakeButton(gamePanel, "Reset All Stats", BW*2 + 4, BH)
+    local resetBtn = MakeButton(gamePanel, L["Options_ResetAllStats"], BW*2 + 4, BH)
     resetBtn:SetPoint("TOPLEFT", gamePanel, "TOPLEFT", statsX, statY - (BH+4)*3)
     resetBtn:SetScript("OnClick", function()
         if not StaticPopupDialogs["CG_RESET_STATS"] then
             StaticPopupDialogs["CG_RESET_STATS"] = {
-                text         = "Reset ALL stats and history profiles? This cannot be undone.",
-                button1      = "Yes", button2 = "No",
+                text         = L["Options_ResetALLStatsAndHistoryProfilesThis"],
+                button1      = L["History_Yes"], button2 = L["History_No"],
                 OnAccept     = function() GetAddon():resetStats(nil) end,
                 timeout      = 0, whileDead = true, hideOnEscape = true,
             }
@@ -803,12 +804,12 @@ function CGOptions:Build(isSlick)
 
     local themeHdr = themePanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     themeHdr:SetPoint("TOP", themePanel, "TOP", 0, -6)
-    themeHdr:SetText("Choose Your Theme")
+    themeHdr:SetText(L["Options_ChooseYourTheme"])
     if isSlick then StyleSlickFont(themeHdr) end
 
     local themeSub = themePanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     themeSub:SetPoint("TOP", themeHdr, "BOTTOM", 0, -4)
-    themeSub:SetText("Theme switches instantly — no reload needed.")
+    themeSub:SetText(L["Options_ThemeSwitchesInstantlyNoReloadNeeded"])
     if isSlick then StyleSlickFont(themeSub) end
 
     local selectedTheme = "Slick"
@@ -822,7 +823,7 @@ function CGOptions:Build(isSlick)
     ct:SetTexture("Interface\\AddOns\\CrossGambling\\media\\ClassicTheme.tga")
     local classicLbl = themePanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
     classicLbl:SetPoint("TOP", classicBox, "BOTTOM", 0, -5)
-    classicLbl:SetText("Classic")
+    classicLbl:SetText(L["Mode_Classic"])
     if isSlick then StyleSlickFont(classicLbl) end
 
     local slickBox = CreateFrame("Button", nil, themePanel, "BackdropTemplate")
@@ -833,7 +834,7 @@ function CGOptions:Build(isSlick)
     st:SetTexture("Interface\\AddOns\\CrossGambling\\media\\NewTheme.tga")
     local slickLbl = themePanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
     slickLbl:SetPoint("TOP", slickBox, "BOTTOM", 0, -5)
-    slickLbl:SetText("Slick")
+    slickLbl:SetText(L["Theme_Slick"])
     if isSlick then StyleSlickFont(slickLbl) end
 
     local function UpdateThemeSel()
@@ -847,12 +848,12 @@ function CGOptions:Build(isSlick)
     classicBox:SetScript("OnClick", function() selectedTheme="Classic" UpdateThemeSel() end)
     slickBox:SetScript("OnClick",   function() selectedTheme="Slick"   UpdateThemeSel() end)
 
-    local confirmBtn = MakeButton(themePanel, "Apply Theme", 280, 28)
+    local confirmBtn = MakeButton(themePanel, L["Options_ApplyTheme"], 280, 28)
     confirmBtn:SetPoint("BOTTOM", themePanel, "BOTTOM", 0, 10)
     confirmBtn:SetScript("OnClick", function()
         local current = GetAddon().db.global.theme or "Slick"
         if selectedTheme == current then
-            DEFAULT_CHAT_FRAME:AddMessage("|cffFFD100CrossGambling|r: Already using " .. selectedTheme .. " theme.")
+            DEFAULT_CHAT_FRAME:AddMessage(L["Options_AlreadyUsing"] .. (current == "Slick" and L["Theme_Slick"] or L["Mode_Classic"]) .. L["Theme_MessageSuffix"])
             return
         end
         CGTheme:Switch(selectedTheme)
@@ -866,7 +867,7 @@ function CGOptions:Build(isSlick)
 
     local histPanel = isSlick and tabPanels[5] or tabPanels[3]
 
-    local openLogBtn = MakeButton(histPanel, "Open History Log", 280, 28)
+    local openLogBtn = MakeButton(histPanel, L["Options_OpenHistoryLog"], 280, 28)
     openLogBtn:SetPoint("TOP", histPanel, "TOP", 0, -10)
     openLogBtn:SetScript("OnClick", function()
         local a  = GetAddon()
@@ -891,7 +892,7 @@ function CGOptions:Build(isSlick)
 
     local purgeLbl = histPanel:CreateFontString(nil,"OVERLAY","GameFontNormal")
     purgeLbl:SetPoint("TOPLEFT", histPanel, "TOPLEFT", 10, -52)
-    purgeLbl:SetText("Auto-purge entries older than:")
+    purgeLbl:SetText(L["Options_AutoPurgeEntriesOlderThan"])
     if isSlick then StyleSlickFont(purgeLbl) end
 
     local retDays = {5, 10, 30, "Never"}
@@ -905,7 +906,7 @@ function CGOptions:Build(isSlick)
         if cb.Text then cb.Text:Hide() end
         local lbl2 = cb:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
         lbl2:SetPoint("TOP", cb, "BOTTOM", 0, -2)
-        lbl2:SetText(type(val)=="number" and (val.."d") or "Never")
+        lbl2:SetText(type(val)=="number" and (val..L["History_DaySuffix"]) or L["Common_Never"])
         if isSlick then StyleSlickFont(lbl2) end
         cb.days = val
         cb:SetScript("OnClick", function(self)
@@ -916,19 +917,19 @@ function CGOptions:Build(isSlick)
         retCBs[i] = cb
     end
 
-    local purgeNowBtn = MakeButton(histPanel, "Purge Log Now", 280, 28)
+    local purgeNowBtn = MakeButton(histPanel, L["Options_PurgeLogNow"], 280, 28)
     purgeNowBtn:SetPoint("TOP", histPanel, "TOP", 0, -115)
     purgeNowBtn:SetScript("OnClick", function()
         GetAddon():ConfirmPurgeAuditLog()
     end)
 
-    local ledgerBtn = MakeButton(histPanel, "Open Payment Ledger", 280, 28)
+    local ledgerBtn = MakeButton(histPanel, L["Options_OpenPaymentLedger"], 280, 28)
     ledgerBtn:SetPoint("TOP", histPanel, "TOP", 0, -157)
     ledgerBtn:SetScript("OnClick", function() GetAddon():ShowPaymentLedger() end)
     local ledgerNote = histPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     ledgerNote:SetPoint("TOP", ledgerBtn, "BOTTOM", 0, -8)
     ledgerNote:SetWidth(280)
-    ledgerNote:SetText("Track unpaid balances and partial payments.\nLedger records are kept when History is purged.")
+    ledgerNote:SetText(L["Options_TrackUnpaidBalancesAndPartialPaymentsLedger"])
 
     histPanel:SetScript("OnShow", function()
         local a = GetAddon()
@@ -942,7 +943,7 @@ function CGOptions:Build(isSlick)
 
     local supportHdr = supportPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     supportHdr:SetPoint("TOP", supportPanel, "TOP", 0, -12)
-    supportHdr:SetText("Support CrossGambling")
+    supportHdr:SetText(L["Options_SupportCrossGambling"])
     supportHdr:SetTextColor(1, 0.82, 0)
     if isSlick then
         StyleSlickFont(supportHdr)
@@ -954,7 +955,7 @@ function CGOptions:Build(isSlick)
     supportSub:SetPoint("LEFT", supportPanel, "LEFT", 18, 0)
     supportSub:SetPoint("RIGHT", supportPanel, "RIGHT", -18, 0)
     supportSub:SetJustifyH("CENTER")
-    supportSub:SetText("Click a link box and press Ctrl+C to copy it.")
+    supportSub:SetText(L["Options_ClickALinkBoxAndPressCtrl"])
     if isSlick then StyleSlickFont(supportSub) end
 
     local supportY = -62
@@ -967,12 +968,12 @@ function CGOptions:Build(isSlick)
 
         local colHdr = colPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         colHdr:SetPoint("TOP", colPanel, "TOP", 0, -6)
-        colHdr:SetText("Slick Theme Colours")
+        colHdr:SetText(L["Options_SlickThemeColours"])
         StyleSlickFont(colHdr)
 
         local colSub = colPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         colSub:SetPoint("TOP", colHdr, "BOTTOM", 0, -2)
-        colSub:SetText("Click a colour swatch to change it")
+        colSub:SetText(L["Options_ClickAColourSwatchToChangeIt"])
         StyleSlickFont(colSub)
 
         local ROW_BAR_H = 26
@@ -983,22 +984,22 @@ function CGOptions:Build(isSlick)
 
         local colItems = {
             {
-                label = "Frame Color",
+                label = L["Options_FrameColor"],
                 get   = function() return CGTheme._frameColor.r,  CGTheme._frameColor.g,  CGTheme._frameColor.b  end,
                 set   = function(r,g,b) CGTheme._frameColor.r,CGTheme._frameColor.g,CGTheme._frameColor.b=r,g,b; CGTheme:ApplyColors(); CGTheme:SaveColors() end,
             },
             {
-                label = "Button Color",
+                label = L["Options_ButtonColor"],
                 get   = function() return CGTheme._buttonColor.r, CGTheme._buttonColor.g, CGTheme._buttonColor.b end,
                 set   = function(r,g,b) CGTheme._buttonColor.r,CGTheme._buttonColor.g,CGTheme._buttonColor.b=r,g,b; CGTheme:ApplyColors(); CGTheme:SaveColors() end,
             },
             {
-                label = "Side Color",
+                label = L["Options_SideColor"],
                 get   = function() return CGTheme._sideColor.r,   CGTheme._sideColor.g,   CGTheme._sideColor.b   end,
                 set   = function(r,g,b) CGTheme._sideColor.r,CGTheme._sideColor.g,CGTheme._sideColor.b=r,g,b; CGTheme:ApplyColors(); CGTheme:SaveColors() end,
             },
             {
-                label = "Font Color",
+                label = L["Options_FontColor"],
                 get   = function() return CGTheme._fontColor.r,   CGTheme._fontColor.g,   CGTheme._fontColor.b   end,
                 set   = function(r,g,b) CGTheme:SetFontColor(r,g,b); CGTheme:SaveColors() end,
             },
@@ -1063,7 +1064,7 @@ function CGOptions:Build(isSlick)
 
         local fontSizeLbl = colPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         fontSizeLbl:SetPoint("TOPLEFT", colPanel, "TOPLEFT", BAR_LEFT, sliderBaseY)
-        fontSizeLbl:SetText("Font Size:")
+        fontSizeLbl:SetText(L["Options_FontSize"])
         StyleSlickFont(fontSizeLbl)
 
         local fontSizeSlider = CreateFrame("Slider", "CGUIFontSizeSlider", colPanel, "OptionsSliderTemplate")
@@ -1074,7 +1075,7 @@ function CGOptions:Build(isSlick)
         fontSizeSlider:SetObeyStepOnDrag(true)
 
         local sliderTitle = _G["CGUIFontSizeSliderText"]
-        if sliderTitle then sliderTitle:SetText("Font Size"); StyleSlickFont(sliderTitle) end
+        if sliderTitle then sliderTitle:SetText(L["Options_FontSize2"]); StyleSlickFont(sliderTitle) end
         local sliderLow = _G["CGUIFontSizeSliderLow"]
         if sliderLow then sliderLow:SetText("8"); StyleSlickFont(sliderLow) end
         local sliderHigh = _G["CGUIFontSizeSliderHigh"]
@@ -1096,7 +1097,7 @@ function CGOptions:Build(isSlick)
 
         local fontLbl = colPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         fontLbl:SetPoint("TOPLEFT", colPanel, "TOPLEFT", BAR_LEFT, sliderBaseY - 58)
-        fontLbl:SetText("Font:")
+        fontLbl:SetText(L["Options_Font"])
         StyleSlickFont(fontLbl)
 
         local fontDropdown = MakeDropdown(colPanel, "CGUIFontDropdown", GetFontChoices(), 180,
@@ -1116,7 +1117,7 @@ function CGOptions:Build(isSlick)
 
         local outlineLbl = colPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         outlineLbl:SetPoint("TOPLEFT", colPanel, "TOPLEFT", BAR_LEFT, sliderBaseY - 92)
-        outlineLbl:SetText("Outline:")
+        outlineLbl:SetText(L["Options_Outline2"])
         StyleSlickFont(outlineLbl)
 
         local outlineDropdown = MakeDropdown(colPanel, "CGUIFontOutlineDropdown", FONT_STYLE_CHOICES, 100,
@@ -1148,7 +1149,7 @@ function CGOptions:Build(isSlick)
         local resetLbl = resetColBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         resetLbl:SetAllPoints()
         resetLbl:SetJustifyH("CENTER")
-        resetLbl:SetText("Reset to Default Colors")
+        resetLbl:SetText(L["Options_ResetToDefaultColors"])
         StyleSlickFont(resetLbl)
 
         resetColBtn:SetScript("OnEnter", function(self)
@@ -1170,7 +1171,7 @@ function CGOptions:Build(isSlick)
             end
             CGTheme:ChangeColor("resetColors")
             for _, sw in ipairs(swatches) do sw:Refresh() end
-            DEFAULT_CHAT_FRAME:AddMessage("CrossGambling: Colors reset to defaults.")
+            DEFAULT_CHAT_FRAME:AddMessage(L["Options_ColorsResetToDefaults"])
         end)
 
         colPanel:SetScript("OnShow", function()
@@ -1187,7 +1188,7 @@ function CGOptions:Build(isSlick)
 
         local chatHdr = chatPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         chatHdr:SetPoint("TOP", chatPanel, "TOP", 0, -6)
-        chatHdr:SetText("Chat Settings")
+        chatHdr:SetText(L["Options_ChatSettings"])
         StyleSlickFont(chatHdr)
 
         local chatRows = {}
@@ -1216,7 +1217,7 @@ function CGOptions:Build(isSlick)
             return rowBg
         end
 
-        local chatSizeRow = ChatRow("Chat Font Size")
+        local chatSizeRow = ChatRow(L["Options_ChatFontSize"])
 
         local chatFontSizeSlider = CreateFrame("Slider", "CGChatFontSizeSlider", chatPanel, "OptionsSliderTemplate")
         chatFontSizeSlider:SetPoint("LEFT",  chatSizeRow, "LEFT",  LABEL_W + 8, 0)
@@ -1226,7 +1227,7 @@ function CGOptions:Build(isSlick)
         chatFontSizeSlider:SetObeyStepOnDrag(true)
 
         local chatSliderTitle = _G["CGChatFontSizeSliderText"]
-        if chatSliderTitle then chatSliderTitle:SetText("Font Size"); StyleSlickFont(chatSliderTitle) end
+        if chatSliderTitle then chatSliderTitle:SetText(L["Options_FontSize2"]); StyleSlickFont(chatSliderTitle) end
         local chatSliderLow = _G["CGChatFontSizeSliderLow"]
         if chatSliderLow then chatSliderLow:SetText("8"); StyleSlickFont(chatSliderLow) end
         local chatSliderHigh = _G["CGChatFontSizeSliderHigh"]
@@ -1248,7 +1249,7 @@ function CGOptions:Build(isSlick)
         end)
 
         chatRowY = -42
-        local chatColorRow = ChatRow("Chat Font Color")
+        local chatColorRow = ChatRow(L["Options_ChatFontColor"])
 
         local chatColorSwatch = CreateFrame("Button", nil, chatColorRow, "BackdropTemplate")
         chatColorSwatch:SetHeight(ROW_BAR_H - 4)
@@ -1330,7 +1331,7 @@ function CGOptions:Open(tabName)
     if not self.frame then return end
     self.frame:Show()
     local map = self._isSlick
-        and {Game=1, Theme=2, Colors=3, Chat=4, ["Chat Settings"]=4, History=5, Support=6}
+        and {Game=1, Theme=2, Colors=3, Chat=4, [L["Options_ChatSettings"]]=4, History=5, Support=6}
         or  {Game=1, Theme=2, History=3, Support=4}
     if tabName and map[tabName] and self.ShowTab then self.ShowTab(map[tabName]) end
 end

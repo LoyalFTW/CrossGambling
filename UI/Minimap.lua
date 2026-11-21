@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 local LDB = LibStub("LibDataBroker-1.1")
@@ -35,16 +36,16 @@ end
 
 local function PopulateTooltip(tooltip)
     local getAddOnMetadata = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
-    local version = getAddOnMetadata and getAddOnMetadata(LDB_NAME, "Version") or nil
-    version = version or "Dev"
+    local version = getAddOnMetadata and getAddOnMetadata(LDB_NAME, L["Minimap_Version"]) or nil
+    version = version or L["Minimap_Dev"]
     if version:find("project-version", 1, true) then
-        version = "Dev"
+        version = L["Minimap_Dev"]
     end
 
-    tooltip:AddDoubleLine("Cross Gambling", "|cFFAAAAAA" .. version .. "|r", 1, 0.82, 0, 1, 1, 1)
-    tooltip:AddLine("Left Click: Show or hide", 0.8, 0.8, 0.8)
-    tooltip:AddLine("Right Click: AddOn settings", 0.8, 0.8, 0.8)
-    tooltip:AddLine("Use /cg minimap to hide this button", 0.5, 0.5, 0.5)
+    tooltip:AddDoubleLine(L["Minimap_CrossGambling"], "|cFFAAAAAA" .. version .. "|r", 1, 0.82, 0, 1, 1, 1)
+    tooltip:AddLine(L["Minimap_LeftClickShowOrHide"], 0.8, 0.8, 0.8)
+    tooltip:AddLine(L["Minimap_RightClickAddOnSettings"], 0.8, 0.8, 0.8)
+    tooltip:AddLine(L["Minimap_UseCgMinimapToHideThisButton"], 0.5, 0.5, 0.5)
 end
 
 function CrossGambling:InitMinimap()

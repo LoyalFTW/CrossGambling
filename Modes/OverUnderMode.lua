@@ -1,10 +1,11 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
 local OverUnderMode = {}
 OverUnderMode.name         = "OverUnder"
-OverUnderMode.description  = "Based on the real craps \"Over/Under 7\" bet, scaled to 1-100. Everyone types \"over\" or \"under\" to bet on whether the host's roll will land above or below 50 (even-money payout). Roll exactly 50 and every bet loses to the house, same as rolling the pivot number in craps."
+OverUnderMode.description  = L["OverUnderMode_BasedOnTheRealCrapsOverUnder"]
 OverUnderMode.minPlayers   = 2
 OverUnderMode.usesChatPick = true
 OverUnderMode.hostRolls    = true
@@ -15,8 +16,8 @@ local ROLL_MAX = 100
 function OverUnderMode:OnStartRolls(addon, game)
     game.overunder = { picks = {}, resolved = false }
     addon:Announce(string.format(
-        "CrossGambling: Over/Under! Target is %d. Type \"over\" or \"under\" to lock in your pick, then %s types /roll %d to decide!",
-        TARGET, game.hostName or "the host", ROLL_MAX
+        L["OverUnderMode_OverUnderTargetIsTypeOverOr"],
+        TARGET, game.hostName or L["OverUnderMode_TheHost"], ROLL_MAX
     ))
 end
 
@@ -36,7 +37,7 @@ function OverUnderMode:OnChatText(addon, game, playerName, text)
 
     ou.picks[playerName] = pick
     addon:RecordRoll(playerName, pick)
-    addon:Announce(playerName .. " picks " .. pick .. "!")
+    addon:Announce(playerName .. L["OverUnderMode_Picks"] .. (pick == "over" and L["OverUnderMode_ChoiceOver"] or L["OverUnderMode_ChoiceUnder"]) .. "!")
 end
 
 function OverUnderMode:OnRollReceived(addon, game, playerName, actualRoll, minRoll, maxRoll)
@@ -53,7 +54,7 @@ function OverUnderMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
         end
     end
     if #missingPicks > 0 then
-        addon:Announce(table.concat(missingPicks, ", ") .. " still needs to pick over or under!")
+        addon:Announce(table.concat(missingPicks, ", ") .. L["OverUnderMode_StillNeedsToPickOverOrUnder"])
         return
     end
 
@@ -65,8 +66,8 @@ function OverUnderMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
     local wager    = addon:GetWager()
     local exactHit = actualRoll == TARGET
     local lines    = { string.format(
-        "CrossGambling: Over/Under rolled %d (target %d)!%s",
-        actualRoll, TARGET, exactHit and " Exact hit - the house takes every bet!" or ""
+        L["OverUnderMode_OverUnderRolledTarget"],
+        actualRoll, TARGET, exactHit and L["OverUnderMode_ExactHitTheHouseTakesEveryBet"] or ""
     ) }
 
     for i = 1, #game.players do
@@ -82,11 +83,11 @@ function OverUnderMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
             if won then
                 ou.outcomes[player.name] = true
                 addon:SettleDebt(bank, player.name, wager, OverUnderMode.name)
-                table.insert(lines, string.format("%s (%s) wins %sg from the house!", player.name, pick, addon:addCommas(wager)))
+                table.insert(lines, string.format(L["OverUnderMode_WinsGFromTheHouse"], player.name, (pick == "over" and L["OverUnderMode_ChoiceOver"] or L["OverUnderMode_ChoiceUnder"]), addon:addCommas(wager)))
             else
                 ou.outcomes[player.name] = false
                 addon:SettleDebt(player.name, bank, wager, OverUnderMode.name)
-                table.insert(lines, string.format("%s (%s) pays %sg to the house.", player.name, pick, addon:addCommas(wager)))
+                table.insert(lines, string.format(L["OverUnderMode_PaysGToTheHouse"], player.name, (pick == "over" and L["OverUnderMode_ChoiceOver"] or L["OverUnderMode_ChoiceUnder"]), addon:addCommas(wager)))
             end
         end
     end

@@ -1,5 +1,12 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
+
+local filterLabels = {
+    Paid = L["Ledger_FilterPaid"],
+    Outstanding = L["Ledger_FilterOutstanding"],
+    All = L["Ledger_FilterAll"],
+}
 
 local ledgerFrames, ledgerButtons, ledgerFonts, ledgerInputs, ledgerPanels = {}, {}, {}, {}, {}
 local LEDGER_BACKDROP = {
@@ -92,7 +99,7 @@ function CrossGambling:RestylePaymentLedger()
         if control._ledgerFilter then
             local selected = self.paymentLedgerFrame and self.paymentLedgerFrame.filter == control._ledgerFilter
             control._ledgerFilterBorder:SetShown(selected)
-            control:SetText((selected and "|cffffffff" or "|cffbbbbbb") .. control._ledgerFilter .. "|r")
+            control:SetText((selected and "|cffffffff" or "|cffbbbbbb") .. filterLabels[control._ledgerFilter] .. "|r")
             if slick and selected then
                 control:SetBackdropColor(math.min(1, theme._buttonColor.r + 0.08), math.min(1, theme._buttonColor.g + 0.08), math.min(1, theme._buttonColor.b + 0.08), 0.95)
             end
@@ -155,13 +162,13 @@ local function button(parent, text, width, x, y, callback)
 end
 
 local function gold(addon, value)
-    return addon:addCommas(value) .. "g"
+    return addon:addCommas(value) .. L["Common_GoldSuffix"]
 end
 
 local function confirm(text, callback)
     if not StaticPopupDialogs.CG_LEDGER_CONFIRM then
         StaticPopupDialogs.CG_LEDGER_CONFIRM = {
-            text = "%s", button1 = "Confirm", button2 = "Cancel",
+            text = "%s", button1 = L["Theme_Confirm"], button2 = L["Stats_Cancel"],
             OnAccept = function(_, data) data() end,
             timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
         }
@@ -187,8 +194,8 @@ function CrossGambling:ShowPaymentLedgerExport(text)
         frame:RegisterForDrag("LeftButton")
         frame:SetScript("OnDragStart", frame.StartMoving)
         frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-        frame.TitleText:SetText("Copy Payment Ledger")
-        label(frame, "Click the text, press Ctrl+A, then Ctrl+C. Paste into a spreadsheet or save as text.", 18, -38, 598)
+        frame.TitleText:SetText(L["Ledger_CopyPaymentLedger"])
+        label(frame, L["Ledger_ClickTheTextPressCtrlAThen"], 18, -38, 598)
         local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
         scroll:SetPoint("TOPLEFT", 20, -68)
         scroll:SetPoint("BOTTOMRIGHT", -38, 20)
@@ -251,7 +258,7 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", frame.StartMoving)
     frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-    frame.TitleText:SetText("CrossGambling - Payment Ledger")
+    frame.TitleText:SetText(L["Ledger_PaymentLedger"])
     table.insert(UISpecialFrames, "CrossGamblingPaymentLedger")
     frame.playerFilter = playerName
     frame.historyPlayer = historyPlayer
@@ -262,7 +269,7 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
     frame.summary = label(frame, "", 18, -40, 278, "GameFontNormal")
     frame.summary:SetHeight(36)
     frame.summary:SetJustifyV("TOP")
-    label(frame, "Search player, guild, mode or debt #", 18, -84, 285)
+    label(frame, L["Ledger_SearchPlayerGuildModeOrDebt"], 18, -84, 285)
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate,BackdropTemplate")
     search:SetSize(196, 23)
     search:SetPoint("TOPLEFT", 22, -101)
@@ -276,7 +283,7 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
     frame.filterButtons = {}
     for i, value in ipairs({ "Outstanding", "Paid", "All" }) do
         local filter = value
-        frame.filterButtons[filter] = button(frame, filter, 92, 18 + (i - 1) * 99, -133, function()
+        frame.filterButtons[filter] = button(frame, filterLabels[filter], 92, 18 + (i - 1) * 99, -133, function()
             frame.filter = filter
             frame:Refresh()
         end)
@@ -287,10 +294,10 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
         control._ledgerFilterBorder:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
         control._ledgerFilterBorder:SetBackdropBorderColor(1, 0.82, 0, 1)
     end
-    button(frame, "Copy list", 88, 18, -464, function()
+    button(frame, L["Ledger_CopyList"], 88, 18, -464, function()
         addon:ShowPaymentLedgerExport(addon:ExportPaymentLedger(search:GetText(), frame.filter, frame.playerFilter))
     end)
-    button(frame, "Clear", 74, 224, -101, function()
+    button(frame, L["Ledger_Clear"], 74, 224, -101, function()
         frame.playerFilter = nil
         frame.historyPlayer = nil
         search:SetText("")
@@ -303,9 +310,9 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
     content:SetSize(278, 1)
     scroll:SetScrollChild(content)
     frame.empty = label(content, "", 8, -12, 262)
-    frame.debtTitle = label(frame, "Payment details", 336, -40, 324, "GameFontNormal")
+    frame.debtTitle = label(frame, L["Ledger_PaymentDetails"], 336, -40, 324, "GameFontNormal")
     frame.debtTitle:SetHeight(20)
-    frame.detail = label(frame, "Select a debt to record a payment.", 336, -64, 324, "GameFontHighlight")
+    frame.detail = label(frame, L["Ledger_SelectADebtToRecordAPayment"], 336, -64, 324, "GameFontHighlight")
     frame.detail:SetHeight(36)
     frame.detail:SetJustifyV("TOP")
     frame.detailMeta = label(frame, "", 336, -102, 324)
@@ -319,24 +326,24 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
         local entry = addon:GetLedgerEntry(frame.selectedId)
         if not entry then return end
         GameTooltip:SetOwner(control, "ANCHOR_RIGHT")
-        GameTooltip:SetText("Debt #" .. entry.id .. " - " .. addon:GetLedgerStatus(entry))
-        GameTooltip:AddLine(entry.loser .. " owes " .. gold(addon, entry.amount) .. " total", 1, 1, 1, true)
-        GameTooltip:AddLine("Winner: " .. entry.winner .. " - " .. gold(addon, entry.winnerAmount), 1, 1, 1, true)
+        GameTooltip:SetText(L["Ledger_Debt"] .. entry.id .. " - " .. addon:GetLedgerStatusDisplayName(addon:GetLedgerStatus(entry)))
+        GameTooltip:AddLine(entry.loser .. L["Common_Owes"] .. gold(addon, entry.amount) .. L["Ledger_Total"], 1, 1, 1, true)
+        GameTooltip:AddLine(L["Ledger_Winner"] .. entry.winner .. " - " .. gold(addon, entry.winnerAmount), 1, 1, 1, true)
         if entry.guildAmount > 0 then
-            GameTooltip:AddLine("Guild: " .. entry.guild .. " - " .. gold(addon, entry.guildAmount), 1, 1, 1, true)
+            GameTooltip:AddLine(L["Ledger_Guild3"] .. entry.guild .. " - " .. gold(addon, entry.guildAmount), 1, 1, 1, true)
         end
-        GameTooltip:AddLine((entry.mode or "") .. " - " .. (entry.profile or ""), 1, 0.82, 0, true)
+        GameTooltip:AddLine((addon:GetModeDisplayName(entry.mode) or "") .. " - " .. (entry.profile or ""), 1, 0.82, 0, true)
         GameTooltip:AddLine(addon:FormatAuditTimestamp(entry.timestamp), 0.7, 0.7, 0.7)
         GameTooltip:Show()
     end)
     detailTooltip:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    frame.winnerButton = button(frame, "Winner", 158, 336, -132, function()
+    frame.winnerButton = button(frame, L["Ledger_WinnerLabel"], 158, 336, -132, function()
         frame.recipient = "winner"
         frame.amount:SetText("")
         frame.feedback:SetText("")
         frame:RefreshDetails()
     end)
-    frame.guildButton = button(frame, "Guild", 158, 502, -132, function()
+    frame.guildButton = button(frame, L["Ledger_Guild"], 158, 502, -132, function()
         frame.recipient = "guild"
         frame.amount:SetText("")
         frame.feedback:SetText("")
@@ -356,7 +363,7 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
     frame.remaining = label(balancePanel, "", 170, -6, 144)
     frame.remaining:SetHeight(28)
     frame.remaining:SetJustifyV("TOP")
-    label(frame, "Payment amount (gold)", 336, -240, 324)
+    label(frame, L["Ledger_PaymentAmountGold"], 336, -240, 324)
     local amount = CreateFrame("EditBox", nil, frame, "InputBoxTemplate,BackdropTemplate")
     amount:SetSize(112, 24)
     amount:SetPoint("TOPLEFT", 341, -258)
@@ -365,22 +372,22 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
     amount:SetScript("OnEscapePressed", function(control) control:ClearFocus() end)
     frame.amount = amount
     table.insert(ledgerInputs, amount)
-    frame.recordButton = button(frame, "Record payment", 194, 466, -258, function()
+    frame.recordButton = button(frame, L["Ledger_RecordPayment"], 194, 466, -258, function()
         local ok, message = addon:RecordLedgerPayment(frame.selectedId, frame.recipient, amount:GetText())
         if ok then amount:SetText("") amount:ClearFocus() end
         frame.feedback:SetText((ok and "|cff66dd99" or "|cffff7777") .. message .. "|r")
     end)
     amount:SetScript("OnEnterPressed", function() frame.recordButton:Click() end)
-    frame.markButton = button(frame, "Mark paid", 158, 336, -290, function()
+    frame.markButton = button(frame, L["Ledger_MarkPaid"], 158, 336, -290, function()
         local entry = addon:GetLedgerEntry(frame.selectedId)
         if not entry then return end
         local id, recipient = entry.id, frame.recipient
         local remaining = addon:GetLedgerBalance(entry, recipient)
         local name = recipient == "winner" and entry.winner or entry.guild
-        confirm("Record " .. gold(addon, remaining) .. " paid by " .. entry.loser .. " to " .. name .. "?", function()
+        confirm(L["Ledger_Record"] .. gold(addon, remaining) .. L["Ledger_PaidBy"] .. entry.loser .. L["Ledger_To"] .. name .. "?", function()
             local current = addon:GetLedgerEntry(id)
             if not current or addon:GetLedgerBalance(current, recipient) ~= remaining then
-                frame.feedback:SetText("Balance changed. Review the debt and try again.")
+                frame.feedback:SetText(L["Ledger_BalanceChangedReviewTheDebtAndTry"])
                 return
             end
             local ok, message = addon:RecordLedgerPayment(id, recipient, remaining)
@@ -388,14 +395,14 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
             if ok then amount:SetText("") end
         end)
     end)
-    frame.undoButton = button(frame, "Undo payment", 158, 502, -290, function()
+    frame.undoButton = button(frame, L["Ledger_UndoPayment"], 158, 502, -290, function()
         local entry = addon:GetLedgerEntry(frame.selectedId)
         if not entry then return end
         local payment, index = addon:GetLastLedgerPayment(entry)
         if not payment then return end
         local id = entry.id
         local name = payment.recipient == "winner" and entry.winner or entry.guild
-        confirm("Undo the last " .. gold(addon, payment.amount) .. " payment to " .. name .. "?", function()
+        confirm(L["Ledger_UndoTheLast"] .. gold(addon, payment.amount) .. L["Ledger_PaymentTo"] .. name .. "?", function()
             local _, message = addon:UndoLedgerPayment(id, index)
             frame.feedback:SetText(message)
         end)
@@ -405,9 +412,9 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
             local entry = addon:GetLedgerEntry(frame.selectedId)
             if not entry then return end
             GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
-            GameTooltip:SetText("Selected debt #" .. entry.id)
+            GameTooltip:SetText(L["Ledger_SelectedDebt"] .. entry.id)
             GameTooltip:AddLine(entry.loser .. " -> " .. entry.winner, 1, 1, 1, true)
-            GameTooltip:AddLine(button == frame.undoButton and "Undo only the latest recorded payment on this debt." or "Record a payment only against this debt's selected recipient.", 1, 0.82, 0, true)
+            GameTooltip:AddLine(button == frame.undoButton and L["Ledger_UndoOnlyTheLatestRecordedPaymentOn"] or L["Ledger_RecordAPaymentOnlyAgainstThisDebt"], 1, 0.82, 0, true)
             GameTooltip:Show()
         end)
         control:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -415,9 +422,9 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
     frame.feedback = label(frame, "", 336, -321, 324)
     frame.feedback:SetHeight(28)
     frame.feedback:SetJustifyV("TOP")
-    frame.historyTitle = label(frame, "Player payment history", 336, -355, 214, "GameFontNormal")
+    frame.historyTitle = label(frame, L["Ledger_PlayerPaymentHistory"], 336, -355, 214, "GameFontNormal")
     frame.historyTitle:SetHeight(16)
-    label(frame, "Scroll to review", 552, -355, 108)
+    label(frame, L["Ledger_ScrollToReview"], 552, -355, 108)
     local historyPanel = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     historyPanel:SetPoint("TOPLEFT", 336, -372)
     historyPanel:SetSize(324, 108)
@@ -435,7 +442,7 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
     history:SetScript("OnMouseWheel", function(control, delta)
         if delta > 0 then control:ScrollUp() else control:ScrollDown() end
     end)
-    frame.reportButton = button(frame, "Report debts to chat", 184, 114, -464, function()
+    frame.reportButton = button(frame, L["Ledger_ReportDebtsToChat"], 184, 114, -464, function()
         local ok, message
         if addon.ledgerDebtReport then
             ok, message = addon:StopLedgerDebtReport()
@@ -448,14 +455,14 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
         local playerName = selectedLedgerPlayer(frame, addon)
         GameTooltip:SetOwner(control, "ANCHOR_RIGHT")
         if addon.ledgerDebtReport then
-            GameTooltip:SetText("Stop Debt Report")
-            GameTooltip:AddLine("Stop sending the remaining report lines.", 1, 1, 1, true)
+            GameTooltip:SetText(L["Ledger_StopDebtReport"])
+            GameTooltip:AddLine(L["Ledger_StopSendingTheRemainingReportLines"], 1, 1, 1, true)
             GameTooltip:Show()
             return
         end
-        GameTooltip:SetText("Report Unpaid Debts")
-        GameTooltip:AddLine("List everything " .. (playerName or "the selected player") .. " still owes, including guild payments, in the selected game chat channel.", 1, 1, 1, true)
-        GameTooltip:AddLine("Includes all their debts, regardless of this window's filters.", 1, 0.82, 0, true)
+        GameTooltip:SetText(L["Ledger_ReportUnpaidDebts"])
+        GameTooltip:AddLine(L["Ledger_ListEverything"] .. (playerName or L["Ledger_TheSelectedPlayer"]) .. L["Ledger_StillOwesIncludingGuildPaymentsInThe"], 1, 1, 1, true)
+        GameTooltip:AddLine(L["Ledger_IncludesAllTheirDebtsRegardlessOfThis"], 1, 0.82, 0, true)
         GameTooltip:Show()
     end)
     frame.reportButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -465,10 +472,10 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
         history:Clear()
         local playerName = selectedLedgerPlayer(self, addon)
         self.reportButton:SetEnabled(playerName ~= nil or addon.ledgerDebtReport ~= nil)
-        self.reportButton:SetText(addon.ledgerDebtReport and "Stop debt report" or "Report debts to chat")
-        self.historyTitle:SetText(playerName and ("History: " .. ledgerName(playerName)) or "Player payment history")
+        self.reportButton:SetText(addon.ledgerDebtReport and L["Ledger_StopDebtReport2"] or L["Ledger_ReportDebtsToChat"])
+        self.historyTitle:SetText(playerName and (L["Ledger_History"] .. ledgerName(playerName)) or L["Ledger_PlayerPaymentHistory"])
         if not playerName then
-            history:AddMessage("Select a player to see all their payments.", 0.6, 0.6, 0.6)
+            history:AddMessage(L["Ledger_SelectAPlayerToSeeAllTheir"], 0.6, 0.6, 0.6)
             return
         end
         local payments = addon:GetPlayerLedgerHistory(playerName)
@@ -476,16 +483,16 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
         for i = #payments, 1, -1 do
             local payment = payments[i]
             local selected = payment.ledgerId == self.selectedId
-            local reference = (selected and "|cffffd100Selected debt #" or "|cffaaaaaaDebt #") .. payment.ledgerId .. "|r"
+            local reference = (selected and L["Ledger_SelectedDebt2"] or L["Ledger_Debt2"]) .. payment.ledgerId .. "|r"
             local color = payment.reversedAt and "|cffaaaaaa" or "|cff66dd99"
             local text = reference .. "  " .. color .. addon:FormatAuditTimestamp(payment.timestamp, true)
                 .. "\n" .. ledgerName(payment.payer) .. color .. " -> " .. ledgerName(payment.recipient) .. color .. ": " .. gold(addon, payment.amount)
             if payment.reversedAt then
-                text = text .. "\nUndone " .. addon:FormatAuditTimestamp(payment.reversedAt, true)
+                text = text .. L["Ledger_Undone"] .. addon:FormatAuditTimestamp(payment.reversedAt, true)
             end
             history:AddMessage(text .. "|r")
         end
-        if #payments == 0 then history:AddMessage("No payments recorded for " .. playerName .. " yet.", 0.6, 0.6, 0.6) end
+        if #payments == 0 then history:AddMessage(L["Ledger_NoPaymentsRecordedFor"] .. playerName .. L["Ledger_Yet"], 0.6, 0.6, 0.6) end
         history:ScrollToTop()
     end
 
@@ -495,14 +502,14 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
         self:RefreshPlayerHistory()
         local controls = { self.winnerButton, self.guildButton, self.recordButton, self.markButton, self.undoButton }
         if not entry then
-            self.debtTitle:SetText("Payment details")
-            self.detail:SetText("Select a debt to view its payout split and record payments.")
+            self.debtTitle:SetText(L["Ledger_PaymentDetails"])
+            self.detail:SetText(L["Ledger_SelectADebtToViewItsPayout"])
             self.detailMeta:SetText("")
             self.recipientName:SetText("")
             self.balance:SetText("")
             self.remaining:SetText("")
-            self.winnerButton:SetText("Winner")
-            self.guildButton:SetText("Guild")
+            self.winnerButton:SetText(L["Ledger_WinnerLabel"])
+            self.guildButton:SetText(L["Ledger_Guild"])
             self.winnerButton:SetWidth(158)
             self.guildButton:SetWidth(158)
             self.guildButton:ClearAllPoints()
@@ -515,14 +522,14 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
         end
         local winnerRemaining, winnerPaid = addon:GetLedgerBalance(entry, "winner")
         local guildRemaining, guildPaid = addon:GetLedgerBalance(entry, "guild")
-        self.debtTitle:SetText(string.format("|cffffd100Debt #%d|r  -  %s", entry.id, addon:GetLedgerStatus(entry)))
-        self.detail:SetText(ledgerName(entry.loser) .. " owes " .. gold(addon, entry.amount) .. " total\nWinner: " .. ledgerName(entry.winner))
-        self.detailMeta:SetText((entry.mode or "") .. "  -  " .. (entry.profile or "") .. "\n" .. addon:FormatAuditTimestamp(entry.timestamp))
+        self.debtTitle:SetText(string.format(L["Ledger_Debt3"], entry.id, addon:GetLedgerStatusDisplayName(addon:GetLedgerStatus(entry))))
+        self.detail:SetText(string.format(L["Ledger_DebtDetails"], ledgerName(entry.loser), gold(addon, entry.amount), ledgerName(entry.winner)))
+        self.detailMeta:SetText((addon:GetModeDisplayName(entry.mode) or "") .. "  -  " .. (entry.profile or "") .. "\n" .. addon:FormatAuditTimestamp(entry.timestamp))
         if entry.winnerAmount == 0 then self.recipient = "guild" end
         if entry.guildAmount == 0 then self.recipient = "winner" end
         local isWinner = self.recipient == "winner"
-        self.winnerButton:SetText((isWinner and "|cffffd100" or "") .. "Winner: " .. gold(addon, winnerRemaining) .. "|r")
-        self.guildButton:SetText((not isWinner and "|cffffd100" or "") .. "Guild: " .. gold(addon, guildRemaining) .. "|r")
+        self.winnerButton:SetText((isWinner and "|cffffd100" or "") .. L["Ledger_Winner"] .. gold(addon, winnerRemaining) .. "|r")
+        self.guildButton:SetText((not isWinner and "|cffffd100" or "") .. L["Ledger_Guild3"] .. gold(addon, guildRemaining) .. "|r")
         self.winnerButton:SetEnabled(entry.winnerAmount > 0)
         self.guildButton:SetEnabled(entry.guildAmount > 0)
         self.winnerButton:SetShown(entry.winnerAmount > 0)
@@ -533,9 +540,9 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
         self.guildButton:SetPoint("TOPLEFT", entry.winnerAmount == 0 and 336 or 502, -132)
         local remaining = isWinner and winnerRemaining or guildRemaining
         local paid = isWinner and winnerPaid or guildPaid
-        self.recipientName:SetText("Paying " .. ledgerName(isWinner and entry.winner or entry.guild))
-        self.balance:SetText("Recorded paid\n" .. gold(addon, paid))
-        self.remaining:SetText("Remaining\n|cffffd100" .. gold(addon, remaining) .. "|r")
+        self.recipientName:SetText(L["Ledger_Paying"] .. ledgerName(isWinner and entry.winner or entry.guild))
+        self.balance:SetText(L["Ledger_RecordedPaid"] .. gold(addon, paid))
+        self.remaining:SetText(L["Ledger_Remaining"] .. gold(addon, remaining) .. "|r")
         self.recordButton:SetEnabled(remaining > 0)
         self.markButton:SetEnabled(remaining > 0)
         if remaining > 0 then self.amount:Enable() else self.amount:Disable() end
@@ -544,7 +551,7 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
 
     function frame:Refresh()
         local entries, summary = addon:GetFilteredLedgerEntries(search:GetText(), self.filter, self.playerFilter)
-        self.summary:SetText(string.format("Outstanding: %s  |  %d debts\nWinner: %s  |  Guild: %s", gold(addon, summary.outstanding), summary.count, gold(addon, summary.winner), gold(addon, summary.guild)))
+        self.summary:SetText(string.format(L["Ledger_OutstandingDebtsWinnerGuild"], gold(addon, summary.outstanding), summary.count, gold(addon, summary.winner), gold(addon, summary.guild)))
         for _, control in pairs(self.filterButtons) do control:Enable() end
         local selectedVisible = false
         for i, entry in ipairs(entries) do
@@ -580,15 +587,15 @@ function CrossGambling:ShowPaymentLedger(playerName, debtId)
             local guildRemaining = addon:GetLedgerBalance(entry, "guild")
             local status = addon:GetLedgerStatus(entry)
             local color = status == "Paid" and "|cff66dd99" or (status == "Partial" and "|cffffcc66" or "|cffff8888")
-            row.text:SetText(string.format("|cffffd100#%d|r  %s  %s%s|r\nTo %s: %s\nGuild: %s  |  %s\n%s - %s", entry.id, ledgerName(entry.loser), color, status, ledgerName(entry.winner),
-                gold(addon, winnerRemaining), gold(addon, guildRemaining), entry.mode or "", entry.profile or "", addon:FormatAuditTimestamp(entry.timestamp, true)))
+            row.text:SetText(string.format(L["Ledger_ToGuild"], entry.id, ledgerName(entry.loser), color, addon:GetLedgerStatusDisplayName(status), ledgerName(entry.winner),
+                gold(addon, winnerRemaining), gold(addon, guildRemaining), addon:GetModeDisplayName(entry.mode) or "", entry.profile or "", addon:FormatAuditTimestamp(entry.timestamp, true)))
             local color = CGTheme and CGTheme._sideColor or { r = 0.2, g = 0.2, b = 0.2 }
             styleDebtRow(row, entry.id == self.selectedId, color, i)
             row:Show()
         end
         for i = #entries + 1, #self.rows do self.rows[i]:Hide() end
         if not selectedVisible then self.selectedId = nil end
-        self.empty:SetText(#entries == 0 and (search:GetText() ~= "" and "No debts match this search." or (self.filter == "Outstanding" and "No outstanding debts.\nNew hosted game results appear here automatically.\nOlder History entries are not treated as unpaid debts." or "No debts in this view.")) or "")
+        self.empty:SetText(#entries == 0 and (search:GetText() ~= "" and L["Ledger_NoDebtsMatchThisSearch"] or (self.filter == "Outstanding" and L["Ledger_NoOutstandingDebtsNewHostedGameResults"] or L["Ledger_NoDebtsInThisView"])) or "")
         content:SetHeight(math.max(1, #entries * 97))
         addon:RestylePaymentLedger()
         self:RefreshDetails()

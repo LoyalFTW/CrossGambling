@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 local function normalizePlayerNameLocal(addon, name, preserveRealm)
@@ -315,19 +316,19 @@ local function createStatsExport(addon, exportType)
             count = count + 1
         end
         if count == 0 then
-            table.insert(lines, "NOTE;No stats to export for " .. modeKey)
+            table.insert(lines, "NOTE;" .. string.format(L["Stats_ExportNoModeData"], addon:GetModeDisplayName(modeKey)))
         end
         return table.concat(lines, "\n")
     elseif exportType == "deathroll" then
         table.insert(lines, "DATASET;DEATHROLL")
         if appendStatLines(lines, "DEATHROLL", global.deathrollStats) == 0 then
-            table.insert(lines, "NOTE;No Deathroll stats to export")
+            table.insert(lines, "NOTE;" .. L["Stats_ExportNoDeathRollData"])
         end
         return table.concat(lines, "\n")
     elseif exportType == "session" then
         table.insert(lines, "DATASET;SESSION")
         if appendStatLines(lines, "SESSION", addon.game and addon.game.sessionStats or {}) == 0 then
-            table.insert(lines, "NOTE;No Session stats to export")
+            table.insert(lines, "NOTE;" .. L["Stats_ExportNoSessionData"])
         end
         return table.concat(lines, "\n")
     end
@@ -335,7 +336,7 @@ local function createStatsExport(addon, exportType)
     table.insert(lines, "DATASET;ALL_STATS")
     table.insert(lines, "HOUSE;" .. tostring(global.housestats or 0))
     if appendStatLines(lines, "STAT", global.stats) == 0 then
-        table.insert(lines, "NOTE;No All Stats to export")
+        table.insert(lines, "NOTE;" .. L["Stats_ExportNoAllData"])
     end
 
     for _, altName in ipairs(sortedKeys(global.joinstats)) do
@@ -395,7 +396,7 @@ local function parseStatsExport(text)
             if recordType == "CrossGamblingStatsExport" then
                 sawVersion = true
                 if fields[2] ~= "1" and fields[2] ~= "2" and fields[2] ~= "3" and fields[2] ~= "4" and fields[2] ~= "5" and fields[2] ~= "6" then
-                    return nil, "Unsupported export version."
+                    return nil, L["Stats_UnsupportedExportVersion"]
                 end
             elseif recordType == "DATASET" then
                 imported.dataset = fields[2] or "FULL"
@@ -407,7 +408,7 @@ local function parseStatsExport(text)
                 local name = fields[2]
                 local amount = tonumber(fields[3])
                 if not name or name == "" or not amount then
-                    return nil, "Invalid " .. recordType .. " line."
+                    return nil, string.format(L["Stats_InvalidRecord"], recordType)
                 end
 
                 if recordType == "STAT" then
@@ -423,7 +424,7 @@ local function parseStatsExport(text)
             elseif recordType == "JOIN" then
                 local altName, mainName = fields[2], fields[3]
                 if not altName or altName == "" or not mainName or mainName == "" then
-                    return nil, "Invalid JOIN line."
+                    return nil, L["Stats_InvalidJOINLine"]
                 end
 
                 imported.joinstats[altName] = mainName
@@ -434,7 +435,7 @@ local function parseStatsExport(text)
                 local stats = tonumber(fields[4])
                 local deathrollStats = tonumber(fields[5])
                 if not altName or altName == "" or not stats or not deathrollStats then
-                    return nil, "Invalid ALT line."
+                    return nil, L["Stats_InvalidALTLine"]
                 end
 
                 imported.altStats[altName] = {
@@ -448,7 +449,7 @@ local function parseStatsExport(text)
                 local playerName = fields[3]
                 local amount = tonumber(fields[4])
                 if not modeName or modeName == "" or not playerName or playerName == "" or not amount then
-                    return nil, "Invalid MODESTAT line."
+                    return nil, L["Stats_InvalidMODESTATLine"]
                 end
 
                 imported.modeStats[modeName] = imported.modeStats[modeName] or {}
@@ -465,7 +466,7 @@ local function parseStatsExport(text)
                 local bestLossStreak = tonumber(fields[9])
                 local lastPlayed = tonumber(fields[10])
                 if not playerName or playerName == "" or not games or not wins or not losses or not pushes or not streak or not bestWinStreak or not bestLossStreak or not lastPlayed then
-                    return nil, "Invalid CARD line."
+                    return nil, L["Stats_InvalidCARDLine"]
                 end
                 imported.playerCardStats[playerName] = {
                     games = games,
@@ -487,7 +488,7 @@ local function parseStatsExport(text)
                 local losses = tonumber(fields[6])
                 local pushes = tonumber(fields[7])
                 if not playerName or playerName == "" or not modeName or modeName == "" or not games or not wins or not losses or not pushes then
-                    return nil, "Invalid CARDMODE line."
+                    return nil, L["Stats_InvalidCARDMODELine"]
                 end
                 imported.playerCardStats[playerName] = imported.playerCardStats[playerName] or { modes = {} }
                 imported.playerCardStats[playerName].modes = imported.playerCardStats[playerName].modes or {}
@@ -499,13 +500,13 @@ local function parseStatsExport(text)
                 }
             elseif recordType == "ACTIVEPROFILE" then
                 if not fields[2] or fields[2] == "" then
-                    return nil, "Invalid ACTIVEPROFILE line."
+                    return nil, L["Stats_InvalidACTIVEPROFILELine"]
                 end
                 imported.activeStatProfile = fields[2]
             elseif recordType == "PROFILE" then
                 local profileName = fields[2]
                 if not profileName or profileName == "" then
-                    return nil, "Invalid PROFILE line."
+                    return nil, L["Stats_InvalidPROFILELine"]
                 end
                 imported.statProfiles = imported.statProfiles or {}
                 imported.statProfiles[profileName] = imported.statProfiles[profileName] or {
@@ -520,7 +521,7 @@ local function parseStatsExport(text)
                 local profileName, playerName = fields[2], fields[3]
                 local amount = tonumber(fields[4])
                 if not profileName or profileName == "" or not playerName or playerName == "" or not amount then
-                    return nil, "Invalid " .. recordType .. " line."
+                    return nil, string.format(L["Stats_InvalidRecord"], recordType)
                 end
                 imported.statProfiles = imported.statProfiles or {}
                 imported.statProfiles[profileName] = imported.statProfiles[profileName] or { stats = {}, deathrollStats = {}, modeStats = {} }
@@ -530,7 +531,7 @@ local function parseStatsExport(text)
                 local profileName, modeName, playerName = fields[2], fields[3], fields[4]
                 local amount = tonumber(fields[5])
                 if not profileName or profileName == "" or not modeName or modeName == "" or not playerName or playerName == "" or not amount then
-                    return nil, "Invalid PROFILEMODE line."
+                    return nil, L["Stats_InvalidPROFILEMODELine"]
                 end
                 imported.statProfiles = imported.statProfiles or {}
                 imported.statProfiles[profileName] = imported.statProfiles[profileName] or { stats = {}, deathrollStats = {}, modeStats = {} }
@@ -538,13 +539,13 @@ local function parseStatsExport(text)
                 profile.modeStats[modeName] = profile.modeStats[modeName] or {}
                 profile.modeStats[modeName][playerName] = amount
             else
-                return nil, "Unknown export line: " .. tostring(recordType)
+                return nil, L["Stats_UnknownExportLine"] .. tostring(recordType)
             end
         end
     end
 
     if not sawVersion then
-        return nil, "Missing CrossGambling export header."
+        return nil, L["Stats_MissingCrossGamblingExportHeader"]
     end
 
     return imported, nil, counts
@@ -556,9 +557,9 @@ local function ensureStatsImportDialog(addon)
     end
 
     StaticPopupDialogs["CG_IMPORT_STATS"] = {
-        text = "Replace current stats with this import?",
-        button1 = "Import",
-        button2 = "Cancel",
+        text = L["Stats_ReplaceCurrentStatsWithThisImport"],
+        button1 = L["Stats_Import"],
+        button2 = L["Stats_Cancel"],
         OnAccept = function()
             local pending = addon.pendingStatsImport
             if not pending then
@@ -604,7 +605,7 @@ local function ensureStatsImportDialog(addon)
             addon:EnsureStatProfiles()
             refreshHistoryProfileOption()
             addon.pendingStatsImport = nil
-            addon:Print("Stats import complete.")
+            addon:Print(L["Stats_StatsImportComplete"])
         end,
         OnCancel = function()
             addon.pendingStatsImport = nil
@@ -618,7 +619,7 @@ end
 function CrossGambling:joinStats(info, args)
     local mainname, altname = self:ParsePlayerNameArguments(args, 2)
     if not mainname or not altname then
-        DEFAULT_CHAT_FRAME:AddMessage('Invalid format. Use: /cg joinstats "Main Name" "Alt Name"')
+        DEFAULT_CHAT_FRAME:AddMessage(L["Stats_InvalidFormatUseCgJoinstatsMainName"])
         return
     end
 
@@ -630,7 +631,7 @@ function CrossGambling:joinStats(info, args)
     local normalizedAltName = normalizePlayerNameLocal(self, storedAltName, true)
 
     if normalizedMainName == normalizedAltName then
-        DEFAULT_CHAT_FRAME:AddMessage("Main and alt cannot be the same character.")
+        DEFAULT_CHAT_FRAME:AddMessage(L["Stats_MainAndAltCannotBeTheSame"])
         return
     end
 
@@ -670,7 +671,7 @@ function CrossGambling:joinStats(info, args)
         timestamp = time()
     })
 
-    DEFAULT_CHAT_FRAME:AddMessage(string.format("Joined alt '%s' to main '%s'", storedAltName, storedMainName))
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(L["Stats_JoinedAltToMain"], storedAltName, storedMainName))
 end
 
 
@@ -678,7 +679,7 @@ function CrossGambling:unjoinStats(info, altname)
     altname = self:ParsePlayerNameArguments(altname, 1)
     if not altname or altname == "" then
         for alt, main in pairs(self.db.global.joinstats or {}) do
-            DEFAULT_CHAT_FRAME:AddMessage(string.format("Currently joined: alt '%s' -> main '%s'", alt, main))
+            DEFAULT_CHAT_FRAME:AddMessage(string.format(L["Stats_CurrentlyJoinedAltMain"], alt, main))
         end
         return
     end
@@ -686,13 +687,13 @@ function CrossGambling:unjoinStats(info, altname)
     local normalizedAltName = normalizePlayerNameLocal(self, altname, true)
     local mainname = self.db.global.joinstats[normalizedAltName]
     if not mainname then
-        DEFAULT_CHAT_FRAME:AddMessage("Alt is not joined to any main.")
+        DEFAULT_CHAT_FRAME:AddMessage(L["Stats_AltIsNotJoinedToAnyMain"])
         return
     end
 
     local altStats = self.db.global.altStats and self.db.global.altStats[normalizedAltName]
     if not altStats then
-        DEFAULT_CHAT_FRAME:AddMessage("No saved stats found for alt.")
+        DEFAULT_CHAT_FRAME:AddMessage(L["Stats_NoSavedStatsFoundForAlt"])
         return
     end
 
@@ -724,19 +725,19 @@ function CrossGambling:unjoinStats(info, altname)
         timestamp = time()
     })
 
-    DEFAULT_CHAT_FRAME:AddMessage(string.format("Unjoined alt '%s' from main '%s'", restoredAltName, mainname))
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(L["Stats_UnjoinedAltFromMain"], restoredAltName, mainname))
 end
 
 function CrossGambling:reportStats(full)
     local lines = {
-        "-- CrossGambling All Time Stats --",
-        string.format("The house has taken %s total.", (self.db.global.housestats or 0))
+        L["Stats_AllTimeStats"],
+        string.format(L["Stats_TheHouseHasTakenTotal"], (self.db.global.housestats or 0))
     }
 
     local combinedStats = combineStatsByMain(self, self.db.global.stats)
 
     if next(combinedStats) == nil then
-        table.insert(lines, "No stats to report.")
+        table.insert(lines, L["Stats_NoStatsToReport"])
         sendChatLinesInBatches(self, lines)
         return
     end
@@ -754,8 +755,8 @@ function CrossGambling:reportStats(full)
 
     if full then
         for k, v in ipairs(sortedStats) do
-            local sortsign = v.amount < 0 and "lost" or "won"
-            local statMessage = string.format("%d. %s %s %d total", k, v.name, sortsign, math.abs(v.amount))
+            local sortsign = v.amount < 0 and L["Stats_Lost"] or L["Stats_Won"]
+            local statMessage = string.format(L["Stats_Total"], k, v.name, sortsign, math.abs(v.amount))
             table.insert(lines, statMessage)
         end
         sendChatLinesInBatches(self, lines)
@@ -764,18 +765,18 @@ function CrossGambling:reportStats(full)
 
     sendChatLine(self, lines[1])
     sendChatLine(self, lines[2])
-    sendChatLine(self, "-- Top 3 Winners --")
+    sendChatLine(self, L["Stats_Top3Winners"])
 		for i = 1, math.min(3, #winners) do
-			sendChatLine(self, string.format("%d. %s won %d total", i, winners[i].name, math.abs(winners[i].amount)))
+			sendChatLine(self, string.format(L["Stats_WonTotal"], i, winners[i].name, math.abs(winners[i].amount)))
 		end
 
 		table.sort(losers, function(a, b)
 			return a.amount < b.amount
 		end)
 
-		sendChatLine(self, "-- Top 3 Losers --")
+		sendChatLine(self, L["Stats_Top3Losers"])
 		for i = 1, math.min(3, #losers) do
-			sendChatLine(self, string.format("%d. %s lost %d total", i, losers[i].name, math.abs(losers[i].amount)))
+			sendChatLine(self, string.format(L["Stats_LostTotal"], i, losers[i].name, math.abs(losers[i].amount)))
 		end
 
 end
@@ -784,10 +785,17 @@ function CrossGambling:ExportStatsText(exportType)
     return createStatsExport(self, exportType)
 end
 
+local datasetLabels = {
+    FULL = L["Stats_DatasetFull"],
+    ALL_STATS = L["Stats_DatasetAll"],
+    DEATHROLL = L["Stats_DatasetDeathRoll"],
+    SESSION = L["Stats_DatasetSession"],
+}
+
 function CrossGambling:ImportStatsText(text)
     local imported, errorMessage, counts = parseStatsExport(text)
     if not imported then
-        self:Print("Stats import failed: " .. (errorMessage or "Invalid export text."))
+        self:Print(L["Stats_StatsImportFailed"] .. (errorMessage or L["Stats_InvalidExportText"]))
         return false
     end
 
@@ -796,9 +804,13 @@ function CrossGambling:ImportStatsText(text)
     StaticPopup_Show("CG_IMPORT_STATS")
 
     if counts then
+        local dataset = imported.dataset or "FULL"
+        local datasetMode = dataset:match("^MODE:(.+)$")
+        local displayDataset = datasetMode and string.format(L["Stats_DatasetMode"], self:GetModeDisplayName(datasetMode))
+            or datasetLabels[dataset] or dataset
         self:Print(string.format(
-            "Ready to import %s: %d stats, %d deathroll stats, %d session stats, %d mode stats, %d joined alts, %d saved alt records, %d player cards, and %d history profiles.",
-            imported.dataset or "FULL",
+            L["Stats_ReadyToImportStatsDeathrollStatsSession"],
+            displayDataset,
             counts.stats or 0,
             counts.deathrollStats or 0,
             counts.sessionStats or 0,
@@ -859,7 +871,7 @@ function CrossGambling:ShowStatsTransferFrame(mode)
 
         local modeLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         modeLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -62)
-        modeLabel:SetText("By Game Mode:")
+        modeLabel:SetText(L["Stats_ByGameMode"])
         if slick then
             styleTransferFont(modeLabel)
         end
@@ -868,17 +880,17 @@ function CrossGambling:ShowStatsTransferFrame(mode)
             local exportTitle
             local modeKey = self.exportType:match("^mode:(.+)$")
             if modeKey then
-                exportTitle = modeKey
+                exportTitle = self.addon:GetModeDisplayName(modeKey)
             elseif self.exportType == "deathroll" then
-                exportTitle = "Deathrolls"
+                exportTitle = L["Stats_Deathrolls"]
             elseif self.exportType == "session" then
-                exportTitle = "Session Stats"
+                exportTitle = L["Stats_SessionStats"]
             else
-                exportTitle = "All Stats"
+                exportTitle = L["Stats_AllStats"]
             end
 
             local exportText = self.addon:ExportStatsText(self.exportType)
-            self.title:SetText("CrossGambling Export Stats - " .. exportTitle)
+            self.title:SetText(L["Stats_ExportStats"] .. exportTitle)
             self.editBox:SetText(exportText)
             self.editBox:SetCursorPosition(0)
             self.editBox:SetFocus()
@@ -908,20 +920,20 @@ function CrossGambling:ShowStatsTransferFrame(mode)
             return btn
         end
 
-        local allStatsButton = addDatasetButton("All Stats", "all", 110, 24, function(btn)
+        local allStatsButton = addDatasetButton(L["Stats_AllStats"], "all", 110, 24, function(btn)
             btn:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -34)
         end)
-        local deathrollButton = addDatasetButton("Deathrolls", "deathroll", 110, 24, function(btn)
+        local deathrollButton = addDatasetButton(L["Stats_Deathrolls"], "deathroll", 110, 24, function(btn)
             btn:SetPoint("LEFT", allStatsButton, "RIGHT", 8, 0)
         end)
-        addDatasetButton("Session Stats", "session", 110, 24, function(btn)
+        addDatasetButton(L["Stats_SessionStats"], "session", 110, 24, function(btn)
             btn:SetPoint("LEFT", deathrollButton, "RIGHT", 8, 0)
         end)
 
         local previousModeButton
         for _, modeName in ipairs(self.modeListOrder or {}) do
             local anchor = previousModeButton
-            previousModeButton = addDatasetButton(modeName, "mode:" .. modeName, 100, 22, function(btn)
+            previousModeButton = addDatasetButton(self:GetModeDisplayName(modeName), "mode:" .. modeName, 100, 22, function(btn)
                 if anchor then
                     btn:SetPoint("LEFT", anchor, "RIGHT", 5, 0)
                 else
@@ -957,20 +969,20 @@ function CrossGambling:ShowStatsTransferFrame(mode)
         scrollFrame:SetScrollChild(editBox)
         frame.editBox = editBox
 
-        local exportButton = createTransferButton(frame, "Export", 110, 24, slick)
+        local exportButton = createTransferButton(frame, L["Stats_Export"], 110, 24, slick)
         exportButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 14, 16)
         exportButton:SetScript("OnClick", function()
             frame.mode = "export"
             frame:RefreshExportText()
         end)
 
-        local importButton = createTransferButton(frame, "Import", 110, 24, slick)
+        local importButton = createTransferButton(frame, L["Stats_Import"], 110, 24, slick)
         importButton:SetPoint("LEFT", exportButton, "RIGHT", 8, 0)
         importButton:SetScript("OnClick", function()
             frame.addon:ImportStatsText(frame.editBox:GetText())
         end)
 
-        local closeButton = createTransferButton(frame, "Close", 110, 24, slick)
+        local closeButton = createTransferButton(frame, L["Common_Close"], 110, 24, slick)
         closeButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -14, 16)
         closeButton:SetScript("OnClick", function()
             frame:Hide()
@@ -986,7 +998,7 @@ function CrossGambling:ShowStatsTransferFrame(mode)
     if mode == "export" then
         frame:RefreshExportText()
     else
-        frame.title:SetText("CrossGambling Import Stats")
+        frame.title:SetText(L["Stats_ImportStats"])
         frame.editBox:SetText("")
         frame.editBox:SetFocus()
     end
@@ -997,13 +1009,13 @@ end
 function CrossGambling:NormalizeStatProfileName(name)
     name = tostring(name or ""):gsub("^%s+", ""):gsub("%s+$", ""):gsub("%s+", " ")
     if name == "" then
-        return nil, "Enter a profile name."
+        return nil, L["Stats_EnterAProfileName"]
     end
     if #name > 32 then
-        return nil, "Profile names can be up to 32 characters."
+        return nil, L["Stats_ProfileNamesCanBeUpTo32"]
     end
     if name:find("[;|\r\n\t]") or name:find("[%c]") then
-        return nil, "Profile names cannot contain separators or control characters."
+        return nil, L["Stats_ProfileNamesCannotContainSeparatorsOrControl"]
     end
     return name
 end
@@ -1082,7 +1094,7 @@ function CrossGambling:CreateStatProfile(name)
     if existingName then
         self.db.global.activeStatProfile = existingName
         refreshHistoryProfileOption()
-        self:Print("History profile selected: " .. existingName .. ".")
+        self:Print(L["Stats_HistoryProfileSelected"] .. existingName .. ".")
         return true
     end
 
@@ -1090,19 +1102,19 @@ function CrossGambling:CreateStatProfile(name)
     self.db.global.statProfiles[normalized] = { stats = {}, deathrollStats = {}, modeStats = {}, housestats = 0, createdAt = now, updatedAt = now }
     self.db.global.activeStatProfile = normalized
     refreshHistoryProfileOption()
-    self:Print("History profile created and selected: " .. normalized .. ".")
+    self:Print(L["Stats_HistoryProfileCreatedAndSelected"] .. normalized .. ".")
     return true
 end
 
 function CrossGambling:SetActiveStatProfile(name)
     local existingName = self:FindStatProfileName(name)
     if not existingName then
-        self:Print("History profile not found: " .. tostring(name) .. ".")
+        self:Print(L["Stats_HistoryProfileNotFound"] .. tostring(name) .. ".")
         return false
     end
     self.db.global.activeStatProfile = existingName
     refreshHistoryProfileOption()
-    self:Print("History profile selected: " .. existingName .. ".")
+    self:Print(L["Stats_HistoryProfileSelected"] .. existingName .. ".")
     return true
 end
 
@@ -1117,7 +1129,7 @@ function CrossGambling:ResetStatProfile(name)
     profile.modeStats = {}
     profile.housestats = 0
     profile.updatedAt = time()
-    self:Print("History profile reset: " .. existingName .. ".")
+    self:Print(L["Stats_HistoryProfileReset"] .. existingName .. ".")
     return true
 end
 
@@ -1130,7 +1142,7 @@ function CrossGambling:DeleteStatProfile(name)
     self.db.global.activeStatProfile = nil
     self:EnsureStatProfiles()
     refreshHistoryProfileOption()
-    self:Print("History profile deleted: " .. existingName .. ". Active profile: " .. self.db.global.activeStatProfile .. ".")
+    self:Print(L["Stats_HistoryProfileDeleted"] .. existingName .. L["Stats_ActiveProfile"] .. self.db.global.activeStatProfile .. ".")
     return true
 end
 
@@ -1150,15 +1162,15 @@ end
 function CrossGambling:reportStatProfile(name)
     local existingName = name and self:FindStatProfileName(name) or self.db.global.activeStatProfile
     if not existingName then
-        self:Print("History profile not found.")
+        self:Print(L["Stats_HistoryProfileNotFound2"])
         return
     end
     local profile = self.db.global.statProfiles[existingName]
-    sendChatLine(self, "-- History Profile: " .. existingName .. " --")
-    sendChatLine(self, string.format("The house has taken %s total.", self:addCommas(profile.housestats or 0)))
+    sendChatLine(self, L["Stats_HistoryProfile"] .. existingName .. " --")
+    sendChatLine(self, string.format(L["Stats_TheHouseHasTakenTotal"], self:addCommas(profile.housestats or 0)))
     local sorted = self:sortStats(combineStatsByMain(self, profile.stats))
     if #sorted == 0 then
-        sendChatLine(self, "No stats available for this profile.")
+        sendChatLine(self, L["Stats_NoStatsAvailableForThisProfile"])
     else
         self:reportSortedStats(sorted, existingName)
     end
@@ -1200,7 +1212,7 @@ function CrossGambling:ShowStatProfilesFrame()
 
         local title = frame:CreateFontString(nil, "OVERLAY", slick and "GameFontNormal" or "GameFontNormalLarge")
         title:SetPoint("TOP", frame, "TOP", 0, slick and 4 or -2)
-        title:SetText("History Profiles")
+        title:SetText(L["Stats_HistoryProfiles"])
         if slick then styleTransferFont(title) end
 
         if slick then
@@ -1224,7 +1236,7 @@ function CrossGambling:ShowStatProfilesFrame()
         help:SetPoint("TOPLEFT", activeLabel, "BOTTOMLEFT", 0, -6)
         help:SetPoint("RIGHT", frame, "RIGHT", -18, 0)
         help:SetJustifyH("LEFT")
-        help:SetText("New results are saved to the selected profile as well as Session and All-Time Stats.")
+        help:SetText(L["Stats_NewResultsAreSavedToTheSelected"])
         if slick then styleTransferFont(help) end
 
         for index = 1, 8 do
@@ -1239,7 +1251,7 @@ function CrossGambling:ShowStatProfilesFrame()
             frame.rows[index] = row
         end
 
-        local previous = createTransferButton(frame, "Previous", 90, 22, slick, true)
+        local previous = createTransferButton(frame, L["Stats_Previous"], 90, 22, slick, true)
         previous:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -306)
         previous:SetScript("OnClick", function()
             frame.page = math.max(1, frame.page - 1)
@@ -1252,7 +1264,7 @@ function CrossGambling:ShowStatProfilesFrame()
         if slick then styleTransferFont(pageLabel) end
         frame.pageLabel = pageLabel
 
-        local nextButton = createTransferButton(frame, "Next", 90, 22, slick, true)
+        local nextButton = createTransferButton(frame, L["Stats_Next"], 90, 22, slick, true)
         nextButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -18, -306)
         nextButton:SetScript("OnClick", function()
             frame.page = frame.page + 1
@@ -1268,7 +1280,7 @@ function CrossGambling:ShowStatProfilesFrame()
         input:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
         frame.input = input
 
-        local createButton = createTransferButton(frame, "Create & Use", 116, 24, slick, true)
+        local createButton = createTransferButton(frame, L["Stats_CreateUse"], 116, 24, slick, true)
         createButton:SetPoint("LEFT", input, "RIGHT", 8, 0)
         createButton:SetScript("OnClick", function()
             if frame.addon:CreateStatProfile(input:GetText()) then
@@ -1282,25 +1294,25 @@ function CrossGambling:ShowStatProfilesFrame()
             createButton:Click()
         end)
 
-        local reportButton = createTransferButton(frame, "Report", 92, 24, slick, true)
+        local reportButton = createTransferButton(frame, L["Stats_Report"], 92, 24, slick, true)
         reportButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 18, 18)
         reportButton:SetScript("OnClick", function() frame.addon:reportStatProfile() end)
 
-        local resetButton = createTransferButton(frame, "Reset", 92, 24, slick, true)
+        local resetButton = createTransferButton(frame, L["Stats_Reset"], 92, 24, slick, true)
         resetButton:SetPoint("LEFT", reportButton, "RIGHT", 8, 0)
         resetButton:SetScript("OnClick", function()
             frame.addon.pendingStatProfileReset = frame.addon.db.global.activeStatProfile
             StaticPopup_Show("CG_RESET_STAT_PROFILE", frame.addon.pendingStatProfileReset)
         end)
 
-        local deleteButton = createTransferButton(frame, "Delete", 92, 24, slick, true)
+        local deleteButton = createTransferButton(frame, L["Stats_Delete"], 92, 24, slick, true)
         deleteButton:SetPoint("LEFT", resetButton, "RIGHT", 8, 0)
         deleteButton:SetScript("OnClick", function()
             frame.addon.pendingStatProfileDelete = frame.addon.db.global.activeStatProfile
             StaticPopup_Show("CG_DELETE_STAT_PROFILE", frame.addon.pendingStatProfileDelete)
         end)
 
-        local closeButton = createTransferButton(frame, "Close", 92, 24, slick, true)
+        local closeButton = createTransferButton(frame, L["Common_Close"], 92, 24, slick, true)
         closeButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -18, 18)
         closeButton:SetScript("OnClick", function() frame:Hide() end)
 
@@ -1310,8 +1322,8 @@ function CrossGambling:ShowStatProfilesFrame()
             local pages = math.max(1, math.ceil(#names / 8))
             self.page = math.min(math.max(1, self.page), pages)
             local activeName = self.addon.db.global.activeStatProfile
-            self.activeLabel:SetText("Active: " .. activeName)
-            self.pageLabel:SetText(string.format("Page %d of %d", self.page, pages))
+            self.activeLabel:SetText(L["Stats_Active"] .. activeName)
+            self.pageLabel:SetText(string.format(L["Stats_PageOf"], self.page, pages))
             self.previous:SetEnabled(self.page > 1)
             self.next:SetEnabled(self.page < pages)
             local startIndex = (self.page - 1) * 8 + 1
@@ -1322,7 +1334,7 @@ function CrossGambling:ShowStatProfilesFrame()
                     local profile = self.addon.db.global.statProfiles[profileName]
                     local playerCount = 0
                     for _ in pairs(profile.stats) do playerCount = playerCount + 1 end
-                    row:SetText(string.format("%s%s  |  %d players", profileName == activeName and "> " or "", profileName, playerCount))
+                    row:SetText(string.format(L["Stats_Players"], profileName == activeName and "> " or "", profileName, playerCount))
                     row:Show()
                     if profileName == activeName then row:LockHighlight() else row:UnlockHighlight() end
                 else
@@ -1337,8 +1349,8 @@ function CrossGambling:ShowStatProfilesFrame()
 
     if not StaticPopupDialogs["CG_RESET_STAT_PROFILE"] then
         StaticPopupDialogs["CG_RESET_STAT_PROFILE"] = {
-            text = "Reset all saved stats in history profile '%s'?",
-            button1 = "Reset", button2 = "Cancel",
+            text = L["Stats_ResetAllSavedStatsInHistoryProfile"],
+            button1 = L["Stats_Reset"], button2 = L["Stats_Cancel"],
             OnAccept = function()
                 local name = self.pendingStatProfileReset
                 self.pendingStatProfileReset = nil
@@ -1351,8 +1363,8 @@ function CrossGambling:ShowStatProfilesFrame()
     end
     if not StaticPopupDialogs["CG_DELETE_STAT_PROFILE"] then
         StaticPopupDialogs["CG_DELETE_STAT_PROFILE"] = {
-            text = "Delete history profile '%s'? This cannot be undone.",
-            button1 = "Delete", button2 = "Cancel",
+            text = L["Stats_DeleteHistoryProfileThisCannotBeUndone"],
+            button1 = L["Stats_Delete"], button2 = L["Stats_Cancel"],
             OnAccept = function()
                 local name = self.pendingStatProfileDelete
                 self.pendingStatProfileDelete = nil
@@ -1376,20 +1388,20 @@ function CrossGambling:getMainName(playerName)
 end
 
 function CrossGambling:reportSessionStats()
-    sendChatLine(self, "-- Current Session Stats --")
+    sendChatLine(self, L["Stats_CurrentSessionStats"])
 
     local sessionSortlist = self:sortStats(self.game.sessionStats or {})
     if #sessionSortlist == 0 then
-        sendChatLine(self, "No stats available for the current session.")
+        sendChatLine(self, L["Stats_NoStatsAvailableForTheCurrentSession"])
     else
-        self:reportSortedStats(sessionSortlist, "Current Session")
+        self:reportSortedStats(sessionSortlist, L["Stats_CurrentSession"])
     end
 end
 
 function CrossGambling:reportSortedStats(sortlist, title)
     for k, v in ipairs(sortlist) do
-        local sortsign = v.amount < 0 and "lost" or "won"
-        sendChatLine(self, string.format("%d. %s %s %d total", k, v.name, sortsign, math.abs(v.amount)))
+        local sortsign = v.amount < 0 and L["Stats_Lost"] or L["Stats_Won"]
+        sendChatLine(self, string.format(L["Stats_Total"], k, v.name, sortsign, math.abs(v.amount)))
     end
 end
 
@@ -1427,12 +1439,12 @@ function CrossGambling:updatePlayerStat(playerName, amount, modeName)
 end
 
 function CrossGambling:reportDeathrollStats()
-    sendChatLine(self, "-- Deathroll Stats --")
+    sendChatLine(self, L["Stats_DeathrollStats"])
     local deathrollSortlist = self:sortStats(combineStatsByMain(self, self.db.global.deathrollStats))
     if #deathrollSortlist == 0 then
-        sendChatLine(self, "No stats available for Deathrolls.")
+        sendChatLine(self, L["Stats_NoStatsAvailableForDeathrolls"])
     else
-        self:reportSortedStats(deathrollSortlist, "Deathrolls")
+        self:reportSortedStats(deathrollSortlist, L["Stats_Deathrolls"])
     end
 end
 
@@ -1440,7 +1452,7 @@ function CrossGambling:listAlts(info)
     for altname, mainname in pairs(self.db.global.joinstats or {}) do
         local altStats = self.db.global.altStats and self.db.global.altStats[altname]
         local displayAltName = (altStats and altStats.displayName) or altname
-        self:Print("[main] " .. mainname .. " is merged with [alt] " .. displayAltName)
+        self:Print(L["Stats_Main"] .. mainname .. L["Stats_IsMergedWithAlt"] .. displayAltName)
     end
 end
 
@@ -1464,9 +1476,9 @@ function CrossGambling:updateStat(info, args)
             timestamp = time()
         })
 
-        self:Print(string.format("Successfully updated stats for %s (%d -> %d), added %d", storedPlayerName, oldAmount, newAmount, amount))
+        self:Print(string.format(L["Stats_SuccessfullyUpdatedStatsForAdded"], storedPlayerName, oldAmount, newAmount, amount))
     else
-        self:Print("Invalid input for updating stats.")
+        self:Print(L["Stats_InvalidInputForUpdatingStats"])
     end
 end
 
@@ -1474,7 +1486,7 @@ end
 function CrossGambling:deleteStat(info, player)
     player = self:ParsePlayerNameArguments(player, 1)
     if not player then
-        self:Print("Error: No name provided.")
+        self:Print(L["Settings_ErrorNoNameProvided"])
         return
     end
     local storedStatName = getKnownPlayerName(self, player)
@@ -1506,7 +1518,7 @@ function CrossGambling:deleteStat(info, player)
         oldDeathrollAmount = oldDeathrollStats,
         timestamp = time()
     })
-    self:Print("Successfully removed stats for " .. storedStatName .. ".")
+    self:Print(L["Stats_SuccessfullyRemovedStatsFor"] .. storedStatName .. ".")
 end
 
 function CrossGambling:resetStats(info)
@@ -1537,5 +1549,5 @@ function CrossGambling:resetStats(info)
         linkedAltCount = linkedAltCount,
         timestamp = time()
     })
-    self:Print("All stats have been reset.")
+    self:Print(L["Stats_AllStatsHaveBeenReset"])
 end

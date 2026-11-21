@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
@@ -6,12 +7,12 @@ local BOT_STEP_DELAY = 0.35
 local BOT_MAX_STEPS  = 300
 
 local function botLog(msg)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99[CG Bot Test]|r " .. msg)
+    DEFAULT_CHAT_FRAME:AddMessage(L["DebugBots_CGBotTest"] .. msg)
 end
 
 function CrossGambling:SimulateRoll(playerName, minRoll, maxRoll)
     local roll = math.random(minRoll, maxRoll)
-    botLog(string.format("%s rolls %d (%d-%d)", playerName, roll, minRoll, maxRoll))
+    botLog(string.format(L["DebugBots_Rolls"], playerName, roll, minRoll, maxRoll))
     self:DispatchModeHook("OnRollReceived", playerName, roll, minRoll, maxRoll)
     return roll
 end
@@ -35,13 +36,13 @@ function CrossGambling:StepBots(token)
     if token ~= self.botTestToken then return end
     if not self:IsBotTest() then return end
     if self.game.state ~= "ROLL" then
-        botLog("Test game finished.")
+        botLog(L["DebugBots_TestGameFinished"])
         return
     end
 
     self.botTestSteps = (self.botTestSteps or 0) + 1
     if self.botTestSteps > BOT_MAX_STEPS then
-        botLog("Stopped - exceeded the safety step limit. Something may be stuck.")
+        botLog(L["DebugBots_StoppedExceededTheSafetyStepLimitSomething"])
         self:StopBotTest()
         return
     end
@@ -53,7 +54,7 @@ function CrossGambling:StepBots(token)
         for i = 1, #self.game.players do
             local name = self.game.players[i].name
             local pick = math.random(2) == 1 and "over" or "under"
-            botLog(name .. " picks " .. pick)
+            botLog(name .. L["OverUnderMode_Picks"] .. (pick == "over" and L["OverUnderMode_ChoiceOver"] or L["OverUnderMode_ChoiceUnder"]))
             self:DispatchModeHook("OnChatText", name, pick)
         end
     else
@@ -62,7 +63,7 @@ function CrossGambling:StepBots(token)
             local minRoll, maxRoll = self:GetRollRange()
             self:SimulateRoll(roller, minRoll, maxRoll)
         else
-            botLog("Nobody left to roll but the game is still open - stopping.")
+            botLog(L["DebugBots_NobodyLeftToRollButTheGame"])
             self:StopBotTest()
             return
         end
@@ -75,25 +76,25 @@ end
 
 function CrossGambling:StartBotTest(info, args)
     if not self:IsTestingMode() then
-        self:Print("CrossGambling: Testing mode is off. Enable it first with /cg testing on.")
+        self:Print(L["DebugBots_TestingModeIsOffEnableItFirst"])
         return
     end
 
     local botCount = tonumber(args)
     if not botCount or botCount < 1 then
-        self:Print("Usage: /cg testbots <numberOfBots> (e.g. /cg testbots 4)")
+        self:Print(L["DebugBots_UsageCgTestbotsNumberOfBotsEGCg"])
         return
     end
     botCount = math.floor(botCount)
 
     if self.game.state ~= "START" then
-        self:Print("CrossGambling: Finish or reset the current game (/cg stoptest) before starting a bot test.")
+        self:Print(L["DebugBots_FinishOrResetTheCurrentGameCg"])
         return
     end
 
     local mode = self:GetCurrentMode()
     if not mode then
-        self:Print("CrossGambling: No mode selected.")
+        self:Print(L["DebugBots_NoModeSelected"])
         return
     end
 
@@ -113,7 +114,7 @@ function CrossGambling:StartBotTest(info, args)
     self.botTestSteps = 0
     self.botPicksDone = false
 
-    botLog(string.format("Starting a %d-bot test game in %s mode.", botCount, mode.name))
+    botLog(string.format(L["DebugBots_StartingABotTestGameInMode"], botCount, self:GetModeDisplayName(mode.name)))
 
     self:ResetGameState()
     self:ClearCompletedGameBoard()
@@ -144,12 +145,12 @@ end
 
 function CrossGambling:StopBotTest()
     if not self:IsBotTest() then
-        self:Print("No bot test is running.")
+        self:Print(L["DebugBots_NoBotTestIsRunning"])
         return
     end
     self.botTestToken = (self.botTestToken or 0) + 1
     if self.game.state ~= "START" then
         self:CloseGame()
     end
-    self:Print("CrossGambling: Bot test stopped.")
+    self:Print(L["DebugBots_BotTestStopped"])
 end

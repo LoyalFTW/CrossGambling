@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 function CrossGambling:IsBotTest()
@@ -186,7 +187,7 @@ function CrossGambling:String(players)
         return names[1]
     end
 
-    return table.concat(names, ", ", 1, #names - 1) .. " and " .. names[#names]
+    return table.concat(names, ", ", 1, #names - 1) .. L["Common_And"] .. names[#names]
 end
 
 function CrossGambling:CountKeys(tbl)

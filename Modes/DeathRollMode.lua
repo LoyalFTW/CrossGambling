@@ -1,10 +1,11 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
 local DeathRollMode = {}
 DeathRollMode.name        = "1v1DeathRoll"
-DeathRollMode.description = "1v1 only. Starting at the wager, each player rolls 1-to-the-last-roll in turn. Whoever rolls a 1 loses the wager."
+DeathRollMode.description = L["DeathRollMode_1v1OnlyStartingAtTheWagerEach"]
 DeathRollMode.minPlayers  = 2
 DeathRollMode.maxPlayers  = 2
 
@@ -12,7 +13,7 @@ local function PromptNextRoll(addon, game)
     local dr = game.deathroll
     local currentPlayer = game.players[dr.turn]
     if currentPlayer then
-        addon:Announce(format("%s, it's your turn! Type /roll %d", currentPlayer.name, dr.max))
+        addon:Announce(format(L["Game_ItSYourTurnTypeRoll"], currentPlayer.name, dr.max))
     end
 end
 
@@ -37,19 +38,19 @@ function DeathRollMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
 
     local currentPlayer = game.players[dr.turn]
     if not currentPlayer then
-        addon:Announce("CrossGambling: Current player is nil.")
+        addon:Announce(L["DeathRollMode_CurrentPlayerIsNil"])
         return
     end
 
     if playerName ~= currentPlayer.name then
         if addon:getPlayerByName(playerName) then
-            addon:Announce(format("%s, it's not your turn! It's %s's turn.", playerName, currentPlayer.name))
+            addon:Announce(format(L["Game_ItSNotYourTurnItS"], playerName, currentPlayer.name))
         end
         return
     end
 
     if minRoll ~= 1 or maxRoll ~= dr.max then
-        addon:Announce("CrossGambling: Roll does not match the expected range (1-" .. dr.max .. ").")
+        addon:Announce(L["Game_RollDoesNotMatchTheExpectedRange"] .. dr.max .. ").")
         return
     end
 
@@ -65,7 +66,7 @@ function DeathRollMode:OnRollReceived(addon, game, playerName, actualRoll, minRo
             return
         end
         local line   = addon:SettleDebt(loser.name, winner.name, wager, DeathRollMode.name)
-        addon:FinishGame({ format("%s rolls a 1 and loses! %s", loser.name, line) })
+        addon:FinishGame({ format(L["DeathRollMode_RollsA1AndLoses"], loser.name, line) })
     else
         dr.max  = actualRoll
         dr.turn = 3 - dr.turn
@@ -78,7 +79,7 @@ function DeathRollMode:OnPlayerLeave(addon, game, playerName)
 
     local remaining = game.players[1]
     if remaining then
-        addon:FinishGame({ format("CrossGambling: %s left, %s wins by default!", playerName, remaining.name) })
+        addon:FinishGame({ format(L["DeathRollMode_LeftWinsByDefault"], playerName, remaining.name) })
     else
         addon:CloseGame()
     end

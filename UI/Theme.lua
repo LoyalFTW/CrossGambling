@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 CGTheme = {}
@@ -194,7 +195,7 @@ function CGTheme:Switch(name)
     local activeFrame = _G[name == "Slick" and "CrossGamblingSlick" or "CrossGamblingClassic"]
     if activeFrame then activeFrame:Show() end
 
-    DEFAULT_CHAT_FRAME:AddMessage("|cffFFD100CrossGambling|r: Switched to " .. name .. " theme.")
+    DEFAULT_CHAT_FRAME:AddMessage(L["Theme_SwitchedTo"] .. (name == "Slick" and L["Theme_Slick"] or L["Mode_Classic"]) .. L["Theme_MessageSuffix"])
 end
 
 function CGTheme:ApplyColors()

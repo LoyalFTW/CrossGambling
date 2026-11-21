@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 
@@ -18,6 +19,20 @@ function CrossGambling:RegisterMode(modeObj)
 
     self.modeRegistry[modeObj.name] = modeObj
     table.insert(self.modeListOrder, modeObj.name)
+end
+
+local modeNames = {
+    Classic = L["Mode_Classic"],
+    BigTwo = L["Mode_BigTwo"],
+    ["1v1DeathRoll"] = L["Mode_DeathRoll"],
+    Elimination = L["Mode_Elimination"],
+    HotPotato = L["Mode_HotPotato"],
+    OverUnder = L["Mode_OverUnder"],
+    Raffle = L["Mode_Raffle"],
+}
+
+function CrossGambling:GetModeDisplayName(mode)
+    return modeNames[mode] or mode
 end
 
 function CrossGambling:GetCurrentMode()
@@ -50,16 +65,16 @@ end
 
 function CrossGambling:GetModeRulesText(mode)
     if not mode then
-        return "No Mode Selected", "Pick a game mode first."
+        return L["Modes_NoModeSelected"], L["Modes_PickAGameModeFirst"]
     end
 
-    local rules = (mode.description and mode.description ~= "") and mode.description or "No rules description available for this mode."
-    return mode.name, rules
+    local rules = (mode.description and mode.description ~= "") and mode.description or L["Modes_NoRulesDescriptionAvailableForThisMode"]
+    return self:GetModeDisplayName(mode.name), rules
 end
 
 function CrossGambling:PostModeRules()
     local title, rules = self:GetModeRulesText(self:GetCurrentMode())
-    self:SendChat(string.format("CrossGambling: %s Rules - %s", title, rules))
+    self:SendChat(string.format(L["Modes_Rules"], title, rules))
 end
 
 function CrossGambling:ShowGameModeTooltip(button)
@@ -68,7 +83,7 @@ function CrossGambling:ShowGameModeTooltip(button)
     GameTooltip:SetText(title, 1, 1, 1)
     GameTooltip:AddLine(rules, 0.9, 0.9, 0.9, true)
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine("Shift+Click to post these rules in chat.", 0.6, 0.8, 1)
+    GameTooltip:AddLine(L["Modes_ShiftClickToPostTheseRulesIn"], 0.6, 0.8, 1)
     GameTooltip:Show()
 end
 

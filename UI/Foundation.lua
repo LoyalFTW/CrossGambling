@@ -1,4 +1,5 @@
 local _, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 
 local uiThemes = {
@@ -44,7 +45,7 @@ function CrossGambling:ShowThemePicker()
 
     local subtext = picker:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     subtext:SetPoint("TOP", picker, "TOP", 0, -50)
-    subtext:SetText("Choose between Classic or Slick style. Click Confirm to switch instantly.\nClosing this window will default to Slick.")
+    subtext:SetText(L["Theme_ChooseBetweenClassicOrSlickStyleClick"])
 
     local pickerSelected = "Slick"
 
@@ -71,8 +72,8 @@ function CrossGambling:ShowThemePicker()
         return btn
     end
 
-    local oldThemeBtn = makeRadioBtn(picker, "Old Theme", 220, 10)
-    local newThemeBtn = makeRadioBtn(picker, "New Theme", 620, 10)
+    local oldThemeBtn = makeRadioBtn(picker, L["Theme_OldTheme"], 220, 10)
+    local newThemeBtn = makeRadioBtn(picker, L["Theme_NewTheme"], 620, 10)
     newThemeBtn:SetChecked(true)
 
     oldThemeBtn:SetScript("OnClick", function()
@@ -103,7 +104,7 @@ function CrossGambling:ShowThemePicker()
     local confirmBtn = CreateFrame("Button", nil, picker, "UIPanelButtonTemplate")
     confirmBtn:SetSize(100, 26)
     confirmBtn:SetPoint("BOTTOM", picker, "BOTTOM", 0, 10)
-    confirmBtn:SetText("Confirm")
+    confirmBtn:SetText(L["Theme_Confirm"])
     confirmBtn:SetScript("OnClick", function()
         confirmChoice(pickerSelected)
     end)

@@ -1,5 +1,6 @@
 
 local ADDON_NAME, ns = ...
+local L = ns.L
 local CrossGambling = ns.CG
 local addonObject = CrossGambling
 local F = _G.Foundry_1_0
@@ -205,11 +206,11 @@ function CrossGambling:SetTestingMode(info, args)
     elseif value == "off" then
         self.db.global.testingMode = false
     else
-        self:Print("Usage: /cg testing on|off (currently " .. (self.db.global.testingMode and "ON" or "OFF") .. ")")
+        self:Print(L["Settings_UsageCgTestingOnOffCurrently"] .. (self.db.global.testingMode and L["Settings_ON"] or L["Settings_OFF"]) .. ")")
         return
     end
 
-    self:Print("CrossGambling: Testing mode is now " .. (self.db.global.testingMode and "ON" or "OFF") .. ".")
+    self:Print(L["Settings_TestingModeIsNow"] .. (self.db.global.testingMode and L["Settings_ON"] or L["Settings_OFF"]) .. ".")
 end
 
 
@@ -245,12 +246,12 @@ end
 function CrossGambling:banPlayer(info, playerName)
     playerName = self:ParsePlayerNameArguments(playerName, 1)
     if not playerName then
-        self:Print("Error: No name provided.")
+        self:Print(L["Settings_ErrorNoNameProvided"])
         return
     end
 
     if self:IsPlayerBanned(playerName) then
-        self:Print(playerName .. " Unable to add to ban list - user already banned.")
+        self:Print(playerName .. L["Settings_UnableToAddToBanListUser"])
         return
     end
 
@@ -269,13 +270,13 @@ function CrossGambling:banPlayer(info, playerName)
         self:unregisterPlayer(shortName)
     end
 
-    self:Print(playerName .. " has been added to the ban list.")
+    self:Print(playerName .. L["Settings_HasBeenAddedToTheBanList"])
 end
 
 function CrossGambling:unbanPlayer(info, playerName)
     playerName = self:ParsePlayerNameArguments(playerName, 1)
     if not playerName then
-        self:Print("Error: No name provided.")
+        self:Print(L["Settings_ErrorNoNameProvided"])
         return
     end
 
@@ -285,23 +286,23 @@ function CrossGambling:unbanPlayer(info, playerName)
         if self:NormalizePlayerName(bans[i]) == normalizedPlayerName then
             table.remove(bans, i)
             self:RebuildBanCache()
-            self:Print(playerName .. " has been removed from the ban list.")
+            self:Print(playerName .. L["Settings_HasBeenRemovedFromTheBanList"])
             return
         end
     end
 
-    self:Print(playerName .. " is not currently banned!")
+    self:Print(playerName .. L["Settings_IsNotCurrentlyBanned"])
 end
 
 function CrossGambling:listBans(info)
     local bans = self.db.global.bans
     if #bans == 0 then
-        self:Print("There are no bans currently.")
+        self:Print(L["Settings_ThereAreNoBansCurrently"])
         return
     end
 
     for _, ban in ipairs(bans) do
         DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s", "...", tostring(ban)))
     end
-    self:Print("The Current Bans, to unban use /cg unban [PlayerName]")
+    self:Print(L["Settings_TheCurrentBansToUnbanUseCg"])
 end
